@@ -1,3 +1,5 @@
 src/.cache
+src/current_process
+src/*.log
 src/downloader/lib/ScrapperUfal.pm
 src/downloader/lib/ScrapperUfal/*
