@@ -1,0 +1,3 @@
+src/.cache
+src/downloader/lib/ScrapperUfal.pm
+src/downloader/lib/ScrapperUfal/*
