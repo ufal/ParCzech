@@ -1,5 +1,7 @@
+.notes.md
 src/.cache
 src/current_process
+src/out
 src/*.log
 src/downloader/lib/ScrapperUfal.pm
 src/downloader/lib/ScrapperUfal/*
