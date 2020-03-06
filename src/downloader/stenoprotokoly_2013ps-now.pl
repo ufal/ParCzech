@@ -25,6 +25,7 @@ my $run_date = ScrapperUfal::get_timestamp('%Y%m%dT%H%M%S');
 Getopt::Long::GetOptions(
   'tei=s' => \$tei_dir,
   'yaml=s' => \$yaml_dir,
+  'id=s' => \$run_date
   );
 
 my $yaml_file_path = File::Spec->catfile( $yaml_dir,"$run_date.yml");
