@@ -49,6 +49,24 @@ sub new {
   return $self;
 }
 
+sub load_tei {
+  my ($class, %params) = @_;
+  my $self;
+  if($params{file}) {
+    open my $fh, '<', $params{file};
+    binmode $fh;
+    my $dom = XML::LibXML->load_xml(IO => $fh)
+    # close $fh;
+    unless($dom->documentElement()->nodeName eq 'TEI') {
+      print STDERR "Unsupported root element"
+      return undef;
+    }
+
+  } else {
+    return undef;
+  }
+}
+
 sub toString {
   my $self = shift;
   return $self->{DOM}->toString();

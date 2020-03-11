@@ -5,7 +5,7 @@ use utf8;
 use URI::QueryParam;
 use File::Spec;
 use File::Path;
-use TEI::ParlaClarin;
+use TEI::ParlaClarin::TEI;
 use Getopt::Long;
 use Data::Dumper;
 
@@ -337,13 +337,12 @@ sub record_exporter {
 
 sub init_TEI {
   my ($therm_id, $meeting_id, $sitting_id, $topic_id) = @_;
-  $teiCorpus = TEI::ParlaClarin->new(id => "$therm_id-$meeting_id-$sitting_id-$topic_id", output_dir => $tei_out_dir);
-  $teiCorpus->newTEI();
+  $teiCorpus = TEI::ParlaClarin::TEI->new(id => "$therm_id-$meeting_id-$sitting_id-$topic_id", output_dir => $tei_out_dir);
 }
 
 sub export_TEI {
   if($teiCorpus && !$teiCorpus->isEmpty()) {
-    my $filepath = $teiCorpus->teiToFile();
+    my $filepath = $teiCorpus->toFile();
 
    # print STDERR "otestovat jestli se soubor změnil -> md5\n";
    # print STDERR "vyřešit verzování -> když se změní jen některý soubor z jednání -> problém se suffixem, který se automaticky upravuje\n";
@@ -355,7 +354,7 @@ sub export_TEI {
 
 sub set_current_tei_unauthorized {
   my $date = shift;
-  my $id = $teiCorpus->corpusID();
+  my $id = $teiCorpus->teiID();
   $teiCorpus->setUnauthorizedFlag();
   $teiCorpus->setRevisionDate($date,'unauthorized');
   my $h = $new_unauthorized;
@@ -366,7 +365,7 @@ sub set_current_tei_unauthorized {
 
 sub set_document_date {
   my $date = shift;
-  my $id = $teiCorpus->corpusID();
+  my $id = $teiCorpus->teiID();
   return unless is_new($id, $date);
   $teiCorpus->setActDate($date);
 }
