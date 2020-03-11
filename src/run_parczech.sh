@@ -1,6 +1,6 @@
 #!/bin/bash
-#set -e
 
+export ID=`date +"%Y%m%dT%H%M%S"`
 
 function log {
   echo -e `date +"%Y-%m-%d %T"`"\t$1" >> parczech.log
@@ -12,12 +12,13 @@ cd $D
 
 pid=$$
 
-log "STARTED $pid"
+log "STARTED $ID: $pid"
 
 if [ -f 'current_process' ]; then
   proc=`cat 'current_process'`
+  echo "another process is running: $proc"
   log "another process is running: $proc"
-  log "FINISHED $pid"
+  log "FINISHED $ID: $pid"
   exit 0;
 fi
 
@@ -36,14 +37,80 @@ mkdir -p $CL_WORKDIR
 mkdir -p $CL_OUTDIR_YAML
 mkdir -p $CL_OUTDIR_TEI
 
-perl -I downloader/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML
+export LAST_ID=`ls $CL_OUTDIR_TEI|grep -v "sha1sum.list"|sort|tail -n 1`
 
 
+if [ -f "$CL_OUTDIR_TEI/$LAST_ID/person.xml" ]; then
+  echo "moving $CL_OUTDIR_TEI/$LAST_ID/person.xml"
+  mkdir -p "$CL_OUTDIR_TEI/$ID"
+  cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$CL_OUTDIR_TEI/$ID"
+  chmod +w "$CL_OUTDIR_TEI/$ID/person.xml"
+fi
+
+perl -I downloader/lib -I lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML --id $ID
+
+# remove duplicities:
+# calculate hashes for new files
+export DOWNLOADER_TEI_HASHES=$PWD/out/downloader-tei/sha1sum.list
+touch $DOWNLOADER_TEI_HASHES
+
+for hf in `find "$CL_OUTDIR_TEI/$ID" -type f ! -name "person.xml" -exec sha1sum {} \;|tr -s ' '|tr ' ' '='`
+do
+	echo "hf=$hf"
+  hash=${hf%=*}
+  file=${hf##*/}
+  filepath=${hf##*=}
+  if grep -xq "${hash}.*${file}" $DOWNLOADER_TEI_HASHES
+  then
+  	rm $filepath
+  else
+  	echo $hf >> $DOWNLOADER_TEI_HASHES
+  fi
+done
+
+# protect tei files
+find "$CL_OUTDIR_TEI/$ID" -type f -exec chmod -w {} \;
 
 
-
+######################
 ### Download audio ###
+export AUDIO_PATH_ORIG=$PWD/out/audio-orig
+mkdir -p $AUDIO_PATH_ORIG
+
+grep -r "audio/mp3" $CL_OUTDIR_TEI/$ID|sed "s/.*url=\"//;s/\".*//" > $AUDIO_PATH_ORIG/${ID}.audio.list
+wget --no-clobber --directory-prefix $AUDIO_PATH_ORIG --force-directories -w 1 -i $AUDIO_PATH_ORIG/${ID}.audio.list 2>&1 | grep -B 2 ' 404 ' > $AUDIO_PATH_ORIG/${ID}.404.list
+mv $AUDIO_PATH_ORIG/${ID}.audio.list $AUDIO_PATH_ORIG/${ID}.audio.list.done
+
 ### Merge audio and enrich tei files ###
+export AUDIO_PATH_MERGED=$PWD/out/audio-merged
+export AUDIO_PATH_TEI=$PWD/out/audio-tei
+mkdir -p $AUDIO_PATH_MERGED
+mkdir -p $AUDIO_PATH_TEI
+
+for tei in `find "$CL_OUTDIR_TEI/$ID" -type f ! -name "person.xml"`
+do
+  rm -rf $AUDIO_PATH_MERGED/tmp
+  MERGED_AUDIO_FILE=`echo "$AUDIO_PATH_MERGED/${tei#*tei/*/}"| sed "s/xml$/mp3/"`
+  MERGED_AUDIO_TEI=$AUDIO_PATH_TEI/${tei#*tei/*/}
+  AUDIO_LIST=`perl -I lib -MTEI::ParlaClarin::TEI -e 'my $tei=TEI::ParlaClarin::TEI->load_tei(file => $ARGV[0]);print join("\n",@{$tei->getAudioUrls()});$tei->addAudioFile($ARGV[1]); $tei->toFile(outputfile => $ARGV[2])' $tei $MERGED_AUDIO_FILE $MERGED_AUDIO_TEI`
+
+  echo $MERGED_AUDIO_FILE;
+  mkdir -p ${MERGED_AUDIO_FILE%/*}
+  mkdir $AUDIO_PATH_MERGED/tmp
+  for url in $AUDIO_LIST
+  do
+    AUDIO_REL_PATH=${url#*//}
+    AUDIO_FILENAME=${url##*/}
+    echo $AUDIO_FILENAME $AUDIO_REL_PATH
+    ffmpeg -t 600 -i $AUDIO_PATH_ORIG/$AUDIO_REL_PATH -acodec copy $AUDIO_PATH_MERGED/tmp/$AUDIO_FILENAME
+    echo "$AUDIO_PATH_MERGED/tmp/$AUDIO_FILENAME" >> $AUDIO_PATH_MERGED/tmp/filelist
+  done  # dont crop last file
+  ffmpeg -i "concat:"$(cat $AUDIO_PATH_MERGED/tmp/filelist | tr "\n" "|" | sed "s/|$//") -acodec copy $MERGED_AUDIO_FILE
+  echo "MERGED AUDIO: $MERGED_AUDIO_FILE"
+done
+
+
+
 ### Anotate tei ###
 ### remove overwriten tei from teitok ###
 ### upload (new and updated) tei files to teitok ###
@@ -54,4 +121,4 @@ perl -I downloader/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUT
 
 ### End of process ###
 rm 'current_process'
-log "FINISHED $pid"
+log "FINISHED $ID: $pid"
