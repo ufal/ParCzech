@@ -8,16 +8,20 @@ pid=$$
 
 
 export DATA_DIR=$PWD/out
+export SCRAPPER_CACHE=1 # For development ONLY!
+export SCRAPPER_FAST=1 # For development ONLY!
+export SHARED=.
 
 set -o allexport
-touch config.sh
-source config.sh
+if [ -f "config.sh" ]; then
+  source config.sh
+fi
 set +o allexport
 
 export ID=`date +"%Y%m%dT%H%M%S"`
 
 function log {
-  echo -e `date +"%Y-%m-%d %T"`"\t$1" >> parczech.log
+  echo -e `date +"%Y-%m-%d %T"`"\t$1" >> ${SHARED}/parczech.log
 }
 
 
@@ -34,11 +38,9 @@ fi
 
 
 ### Download stenoprotocols ###
-echo "$pid steno_download" > 'current_process'
+echo "$pid steno_download" > ${SHARED}/current_process
 log "downloading"
 
-export SCRAPPER_CACHE=1 # For development ONLY!
-export SCRAPPER_FAST=1 # For development ONLY!
 export CL_WORKDIR=$DATA_DIR/downloader
 export CL_OUTDIR_YAML=$DATA_DIR/downloader-yaml
 export CL_OUTDIR_TEI=$DATA_DIR/downloader-tei
@@ -57,7 +59,7 @@ if [ -f "$CL_OUTDIR_TEI/$LAST_ID/person.xml" ]; then
   chmod +w "$CL_OUTDIR_TEI/$ID/person.xml"
 fi
 
-perl -I downloader/lib -I lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML --id $ID
+perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML --id $ID
 
 # remove duplicities:
 # calculate hashes for new files
@@ -130,5 +132,5 @@ done
 
 
 ### End of process ###
-rm 'current_process'
+rm ${SHARED}/current_process
 log "FINISHED $ID: $pid"
