@@ -1,5 +1,19 @@
 #!/bin/bash
 
+D=`dirname $0`
+cd $D
+
+pid=$$
+
+
+
+export DATA_DIR=$PWD/out
+
+set -o allexport
+touch config.sh
+source config.sh
+set +o allexport
+
 export ID=`date +"%Y%m%dT%H%M%S"`
 
 function log {
@@ -7,10 +21,6 @@ function log {
 }
 
 
-D=`dirname $0`
-cd $D
-
-pid=$$
 
 log "STARTED $ID: $pid"
 
@@ -29,9 +39,9 @@ log "downloading"
 
 export SCRAPPER_CACHE=1 # For development ONLY!
 export SCRAPPER_FAST=1 # For development ONLY!
-export CL_WORKDIR=$PWD/out/downloader
-export CL_OUTDIR_YAML=$PWD/out/downloader-yaml
-export CL_OUTDIR_TEI=$PWD/out/downloader-tei
+export CL_WORKDIR=$DATA_DIR/downloader
+export CL_OUTDIR_YAML=$DATA_DIR/downloader-yaml
+export CL_OUTDIR_TEI=$DATA_DIR/downloader-tei
 export CL_SCRIPT=stenoprotokoly_2013ps-now.pl
 mkdir -p $CL_WORKDIR
 mkdir -p $CL_OUTDIR_YAML
@@ -51,7 +61,7 @@ perl -I downloader/lib -I lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml 
 
 # remove duplicities:
 # calculate hashes for new files
-export DOWNLOADER_TEI_HASHES=$PWD/out/downloader-tei/sha1sum.list
+export DOWNLOADER_TEI_HASHES=$DATA_DIR/downloader-tei/sha1sum.list
 touch $DOWNLOADER_TEI_HASHES
 
 for hf in `find "$CL_OUTDIR_TEI/$ID" -type f ! -name "person.xml" -exec sha1sum {} \;|tr -s ' '|tr ' ' '='`
@@ -74,7 +84,7 @@ find "$CL_OUTDIR_TEI/$ID" -type f -exec chmod -w {} \;
 
 ######################
 ### Download audio ###
-export AUDIO_PATH_ORIG=$PWD/out/audio-orig
+export AUDIO_PATH_ORIG=$DATA_DIR/audio-orig
 mkdir -p $AUDIO_PATH_ORIG
 
 grep -r "audio/mp3" $CL_OUTDIR_TEI/$ID|sed "s/.*url=\"//;s/\".*//" > $AUDIO_PATH_ORIG/${ID}.audio.list
@@ -82,8 +92,8 @@ wget --no-clobber --directory-prefix $AUDIO_PATH_ORIG --force-directories -w 1 -
 mv $AUDIO_PATH_ORIG/${ID}.audio.list $AUDIO_PATH_ORIG/${ID}.audio.list.done
 
 ### Merge audio and enrich tei files ###
-export AUDIO_PATH_MERGED=$PWD/out/audio-merged
-export AUDIO_PATH_TEI=$PWD/out/audio-tei
+export AUDIO_PATH_MERGED=$DATA_DIR/audio-merged
+export AUDIO_PATH_TEI=$DATA_DIR/audio-tei
 mkdir -p $AUDIO_PATH_MERGED
 mkdir -p $AUDIO_PATH_TEI
 
