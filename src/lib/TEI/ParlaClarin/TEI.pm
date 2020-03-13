@@ -87,16 +87,16 @@ sub toFile {
   File::Path::mkpath($dir) unless -d $dir;
   unless($params{outputfile}) {
     my $suffix = '';
-    my $authorized = $self->{authorized} ? '' : 'u';
+    my $unauthorized = $self->{unauthorized} ? '' : 'u';
     while(-f "$filename$authorized$suffix.xml"){
       $suffix = 'a' unless $suffix;
       $suffix = chr(ord($suffix)+1);
     }
-    if($suffix || $authorized){
+    if($suffix || $unauthorized){
   	  #updateIds({DOM => $teiDoc, NS => $self->{NS}},$self->{ID},$self->{ID}.$authorized.$suffix)
-  	  updateIds({DOM => $self->{DOM}},$self->{ID},$self->{ID}.$authorized.$suffix)
+  	  updateIds({DOM => $self->{DOM}},$self->{ID},$self->{ID}.$unauthorized.$suffix)
     }
-    $filename = "$filename$authorized$suffix.xml";
+    $filename = "$filename$unauthorized$suffix.xml";
   }
   my $listPerson;
   if(%{$self->{THIS_TEI_PERSON_IDS}}){
@@ -262,7 +262,7 @@ sub addHead {
 
 sub setUnauthorizedFlag {
   my $self = shift;
-  $self->{authorized} = 0;
+  $self->{unauthorized} = 1;
   return $self;
 }
 
