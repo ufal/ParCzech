@@ -11,6 +11,8 @@ export DATA_DIR=$PWD/out
 export SCRAPPER_CACHE=1 # For development ONLY!
 export SCRAPPER_FAST=1 # For development ONLY!
 export SHARED=.
+export TEITOK=.
+export TEITOK_CORPUS=corpus
 
 set -o allexport
 if [ -f "config.sh" ]; then
@@ -118,12 +120,23 @@ do
     echo "$AUDIO_PATH_MERGED/tmp/$AUDIO_FILENAME" >> $AUDIO_PATH_MERGED/tmp/filelist
   done  # dont crop last file
   ffmpeg -i "concat:"$(cat $AUDIO_PATH_MERGED/tmp/filelist | tr "\n" "|" | sed "s/|$//") -acodec copy $MERGED_AUDIO_FILE
+  chmod -w $MERGED_AUDIO_FILE
+  rm -rf $AUDIO_PATH_MERGED/tmp
   echo "MERGED AUDIO: $MERGED_AUDIO_FILE"
 done
 
-
-
 ### Anotate tei ###
+# anotate tei file in AUDIO_PATH_TEI -> prevents multiple anotations
+find $AUDIO_PATH_TEI -type f -name '*.xml' -exec $TEITOK/common/Scripts/xmltokenize.pl  {} \;
+
+# COPY anotated files
+for f in `find $AUDIO_PATH_TEI -type f -name '*.xml' -not -name "*.nt.xml" -exec realpath --relative-to $AUDIO_PATH_TEI {} \;`
+do
+  DIR=${f%/*}
+  mkdir -p $TEITOK_CORPUS/xmlfiles/$DIR
+  cp $AUDIO_PATH_TEI/$f $TEITOK_CORPUS/xmlfiles/$f
+done
+
 ### remove overwriten tei from teitok ###
 ### upload (new and updated) tei files to teitok ###
 
