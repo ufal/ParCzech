@@ -87,8 +87,8 @@ sub toFile {
   File::Path::mkpath($dir) unless -d $dir;
   unless($params{outputfile}) {
     my $suffix = '';
-    my $unauthorized = $self->{unauthorized} ? '' : 'u';
-    while(-f "$filename$authorized$suffix.xml"){
+    my $unauthorized = $self->{unauthorized} ? '' : '.u';
+    while(-f "$filename$suffix$unauthorized.xml"){
       $suffix = 'a' unless $suffix;
       $suffix = chr(ord($suffix)+1);
     }
@@ -96,7 +96,7 @@ sub toFile {
   	  #updateIds({DOM => $teiDoc, NS => $self->{NS}},$self->{ID},$self->{ID}.$authorized.$suffix)
   	  updateIds({DOM => $self->{DOM}},$self->{ID},$self->{ID}.$unauthorized.$suffix)
     }
-    $filename = "$filename$unauthorized$suffix.xml";
+    $filename = "$filename$suffix$unauthorized.xml";
   }
   my $listPerson;
   if(%{$self->{THIS_TEI_PERSON_IDS}}){
