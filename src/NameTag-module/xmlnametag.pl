@@ -37,6 +37,7 @@ if ( $filename ) {
 if ( $filelist ) {
   open my $fl, $filelist or die "Could not open $filelist: $!";
   while(my $fn = <$fl>) {
+    $fn =~ s/\n$//;
     push @input_files, $fn if $fn ;
   }
   close $fl;
@@ -78,7 +79,8 @@ while($filename = shift @input_files) {
   my @parents = $doc->findnodes('//*[./tok]'); # all parent nodes that contain tokens
   while(my $parent = shift @parents) {
     my @childnodes = $parent->childNodes(); # find all child tokens
-    $parent->removeChildNodes();
+    $_->unbindNode() for @childnodes;
+    #$parent->removeChildNodes();
     my @stack = ($parent);
 #    my $newxml = '';
 
@@ -107,14 +109,15 @@ while($filename = shift @input_files) {
       my @sorted_entities = sort_entities($entities);
       my @open_entities;
       my $e=0;
-      my $skipped;
+      my $skipped=0;
       for( my $i=0; $i < @sentence_nodes; $i++) {
-        while(not defined $sentence_tokens[$i]){ # print nodes != 'tok'
+        while($i < @sentence_nodes && not defined $sentence_tokens[$i]){ # print nodes != 'tok'
 #          $newxml .= $sentence_nodes[$i];
           $stack[$#stack]->appendChild($sentence_nodes[$i]);
           $i++;
           $skipped++;
         }
+        last unless $i < @sentence_nodes;
         my $node = $sentence_nodes[$i];
         for (; $e < @sorted_entities && $sorted_entities[$e]->{start} == $i - $skipped; $e++) {
 #          $newxml .= sprintf '<ne type="%s">', encode_entities($sorted_entities[$e]->{type});
@@ -168,7 +171,7 @@ while($filename = shift @input_files) {
 
 
 
-sub makenode ( $xml, $xquery ) {
+sub makenode {
   my ( $xml, $xquery ) = @_;
   my @tmp = $xml->findnodes($xquery);
   if ( scalar @tmp ) {
@@ -219,7 +222,7 @@ sub usage_exit {
 }
 
 
-sub sort_entities($) {
+sub sort_entities {
   my ($entities) = @_;
   my @entities = ();
   for (my ($i, $size) = (0, $entities->size()); $i < $size; $i++) {
@@ -228,7 +231,7 @@ sub sort_entities($) {
   return sort { $a->{start} <=> $b->{start} || $b->{length} <=> $a->{length} } @entities;
 }
 
-sub encode_entities($) {
+sub encode_entities {
   my ($text) = @_;
   $text =~ s/[&<>"]/$& eq "&" ? "&amp;" : $& eq "<" ? "&lt;" : $& eq ">" ? "&gt;" : "&quot;"/ge;
   return $text;
