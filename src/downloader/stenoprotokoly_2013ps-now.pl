@@ -21,11 +21,13 @@ my $URL_start = "$URL/eknih/";
 my $tei_dir = 'out_tei';
 my $yaml_dir = 'out_tei';
 my $run_date = ScrapperUfal::get_timestamp('%Y%m%dT%H%M%S');
+my $prune_regex = undef;
 
 Getopt::Long::GetOptions(
   'tei=s' => \$tei_dir,
   'yaml=s' => \$yaml_dir,
-  'id=s' => \$run_date
+  'id=s' => \$run_date,
+  'prune=s' => \$prune_regex
   );
 
 my $yaml_file_path = File::Spec->catfile( $yaml_dir,"$run_date.yml");
@@ -110,6 +112,12 @@ for my $sch_link (@steno_voleb_obd) {
 # example input link: https://www.psp.cz/eknih/2013ps/stenprot/012schuz/12-1.html
 for my $steno_s (@steno_sittings) {
   my ($sitting_link, $therm_id, $meeting_id, $sitting_id) = @$steno_s;
+  if(defined $prune_regex){
+    unless(join('-',$therm_id, $meeting_id, $sitting_id) =~ m/^$prune_regex/) {
+      print STDERR "prunning: ",join('-',$therm_id, $meeting_id, $sitting_id),"\n";
+      next;
+    }
+  }
   make_request($sitting_link);
   next unless doc_loaded;
 
