@@ -141,7 +141,7 @@ mkdir -p $AUDIO_PATH_TEI
 for tei in `find "$CL_OUTDIR_TEI/$ID" -type f ! -name "person.xml"`
 do
   rm -rf $AUDIO_PATH_MERGED/tmp
-  MERGED_AUDIO_FILE=`echo "$AUDIO_PATH_MERGED/${tei#*tei/*/}"| sed "s/xml$/mp3/"`
+  MERGED_AUDIO_FILE=`echo "${tei#*tei/*/}"| sed "s/xml$/mp3/"`
   MERGED_AUDIO_TEI=$AUDIO_PATH_TEI/${tei#*tei/*/}
   AUDIO_LIST=`perl -I lib -MTEI::ParlaClarin::TEI -e 'my $tei=TEI::ParlaClarin::TEI->load_tei(file => $ARGV[0]);print join("\n",@{$tei->getAudioUrls()});$tei->addAudioFile($ARGV[1]); $tei->toFile(outputfile => $ARGV[2])' $tei $MERGED_AUDIO_FILE $MERGED_AUDIO_TEI`
 
@@ -215,7 +215,7 @@ log "publishing tei $ID"
 export FINALIZE_INPUT=$NAMETAG_TEI
 export FINALIZE_EXCLUDE="*.nntg.xml"
 
-rsync -a --prune-empty-dirs --include "*.xml" --exclude "filelist" --exclude "$FINALIZE_EXCLUDE" $FINALIZE_INPUT/ $TEITOK_CORPUS/xmlfiles
+rsync -a --prune-empty-dirs --exclude "filelist" --exclude "$FINALIZE_EXCLUDE" $FINALIZE_INPUT/ $TEITOK_CORPUS/xmlfiles
 
 cp "$CL_OUTDIR_TEI/$ID/person.xml" "$TEITOK_CORPUS/Resources/person.xml"
 
