@@ -77,7 +77,7 @@ if [ -f "$CL_OUTDIR_TEI/$LAST_ID/person.xml" ]; then
   cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$CL_OUTDIR_TEI/$ID"
 fi
 
-perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML --id $ID
+perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML --id $ID # --prune '2017-040-1$'
 
 # remove duplicities:
 # calculate hashes for new files
@@ -145,8 +145,8 @@ do
   MERGED_AUDIO_TEI=$AUDIO_PATH_TEI/${tei#*tei/*/}
   AUDIO_LIST=`perl -I lib -MTEI::ParlaClarin::TEI -e 'my $tei=TEI::ParlaClarin::TEI->load_tei(file => $ARGV[0]);print join("\n",@{$tei->getAudioUrls()});$tei->addAudioFile($ARGV[1]); $tei->toFile(outputfile => $ARGV[2])' $tei $MERGED_AUDIO_FILE $MERGED_AUDIO_TEI`
 
-  log "merging to $MERGED_AUDIO_FILE";
-  mkdir -p ${MERGED_AUDIO_FILE%/*}
+  log "merging to $AUDIO_PATH_MERGED/$MERGED_AUDIO_FILE";
+  mkdir -p $AUDIO_PATH_MERGED/${MERGED_AUDIO_FILE%/*}
   mkdir $AUDIO_PATH_MERGED/tmp
   for url in $AUDIO_LIST
   do
@@ -156,8 +156,8 @@ do
     ffmpeg -t 600 -i $AUDIO_PATH_ORIG/$AUDIO_REL_PATH -acodec copy $AUDIO_PATH_MERGED/tmp/$AUDIO_FILENAME
     echo "$AUDIO_PATH_MERGED/tmp/$AUDIO_FILENAME" >> $AUDIO_PATH_MERGED/tmp/filelist
   done  # dont crop last file
-  ffmpeg -i "concat:"$(cat $AUDIO_PATH_MERGED/tmp/filelist | tr "\n" "|" | sed "s/|$//") -acodec copy $MERGED_AUDIO_FILE
-  chmod -w $MERGED_AUDIO_FILE
+  ffmpeg -i "concat:"$(cat $AUDIO_PATH_MERGED/tmp/filelist | tr "\n" "|" | sed "s/|$//") -acodec copy $AUDIO_PATH_MERGED/$MERGED_AUDIO_FILE
+  chmod -w $AUDIO_PATH_MERGED/$MERGED_AUDIO_FILE
   rm -rf $AUDIO_PATH_MERGED/tmp
 done
 
