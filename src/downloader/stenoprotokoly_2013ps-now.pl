@@ -268,7 +268,7 @@ sub record_exporter {
       export_steno_record($ref_author,$ref_post);
       last;
     }
-    if(xpath_node('.//strong[contains(text(), "Neautorizováno !" )]',$cnt) ) {
+    if(xpath_node('.//strong[contains(text(), "eautorizováno !" )]',$cnt) ) { # Neautorizováno or neautorizováno
       set_current_tei_unauthorized($act_date);
     } elsif (my $s = xpath_string('./@class',$cnt) eq "status") {
       next;
