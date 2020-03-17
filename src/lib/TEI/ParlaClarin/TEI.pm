@@ -87,7 +87,7 @@ sub toFile {
   File::Path::mkpath($dir) unless -d $dir;
   unless($params{outputfile}) {
     my $suffix = '';
-    my $unauthorized = $self->{unauthorized} ? '' : '.u';
+    my $unauthorized = $self->{unauthorized} ? '.u' : '';
     while(-f "$filename$suffix$unauthorized.xml"){
       $suffix = 'a' unless $suffix;
       $suffix = chr(ord($suffix)+1);
