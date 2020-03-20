@@ -16,9 +16,9 @@ my ($debug, $test, $filename, $filelist, $neotag_model);
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
-            'test' => \$test, # tokenize to string, do not change the database
+            'test' => \$test, # tag to string, do not change the database
             'filename=s' => \$filename, # input file
-            'filelist=s' => \$filelist, # file that contains files to be tokenized (it increase speed of script - NameTag model is inicialized single time)
+            'filelist=s' => \$filelist, # file that contains files to be nametagged (it increase speed of script - NameTag model is inicialized single time)
             'model=s' => \$neotag_model # neotag model
             );
 
