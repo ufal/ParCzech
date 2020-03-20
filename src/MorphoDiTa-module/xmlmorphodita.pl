@@ -20,7 +20,6 @@ GetOptions ( ## Command line options
             'test' => \$test, # tokenize, tag and lemmatize to string, do not change the database
             'filename=s' => \$filename, # input file
             'filelist=s' => \$filelist, # file that contains files (it increase speed of script - MorphoDiTa model is inicialized single time)
-####TODO REMOVE#######            'dict=s' => \$mdict, # morphodita dictionary
             'model=s' => \$mtagger, # morphodita tagger
             'elements=s' => \$elements_names,
             'sent=i' => \$sentsplit, # split into sentences
@@ -30,8 +29,6 @@ GetOptions ( ## Command line options
 
 usage_exit() unless ( $filename  || $filelist );
 
-####TODO REMOVE#######usage_exit() unless $mdict;
-####TODO REMOVE#######file_does_not_exist($mdict) unless -e $mdict;
 usage_exit() unless $mtagger;
 file_does_not_exist($mtagger) unless -e $mtagger;
 
@@ -60,8 +57,6 @@ for my $f (@input_files) {
 }
 
 print STDERR "Loading : " if $debug;
-####TODO REMOVE#######my $morpho = Ufal::MorphoDiTa::Morpho::load($mdict);
-####TODO REMOVE#######$morpho or die "Cannot load dictionary from file '$mdict'\n";
 my $tagger = Ufal::MorphoDiTa::Tagger::load($mtagger);
 $tagger or die "Cannot load tagger from file '$mtagger'\n";
 print STDERR "done\n" if $debug;
@@ -111,6 +106,7 @@ while($filename = shift @input_files) {
       } else { # text node
         my $text = $chnode->textContent();
         $tokenizer->setText($text);
+        my $ti = 0;
         while($tokenizer->nextSentence($forms, undef)){
           if($sentsplit){
             $sentNode = XML::LibXML::Element->new( 's' );
@@ -121,14 +117,24 @@ while($filename = shift @input_files) {
           $tagger->tag($forms, $lemmas);
 
           for (my $i = 0; $i < $lemmas->size(); $i++) {
+            my $form = $forms->get($i);
+            my $lemma = $lemmas->get($i);
+            $ti += length($form);
             my $tokenNode = XML::LibXML::Element->new( 'tok' );
             $tokenNode->setAttribute('id', "w-$wid");
-            $tokenNode->setAttribute('lemma', $lemmas->get($i)->{lemma});
-            $tokenNode->setAttribute('tag', $lemmas->get($i)->{tag});
-            $tokenNode->setAttribute('form', $forms->get($i));
-            $tokenNode->appendText($forms->get($i));
+            $tokenNode->setAttribute('lemma', $lemma->{lemma});
+            $tokenNode->setAttribute('tag', $lemma->{tag});
+            $tokenNode->setAttribute('form', $form);
+            $tokenNode->appendText($form);
             $sentNode->appendChild($tokenNode);
-            $sentNode->appendText(' ');
+            print STDERR (substr $text, $ti, 1 ), "=>$form\n";
+
+            if(substr($text, $ti, 1) =~ m/\s/){ # skip first space and append space to node
+
+              $sentNode->appendText(' ');
+              $ti++;
+            }
+            $ti++ while substr($text, $ti, 1) =~ m/\s/; # skip next spaces
 
             $wid++;
           }
