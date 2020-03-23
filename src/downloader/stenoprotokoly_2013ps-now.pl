@@ -257,7 +257,10 @@ sub record_exporter {
   }
 
   my $date = trim xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]/p[@class="date"]/a');
-  $date =~ s/^[^ ]* // if $date;
+  if($date){
+    $date =~ s/^[^ ]* //;
+    $teiCorpus->addSittingDate($strp->parse_datetime("$date 00:00"));
+  }
 
   for my $cnt (xpath_node('//*[@id="main-content"]/'.$jumb_to_anchor.'*[not(has(@class,"document-nav"))] | //*[@id="main-content"]/'.$jumb_to_anchor.'text()')) {
   	my $cnt_html = trim dump_html($cnt);

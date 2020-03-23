@@ -35,6 +35,8 @@ sub new {
 
   bless($self,$class);
   $self->{PERSONLIST} = $self->getPersonlistDOM($personlistfilepath);
+  $self->{METADATA} = _get_child_node_or_create($self->{HEADER},'notesStmt');
+  $self->addMetadata('authorized','ano');
   # $self->addNamespaces($root_node, tei => 'http://www.tei-c.org/ns/1.0', xml => 'http://www.w3.org/XML/1998/namespace');
   if(exists $params{id}) {
   	$self->{ID} = $params{id};
@@ -60,6 +62,7 @@ sub load_tei {
     $self->{DOM} = $dom;
     $self->{ROOT} = $dom->documentElement();
     $self->{HEADER} = _get_child_node_or_create($self->{ROOT},'teiHeader');
+    $self->{METADATA} = _get_child_node_or_create($self->{HEADER},'notesStmt');
     $self->{PERSON_IDS} = {};
     $self->{THIS_TEI_PERSON_IDS} = {};
     $self->{activeUtterance} = undef;
@@ -85,6 +88,10 @@ sub toFile {
   my $filename = $params{outputfile} // File::Spec->catfile($self->{output}->{dir},join("-",@id_parts[0,1]),$self->{ID});
   my $dir = dirname($filename);
   File::Path::mkpath($dir) unless -d $dir;
+
+  $self->addMetadata('therm',$id_parts[0],1);
+  $self->addMetadata('sitting',join('/',@id_parts[0,1]),1);
+
   unless($params{outputfile}) {
     my $suffix = '';
     my $unauthorized = $self->{unauthorized} ? '.u' : '';
@@ -147,13 +154,6 @@ sub addAudioFile {
   $media->setAttribute('url', $file);
 
   return $self;
-=x
-  <teiHeader>
-    <recordingStmt>
-      <recording type="audio" dur="P30M">
-        <media mimeType="audio/wav" url="dingDong.wav" dur="PT10S">
-        <desc>Ten seconds of bellringing sound</desc>
-=cut
 }
 
 sub addNamespaces {
@@ -263,6 +263,7 @@ sub addHead {
 sub setUnauthorizedFlag {
   my $self = shift;
   $self->{unauthorized} = 1;
+  $self->addMetadata('authorized','ne',1);
   return $self;
 }
 
@@ -281,6 +282,12 @@ sub addTimeNote {
   $note->appendText($params{before}//'');
   $tei_text->appendChild($note);
   return $self;
+}
+
+sub addSittingDate {
+  my $self = shift;
+  my $date = shift;
+  $self->addMetadata('sittingdate',$date->strftime('%Y-%m-%d')) if $date;
 }
 
 sub addAudioNote {
@@ -356,6 +363,22 @@ sub getPersonlistDOM {
 sub teiID {
   my $self = shift;
   return $self->{ID};
+}
+
+sub addMetadata {
+  my $self = shift;
+  my ($key, $value, $force) = @_; # force means overwrite if key exists
+  my $noteNode;
+  ($noteNode) = $self->{METADATA}->findnodes('./note[@n="'.$key.'"]');
+  return undef if !$force && $noteNode;
+  unless($noteNode){
+    $noteNode = $self->{METADATA}->addNewChild(undef,'note');
+    $noteNode->setAttribute('n',"$key");
+  } else {
+    $noteNode->removeChildNodes(); # remove possibly existing text
+  }
+  $noteNode->appendText($value);
+  return $noteNode;
 }
 # ===========================
 
