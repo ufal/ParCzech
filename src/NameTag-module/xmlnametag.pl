@@ -98,9 +98,11 @@ while($filename = shift @input_files) {
         push @sentence_tokens, $text;
         if(defined $text) { # definde for tokens
           $forms->push($text);
-          last if not($prev_num) && $text eq '.'; # possible ordinal number
-          last if $text =~ m/[\?\!]/;
-          $prev_num = $text =~ /^[0-9]+$/ ? 1 : 0;
+          unless($parent->nodeName() eq 's') { # detect end of sentence unless sentence is defined:
+            last if not($prev_num) && $text eq '.'; # possible ordinal number
+            last if $text =~ m/[\?\!]/;
+            $prev_num = $text =~ /^[0-9]+$/ ? 1 : 0;
+          }
         }
       }
 
