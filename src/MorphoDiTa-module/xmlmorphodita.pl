@@ -123,11 +123,10 @@ while($filename = shift @input_files) {
             my $tokenNode = XML::LibXML::Element->new( 'tok' );
             $tokenNode->setAttribute('id', "w-$wid");
             $tokenNode->setAttribute('lemma', $lemma->{lemma});
-            $tokenNode->setAttribute('tag', $lemma->{tag});
+            $tokenNode->setAttribute('pos', $lemma->{tag});
             $tokenNode->setAttribute('form', $form);
             $tokenNode->appendText($form);
             $sentNode->appendChild($tokenNode);
-            print STDERR (substr $text, $ti, 1 ), "=>$form\n";
 
             if(substr($text, $ti, 1) =~ m/\s/){ # skip first space and append space to node
 
@@ -138,7 +137,6 @@ while($filename = shift @input_files) {
 
             $wid++;
           }
-print STDERR $sentNode,"\n" if $debug;
         }
       }
     } # end of element
@@ -147,7 +145,7 @@ print STDERR $sentNode,"\n" if $debug;
   my $revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"xmlmorphodita\"]");
   my $when = strftime "%Y-%m-%d", localtime;
   $revnode->setAttribute("when", $when);
-  $revnode->appendText("tokkenized, tagged and lemmatized using xmlmorphodita.pl");
+  $revnode->appendText("tokenized, tagged and lemmatized using xmlmorphodita.pl");
 
   my $xmlfile = $doc->toString;
 
