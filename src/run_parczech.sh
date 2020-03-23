@@ -77,7 +77,7 @@ if [ -f "$CL_OUTDIR_TEI/$LAST_ID/person.xml" ]; then
   cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$CL_OUTDIR_TEI/$ID"
 fi
 
-perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML --id $ID # --prune '2017-040-1$'
+perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML --id $ID --prune '201.-04.-.$'
 
 # remove duplicities:
 # calculate hashes for new files
@@ -172,20 +172,39 @@ done
 #    tokenizer-tei/$ID
 ###############################
 
-log_process "tei_tokenizing"
-log "tokenizing tei $ID"
+# log_process "tei_tokenizing"
+# log "tokenizing tei $ID"
 
-export TOKENIZER_TEI=$DATA_DIR/tokenizer-tei/${ID}
-mkdir -p $TOKENIZER_TEI
+# export TOKENIZER_TEI=$DATA_DIR/tokenizer-tei/${ID}
+# mkdir -p $TOKENIZER_TEI
 
-rsync -a --prune-empty-dirs $AUDIO_PATH_TEI/ $TOKENIZER_TEI
-find $TOKENIZER_TEI -type f -name '*.xml' -exec perl $TEITOK/common/Scripts/xmltokenize.pl  {} \;
+# rsync -a --prune-empty-dirs $AUDIO_PATH_TEI/ $TOKENIZER_TEI
+# find $TOKENIZER_TEI -type f -name '*.xml' -exec perl $TEITOK/common/Scripts/xmltokenize.pl  {} \;
 
+
+###############################################
+###     Tokenize, lemmatize, PoS tei        ###
+#  input:
+#    audio-tei/$ID
+#  output:
+#    morphodita-tei/$ID
+###############################################
+
+log_process "tei_morphodita"
+log "morphodita tei $ID"
+
+export MORPHODITA_TEI=$DATA_DIR/morphodita-tei/${ID}
+mkdir -p $MORPHODITA_TEI
+
+rsync -a --prune-empty-dirs $AUDIO_PATH_TEI/ $MORPHODITA_TEI
+find $MORPHODITA_TEI -type f -name '*.xml' > $MORPHODITA_TEI/filelist
+
+ perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models/czech-morfflex-pdt-161115.tagger  --filelist $MORPHODITA_TEI/filelist --debug
 
 ###############################
 ###     NameTag tei         ###
 #  input:
-#    tokenizer-tei/$ID
+#    morphodita-tei/$ID
 #  output:
 #    nametag-tei/$ID
 ###############################
@@ -196,12 +215,13 @@ log "nametagging tei $ID"
 export NAMETAG_TEI=$DATA_DIR/nametag-tei/${ID}
 mkdir -p $NAMETAG_TEI
 
-# copy tokenized files (ignore backups *.nt.xml)
-rsync -a --prune-empty-dirs --exclude '*.nt.xml' $TOKENIZER_TEI/ $NAMETAG_TEI
+# copy tokenized+PoSed+Lematized files (ignore backups *.nmorph.xml)
+rsync -a --prune-empty-dirs --exclude '*.nmorph.xml' $MORPHODITA_TEI/ $NAMETAG_TEI
 
 find $NAMETAG_TEI -type f -name '*.xml' > $NAMETAG_TEI/filelist
 perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304.ner --filelist $NAMETAG_TEI/filelist --debug
 
+echo "KONEC"; rm ${SHARED}/current_process; exit
 
 ###############################
 ###     FINALIZE            ###
@@ -227,11 +247,26 @@ echo "TODO: link merged audio !!!"
 
 
 ### upload (new and updated) tei files to teitok ###
-
+# run
+cd $TEITOK_CORPUS
+#  Removing the old files
+# command:
+/bin/rm -f cqp/*
+----------------------
+#(1) Encoding the corpus
+#command:
+/usr/local/bin/tt-cwb-encode -r cqp
+#----------------------
+#(2) Creating the corpus
+#command:
+/usr/local/bin/cwb-makeall  -r cqp TT-PARCZECH
+#----------------------
+#Regeneration completed on Fri Mar 20 22:48:27 2020
 
 
 
 
 ### End of process ###
+cd $D
 rm ${SHARED}/current_process
 log "FINISHED $ID: $pid"
