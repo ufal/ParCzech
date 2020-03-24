@@ -253,10 +253,7 @@ sub addAuthor {
 sub addHead {
   my $self = shift;
   my $text = shift;
-  my $tei_text = _get_child_node_or_create($self->{ROOT},'text');
-  my $head = XML::LibXML::Element->new("head");
-  $head->appendText($text//'');
-  $tei_text->appendChild($head);
+  _get_child_node_or_create(_get_child_node_or_create($self->{HEADER},'fileDesc'),'titleStmt')->appendTextChild('title',$text//'');
   return $self;
 }
 

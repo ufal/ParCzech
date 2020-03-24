@@ -264,7 +264,7 @@ sub record_exporter {
 
   for my $cnt (xpath_node('//*[@id="main-content"]/'.$jumb_to_anchor.'*[not(has(@class,"document-nav"))] | //*[@id="main-content"]/'.$jumb_to_anchor.'text()')) {
   	my $cnt_html = trim dump_html($cnt);
-    my $cnt_text =ScrapperUfal::html2text($cnt);
+    my $cnt_text =trim ScrapperUfal::html2text($cnt);
     if(xpath_node('./a[../@class="media-links" and @class="bqbs"]',$cnt)){ # end condition, record will be exported within next make_request iteration
       $get_next_page = 0;
       # export previeous utterance
