@@ -221,7 +221,6 @@ rsync -a --prune-empty-dirs --exclude '*.nmorph.xml' $MORPHODITA_TEI/ $NAMETAG_T
 find $NAMETAG_TEI -type f -name '*.xml' > $NAMETAG_TEI/filelist
 perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304.ner --filelist $NAMETAG_TEI/filelist --debug
 
-echo "KONEC"; rm ${SHARED}/current_process; exit
 
 ###############################
 ###     FINALIZE            ###
@@ -252,7 +251,7 @@ cd $TEITOK_CORPUS
 #  Removing the old files
 # command:
 /bin/rm -f cqp/*
-----------------------
+#----------------------
 #(1) Encoding the corpus
 #command:
 /usr/local/bin/tt-cwb-encode -r cqp
