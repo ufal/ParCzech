@@ -90,7 +90,7 @@ sub toFile {
   File::Path::mkpath($dir) unless -d $dir;
 
   $self->addMetadata('therm',$id_parts[0],1);
-  $self->addMetadata('sitting',join('/',@id_parts[0,1]),1);
+  $self->addMetadata('meeting',join('/',@id_parts[0,1]),1);
 
   unless($params{outputfile}) {
     my $suffix = '';
