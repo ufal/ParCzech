@@ -205,13 +205,7 @@ sub addUtterance { # don't change actTEI
   #$u->setAttributeNS($self->{NS}->{xml}, 'id', $params{id}) if exists $params{id};
   $u->setAttribute('id', $params{id}) if exists $params{id};
   if(exists $params{link}) {
-    my $url_note = XML::LibXML::Element->new("note");
-    my $url_idno = XML::LibXML::Element->new("idno");
-    $url_idno->setAttribute('type','URI');
-    $url_idno->appendText($params{link});
-
-    $url_note->appendChild($url_idno);
-    $u->appendChild($url_note);
+    $u->setAttribute('source',$params{link});
   }
   $u->appendText($params{text}//'');
   $u->appendChild($_) for (@{$params{html}//[]});
