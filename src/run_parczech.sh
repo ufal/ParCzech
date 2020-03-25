@@ -77,7 +77,7 @@ if [ -f "$CL_OUTDIR_TEI/$LAST_ID/person.xml" ]; then
   cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$CL_OUTDIR_TEI/$ID"
 fi
 
-perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML --id $ID --prune '201.-04.-.$'
+perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML --id $ID --prune '201.-04[01]-.$'
 
 # remove duplicities:
 # calculate hashes for new files
@@ -219,7 +219,7 @@ mkdir -p $NAMETAG_TEI
 rsync -a --prune-empty-dirs --exclude '*.nmorph.xml' $MORPHODITA_TEI/ $NAMETAG_TEI
 
 find $NAMETAG_TEI -type f -name '*.xml' > $NAMETAG_TEI/filelist
-perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304.ner --filelist $NAMETAG_TEI/filelist --debug
+perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304-no_numbers.ner --filelist $NAMETAG_TEI/filelist --debug
 
 
 ###############################
