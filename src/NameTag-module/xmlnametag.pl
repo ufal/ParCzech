@@ -14,6 +14,49 @@ my $scriptname = $0;
 
 my ($debug, $test, $filename, $filelist, $neotag_model);
 
+
+# id stores last used value
+# prefixid prefix for id
+my %namedEntities = (
+  #generate_common_entities({},qw//),
+  G  => { placeName => { prefixid => 'place', id => 0 } },
+  gc  => { region => { prefixid => 'gc', id => 0, type => 'state' } },
+  gh  => { geogName => { prefixid => 'gh', id => 0, type => 'hydronym' } },
+  gl  => { geogName => { prefixid => 'gl', id => 0, type => 'nature' } },
+  gp  => { placeName => { prefixid => 'gp', id => 0, type => 'urbanpart' } },
+  gr  => { country => { prefixid => 'gr', id => 0 } },
+  gs  => { placeName => { prefixid => 'gs', id => 0, type => 'street' } },
+  gt  => { bloc => { prefixid => 'gt', id => 0, type => 'continent' } },
+  gu  => { settlement => { prefixid => 'gu', id => 0, type => 'city' } },
+  g_  => { placeName => { prefixid => 'g_', id => 0, type => 'underspecified' } },
+
+
+  I  => { orgName => { prefixid => 'org', id => 0 } },
+  ia => { orgName => { prefixid => 'ia', id => 0, type => 'conference/contest' } }, # not in TEI
+  ic => { orgName => { prefixid => 'ia', id => 0, type => 'cult/educ/scient' } }, # not in TEI
+  if => { orgName => { prefixid => 'if', id => 0, type => 'company' } }, # not in TEI
+  io => { orgName => { prefixid => 'io', id => 0, type => 'government/political' } }, # not in TEI
+  i_ => { orgName => { prefixid => 'o_', id => 0, type => 'underspecified' } }, # not in TEI
+
+  P  => { persName => { prefixid => 'pers', id => 0 } },
+  pf => { forename => { prefixid => 'pf', id => 0 } },
+  pm => { forename => { prefixid => 'pf', id => 0, type => 'second'} }, # not in TEI
+  ps => { surname => { prefixid => 'ps', id => 0 } },
+  pd => { roleName => { prefixid => 'pd', id => 0, type => 'honorific' } }, # possible attribute: full
+  pc => { roleName => { prefixid => 'pc', id => 0, type => 'inhabitant' } }, # not in TEI
+  pp => { persName => { prefixid => 'pp', id => 0, type => 'religious/mythological' } },
+  p_ => { persName => { prefixid => 'p_', id => 0, type => 'underspecified' } }, # not in TEI
+
+  O  => { name => { prefixid => 'o', id => 0, type => 'artifact' } },
+  oa => { name => { prefixid => 'oa', id => 0, type => 'culturalartifact' } }, # not in TEI
+  oe => { unit => { prefixid => 'oe', id => 0, type => 'measure' } },
+  om => { unit => { prefixid => 'om', id => 0, type => 'currency' } },
+  op => { name => { prefixid => 'op', id => 0, type => 'product' } },# not in TEI
+  or => { name => { prefixid => 'or', id => 0, type => 'norm/directive' } },# not in TEI
+  o_ => { name => { prefixid => 'o_', id => 0, type => 'underspecified' } }, # not in TEI
+
+);
+
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tag to string, do not change the database
@@ -123,8 +166,7 @@ while($filename = shift @input_files) {
         my $node = $sentence_nodes[$i];
         for (; $e < @sorted_entities && $sorted_entities[$e]->{start} == $i - $skipped; $e++) {
 #          $newxml .= sprintf '<ne type="%s">', encode_entities($sorted_entities[$e]->{type});
-          my $newnode = XML::LibXML::Element->new("ne");
-          $newnode->setAttribute('type',encode_entities($sorted_entities[$e]->{type}));
+          my $newnode = new_nametag_element($sorted_entities[$e]->{type});
           $stack[$#stack]->appendChild($newnode);
           push @stack, $newnode;
           push @open_entities, $sorted_entities[$e]->{start} + $sorted_entities[$e]->{length} - 1;
@@ -211,7 +253,25 @@ sub makenode {
   };
 };
 
-
+sub new_nametag_element {
+  my $tag = shift;
+  unless(exists $namedEntities{$tag}){
+    $namedEntities{$tag} = {
+      name => {
+        prefixid => $tag,
+        id =>0,
+        type => $tag
+        }
+      };
+  }
+  my ($name) = keys %{$namedEntities{$tag}};
+  my $entSpec = $namedEntities{$tag}->{$name};
+  my $node = XML::LibXML::Element->new($name);
+  $node->setAttribute('id',($entSpec->{prefixid}//'NE') . $entSpec->{id});
+  $entSpec->{id}++;
+  $node->setAttribute($_,encode_entities($entSpec->{$_})) for (grep {not($_ eq 'id' || $_ eq 'prefixid')} keys %$entSpec);
+  return $node;
+}
 
 
 
@@ -238,5 +298,6 @@ sub encode_entities {
   $text =~ s/[&<>"]/$& eq "&" ? "&amp;" : $& eq "<" ? "&lt;" : $& eq ">" ? "&gt;" : "&quot;"/ge;
   return $text;
 }
+
 
 
