@@ -207,7 +207,14 @@ sub addUtterance { # don't change actTEI
   if(exists $params{link}) {
     $u->setAttribute('source',$params{link});
   }
-  $u->appendText($params{text}//'');
+  for my $t (@{$params{text}//[]}) {
+    if(ref $t) {
+      $u->appendChild($t);
+    } else {
+      $u->appendText($t.' ');
+    }
+
+  }
   $u->appendChild($_) for (@{$params{html}//[]});
 
   $tei_text->appendChild($u);
@@ -262,6 +269,14 @@ sub addTimeNote {
   my $self = shift;
   my %params = @_;
   my $tei_text = _get_child_node_or_create($self->{ROOT},'text');
+  my $note = $self->createTimeNoteNode(%params);
+  $tei_text->appendChild($note);
+  return $note;
+}
+
+sub createTimeNoteNode {
+  my $self = shift;
+  my %params = @_;
   my $note = XML::LibXML::Element->new("note");
   $note->setAttribute('type','time');
   $note->appendText($params{before}//'');
@@ -271,9 +286,10 @@ sub addTimeNote {
   $time->appendText($params{texttime}//'');
   $note->appendChild($time);
   $note->appendText($params{before}//'');
-  $tei_text->appendChild($note);
-  return $self;
+  return $note;
 }
+
+
 
 sub addSittingDate {
   my $self = shift;
