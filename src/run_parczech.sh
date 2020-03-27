@@ -143,7 +143,18 @@ do
   rm -rf $AUDIO_PATH_MERGED/tmp
   MERGED_AUDIO_FILE=`echo "${tei#*tei/*/}"| sed "s/xml$/mp3/"`
   MERGED_AUDIO_TEI=$AUDIO_PATH_TEI/${tei#*tei/*/}
-  AUDIO_LIST=`perl -I lib -MTEI::ParlaClarin::TEI -e 'my $tei=TEI::ParlaClarin::TEI->load_tei(file => $ARGV[0]);print join("\n",@{$tei->getAudioUrls()});$tei->addAudioFile($ARGV[1]); $tei->toFile(outputfile => $ARGV[2])' $tei $MERGED_AUDIO_FILE $MERGED_AUDIO_TEI`
+
+  AUDIO_LIST=`perl -I lib -MTEI::ParlaClarin::TEI -e '
+    my $tei=TEI::ParlaClarin::TEI->load_tei(file => $ARGV[0]);
+    my @list = @{$tei->getAudioUrls()};
+    if(@list) {
+      print join("\n",@list);
+      $tei->addAudioFile($ARGV[1]);
+    }
+    $tei->toFile(outputfile => $ARGV[2]);
+    exit 1 unless @list' $tei $MERGED_AUDIO_FILE $MERGED_AUDIO_TEI`
+
+   [ $? -eq 0 ] || continue
 
   log "merging to $AUDIO_PATH_MERGED/$MERGED_AUDIO_FILE";
   mkdir -p $AUDIO_PATH_MERGED/${MERGED_AUDIO_FILE%/*}
