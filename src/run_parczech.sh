@@ -8,8 +8,8 @@ pid=$$
 
 
 export DATA_DIR=$PWD/out
-export SCRAPPER_CACHE=1 # For development ONLY!
-export SCRAPPER_FAST=1 # For development ONLY!
+# export SCRAPPER_CACHE=1 # For development ONLY!
+# export SCRAPPER_FAST=1 # For development ONLY!
 export SHARED=.
 export TEITOK=./TEITOK
 export TEITOK_CORPUS=$TEITOK/projects/CORPUS
