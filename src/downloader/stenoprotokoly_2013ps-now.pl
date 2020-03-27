@@ -329,7 +329,7 @@ sub record_exporter {
         $a->unbindNode();
         $cnt_text = ScrapperUfal::html2text($cnt);
       }
-      $cnt_text =~ s/\s*:\s*//; # remove initial :
+      $cnt_text =~ s/\s*:?\s*//; # remove initial : and spaces
 
       ($$ref_author->{authorname}) = $auth =~ m/([^ ]*\s+[^ ]+?):?$/;
       $$ref_author->{author} = $auth;
