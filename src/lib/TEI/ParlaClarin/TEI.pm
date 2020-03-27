@@ -144,6 +144,15 @@ sub getAudioUrls {
   return [ sort grep {!$seen{$_}++} map {$_->getAttribute('url')} $self->{ROOT}->findnodes('.//media[@url][@mimeType="audio/mp3"]') ];
 }
 
+sub hideAudioUrls {
+  my $self = shift;
+  for my $node ($self->{ROOT}->findnodes('.//note[@type="media"][./media[@url][@mimeType="audio/mp3"]]')){
+    my $url = $node->findnodes('.//media/@url');
+    $node->replaceNode(XML::LibXML::Comment->new("AUDIO:$url"));
+  }
+}
+
+
 sub addAudioFile {
   my $self = shift;
   my $file = shift;

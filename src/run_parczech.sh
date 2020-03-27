@@ -135,6 +135,8 @@ log "merging audio $ID"
 
 export AUDIO_PATH_MERGED=$DATA_DIR/audio-merged/${ID}
 export AUDIO_PATH_TEI=$DATA_DIR/audio-tei/${ID}
+export AUDIO_PATH_CORPUS=$TEITOK_CORPUS/Audio
+
 mkdir -p $AUDIO_PATH_MERGED
 mkdir -p $AUDIO_PATH_TEI
 
@@ -147,17 +149,28 @@ do
   AUDIO_LIST=`perl -I lib -MTEI::ParlaClarin::TEI -e '
     my $tei=TEI::ParlaClarin::TEI->load_tei(file => $ARGV[0]);
     my @list = @{$tei->getAudioUrls()};
+    print STDERR $ARGV[2],"\n";
     if(@list) {
+    	print STDERR join("\n",@list),"\n";
       print join("\n",@list);
+      $tei->hideAudioUrls();
       $tei->addAudioFile($ARGV[1]);
     }
     $tei->toFile(outputfile => $ARGV[2]);
     exit 1 unless @list' $tei $MERGED_AUDIO_FILE $MERGED_AUDIO_TEI`
 
-   [ $? -eq 0 ] || continue
+  if [ $? -ne 0 ]; then
+  	echo "NO AUDIO   $MERGED_AUDIO_TEI"
+    echo "NO AUDIO   $MERGED_AUDIO_TEI" >> $AUDIO_PATH_MERGED/${ID}.log
+   	continue
+  fi
 
+  if [ -f "$AUDIO_PATH_CORPUS/$MERGED_AUDIO_FILE" ]; then
+    echo "EXISTS   $AUDIO_PATH_CORPUS/$MERGED_AUDIO_FILE" >> $AUDIO_PATH_MERGED/${ID}.log
+    continue
+  fi
   log "merging to $AUDIO_PATH_MERGED/$MERGED_AUDIO_FILE";
-  mkdir -p $AUDIO_PATH_MERGED/${MERGED_AUDIO_FILE%/*}
+  mkdir -p $AUDIO_PATH_CORPUS/${MERGED_AUDIO_FILE%/*}
   mkdir $AUDIO_PATH_MERGED/tmp
   for url in $AUDIO_LIST
   do
@@ -167,12 +180,10 @@ do
     ffmpeg -t 600 -i $AUDIO_PATH_ORIG/$AUDIO_REL_PATH -acodec copy $AUDIO_PATH_MERGED/tmp/$AUDIO_FILENAME
     echo "$AUDIO_PATH_MERGED/tmp/$AUDIO_FILENAME" >> $AUDIO_PATH_MERGED/tmp/filelist
   done  # dont crop last file
-  ffmpeg -i "concat:"$(cat $AUDIO_PATH_MERGED/tmp/filelist | tr "\n" "|" | sed "s/|$//") -acodec copy $AUDIO_PATH_MERGED/$MERGED_AUDIO_FILE
-  chmod -w $AUDIO_PATH_MERGED/$MERGED_AUDIO_FILE
+  ffmpeg -i "concat:"$(cat $AUDIO_PATH_MERGED/tmp/filelist | tr "\n" "|" | sed "s/|$//") -acodec copy $AUDIO_PATH_CORPUS/$MERGED_AUDIO_FILE
   rm -rf $AUDIO_PATH_MERGED/tmp
+  echo "CREATED    $AUDIO_PATH_CORPUS/$MERGED_AUDIO_FILE" >> $AUDIO_PATH_MERGED/${ID}.log
 done
-
-
 
 
 ###############################
@@ -248,11 +259,6 @@ export FINALIZE_EXCLUDE="*.nntg.xml"
 rsync -a --prune-empty-dirs --exclude "filelist" --exclude "$FINALIZE_EXCLUDE" $FINALIZE_INPUT/ $TEITOK_CORPUS/xmlfiles
 
 cp "$CL_OUTDIR_TEI/$ID/person.xml" "$TEITOK_CORPUS/Resources/person.xml"
-
-
-
-echo "TODO: link merged audio !!!"
-
 
 
 
