@@ -10,7 +10,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 =description
-This scrapping script works only for therms from 2013
+This scrapping script works only for terms from 2013
 =cut
 
 
@@ -73,7 +73,7 @@ my @steno_topic_links;
 my $unauthorized = JSON::from_json(ScrapperUfal::get_note('unauthorized')||'{}');
 my $new_unauthorized = {};
 
-# loop through therms
+# loop through terms
 for my $row (xpath_node('//*[@id="main-content"]/table/tr',$URL_start)) {
   my $link = xpath_string('./td[2]/a/@href',$row);
   my $header = xpath_string('./td[2]/a',$row);
@@ -83,7 +83,7 @@ for my $row (xpath_node('//*[@id="main-content"]/table/tr',$URL_start)) {
   push @URLs_parlament, $link if $from >= 2013 and $link =~ m/\/\d{4}ps\//;
 }
 
-# get stenoprotocols link for each therms
+# get stenoprotocols link for each terms
 for my $ps_link (@URLs_parlament) {
   make_request($ps_link);
   next unless doc_loaded;
@@ -93,7 +93,7 @@ for my $ps_link (@URLs_parlament) {
 # get sittings
 for my $sch_link (@steno_voleb_obd) {
   make_request($sch_link);
-  my ($therm_id) = $sch_link =~ m/(\d{4})ps/;
+  my ($term_id) = $sch_link =~ m/(\d{4})ps/;
   next unless doc_loaded;
   for my $meeting_node (xpath_node('//*[@id="main-content"]/a[./b]')) {
     my $meeting_link = URI->new_abs($meeting_node->getAttribute('href'),$sch_link);
@@ -103,7 +103,7 @@ for my $sch_link (@steno_voleb_obd) {
     for my $sitting_link (@sittings_links) {
       $sitting_link = URI->new_abs($sitting_link,$sch_link);
       my ($sitting_id) = $sitting_link =~ m/-(\d+)\.htm/;
-      push @steno_sittings, [$sitting_link, $therm_id, $meeting_id, $sitting_id] if is_new($sitting_link,1) || exists $unauthorized->{$therm_id}->{$meeting_id}->{$sitting_id};
+      push @steno_sittings, [$sitting_link, $term_id, $meeting_id, $sitting_id] if is_new($sitting_link,1) || exists $unauthorized->{$term_id}->{$meeting_id}->{$sitting_id};
     }
   }
 }
@@ -111,10 +111,10 @@ for my $sch_link (@steno_voleb_obd) {
 # loop through sittings
 # example input link: https://www.psp.cz/eknih/2013ps/stenprot/012schuz/12-1.html
 for my $steno_s (@steno_sittings) {
-  my ($sitting_link, $therm_id, $meeting_id, $sitting_id) = @$steno_s;
+  my ($sitting_link, $term_id, $meeting_id, $sitting_id) = @$steno_s;
   if(defined $prune_regex){
-    unless(join('-',$therm_id, $meeting_id, $sitting_id) =~ m/^$prune_regex/) {
-      print STDERR "prunning: ",join('-',$therm_id, $meeting_id, $sitting_id),"\n";
+    unless(join('-',$term_id, $meeting_id, $sitting_id) =~ m/^$prune_regex/) {
+      print STDERR "prunning: ",join('-',$term_id, $meeting_id, $sitting_id),"\n";
       next;
     }
   }
@@ -125,7 +125,7 @@ for my $steno_s (@steno_sittings) {
   my ($topic_anchor_link,$anchor) = xpath_string('//*[@id="main-content"]/a[starts-with(./@href,"s")][1]/@href') =~ m/(.*)#(.*)/;
   my $is_topic_page = 1;
   my $is_new_topic = 1;
-  push @steno_topic_anchor,[URI->new_abs($topic_anchor_link,$sitting_link),'',$is_topic_page, $is_new_topic,$therm_id, $meeting_id, $sitting_id, '000'];
+  push @steno_topic_anchor,[URI->new_abs($topic_anchor_link,$sitting_link),'',$is_topic_page, $is_new_topic,$term_id, $meeting_id, $sitting_id, '000'];
 
   # get topic links
   $is_topic_page = 0;
@@ -134,7 +134,7 @@ for my $steno_s (@steno_sittings) {
   	next if exists $seen{$l}; # add non topic page only onetimes !!!
   	$seen{$l} = 1;
   	($topic_anchor_link,$anchor) = $l =~ m/(.*)#(.*)/;
-    push @steno_topic_anchor,[URI->new_abs($topic_anchor_link,$sitting_link),$anchor,$is_topic_page, $is_new_topic,$therm_id, $meeting_id, $sitting_id];
+    push @steno_topic_anchor,[URI->new_abs($topic_anchor_link,$sitting_link),$anchor,$is_topic_page, $is_new_topic,$term_id, $meeting_id, $sitting_id];
   }
 }
 
@@ -145,7 +145,7 @@ my %seen_topics;
 my $teiCorpus;
 
 while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
-  my ($topic_anchor_link,$anchor,$is_topic_page,$is_new_topic,$therm_id, $meeting_id, $sitting_id, $topic_id) = @$steno_top;
+  my ($topic_anchor_link,$anchor,$is_topic_page,$is_new_topic,$term_id, $meeting_id, $sitting_id, $topic_id) = @$steno_top;
   # načíst stránku
   unless($previeous_link eq $topic_anchor_link){ # test whether is document loaded from previeous iteration
     make_request($topic_anchor_link);
@@ -157,10 +157,10 @@ while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
     if($is_new_topic){
   	  export_steno_record(\$author,\$post);
   	  export_TEI();
-  	  init_TEI($therm_id, $meeting_id, $sitting_id, $topic_id);
+  	  init_TEI($term_id, $meeting_id, $sitting_id, $topic_id);
     }
     $post->{link} = $topic_anchor_link;
-    $post->{id}->{therm} = $therm_id;
+    $post->{id}->{term} = $term_id;
     $post->{id}->{meeting} = $meeting_id;
     $post->{id}->{sitting} = $sitting_id;
     $post->{id}->{topic} = $topic_id;
@@ -170,17 +170,17 @@ while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
     my $get_next_page = record_exporter($topic_anchor_link, \$author,\$post,$anchor);
 
     # add next page if exists
-    # push @steno_topic_anchor,[$link,'',1,0,$therm_id, $meeting_id, $sitting_id, $topic_id];
+    # push @steno_topic_anchor,[$link,'',1,0,$term_id, $meeting_id, $sitting_id, $topic_id];
     if($get_next_page){
       my $url_next = xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]//a[@class="next"]/@href');
       if($url_next) {
-        unshift @steno_topic_anchor,[URI->new_abs($url_next,$topic_anchor_link),'',1,0,$therm_id, $meeting_id, $sitting_id, $topic_id];
+        unshift @steno_topic_anchor,[URI->new_abs($url_next,$topic_anchor_link),'',1,0,$term_id, $meeting_id, $sitting_id, $topic_id];
       } else {
         my $number;
         ($url_next,$number) = $topic_anchor_link =~ m/(.*schuz\/s.*)(\d\d\d).htm$/;
         if($url_next) {
           $number = int($number) + 1;
-          unshift @steno_topic_anchor,[URI->new_abs($url_next.sprintf("%03d.htm",$number),$topic_anchor_link),'',1,0,$therm_id, $meeting_id, $sitting_id, $topic_id];
+          unshift @steno_topic_anchor,[URI->new_abs($url_next.sprintf("%03d.htm",$number),$topic_anchor_link),'',1,0,$term_id, $meeting_id, $sitting_id, $topic_id];
         }
       }
     }
@@ -212,13 +212,13 @@ while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
         $l = URI->new_abs($l,$topic_anchor_link);
         #next unless exists $seen_topics{$l};
         #$seen_topics{$l} = 1;
-        unshift @steno_topic_anchor,[$l,'',1,1,$therm_id, $meeting_id, $sitting_id, $topic_id];
+        unshift @steno_topic_anchor,[$l,'',1,1,$term_id, $meeting_id, $sitting_id, $topic_id];
       }
     } else {
   			# TODO bod nemá vlastní stránku !!!
   			# nebo kotva nasměrovala na následující stránku !!!
   			my $previeous_page = xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]//a[@class="prev"]/@href');
-            push @steno_topic_anchor,[URI->new_abs($previeous_page,$topic_anchor_link),'_d',0, 1,$therm_id, $meeting_id, $sitting_id] if $previeous_page;
+            push @steno_topic_anchor,[URI->new_abs($previeous_page,$topic_anchor_link),'_d',0, 1,$term_id, $meeting_id, $sitting_id] if $previeous_page;
  			# print STDERR "This topic is glued with previeous one or topic is on previeous_page: \n\t$topic_anchor_link#$anchor -> $previeous_page\n";
   	}
 
@@ -348,8 +348,8 @@ sub record_exporter {
 }
 
 sub init_TEI {
-  my ($therm_id, $meeting_id, $sitting_id, $topic_id) = @_;
-  $teiCorpus = TEI::ParlaClarin::TEI->new(id => "$therm_id-$meeting_id-$sitting_id-$topic_id", output_dir => $tei_out_dir);
+  my ($term_id, $meeting_id, $sitting_id, $topic_id) = @_;
+  $teiCorpus = TEI::ParlaClarin::TEI->new(id => "$term_id-$meeting_id-$sitting_id-$topic_id", output_dir => $tei_out_dir);
 }
 
 sub export_TEI {
@@ -385,11 +385,11 @@ sub set_document_date {
 sub export_steno_record {
   my ($ref_author, $ref_post) = @_;
   unless($teiCorpus) {
-  	$teiCorpus = init_TEI(map {$$ref_post->{id}->{$_} // ''} qw/therm meeting sitting topic/) ;
+  	$teiCorpus = init_TEI(map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic/) ;
   }
   my %post = %{$$ref_post};
   $$ref_post->{id}->{post} = 'r0' unless exists $$ref_post->{id}->{post};
-  my $id = join("-",map {$$ref_post->{id}->{$_} // ''} qw/therm meeting sitting topic post/);
+  my $id = join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic post/);
   my $textcontent = trim join(' ',@{$$ref_post->{content} //[]}) ;
   unless($textcontent) {
   	return;
@@ -410,7 +410,7 @@ sub export_steno_record {
     author => $$ref_author->{author} // undef,
     author_name => $$ref_author->{authorname} // undef,
     author_id => $$ref_author->{author_id} // undef,
-    topic_id => join("-",map {$$ref_post->{id}->{$_} // ''} qw/therm meeting sitting topic/) // undef,
+    topic_id => join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic/) // undef,
     speech_note => $post{speechnote} // undef,
     date => $$ref_post->{date},
     #scalar @hlas ?(voting => \@hlas) : (),
