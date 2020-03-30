@@ -36,7 +36,7 @@ sub new {
   bless($self,$class);
   $self->{PERSONLIST} = $self->getPersonlistDOM($personlistfilepath);
   $self->{METADATA} = _get_child_node_or_create($self->{HEADER},'notesStmt');
-  $self->addMetadata('authorized','ano');
+  $self->addMetadata('authorized','yes');
   # $self->addNamespaces($root_node, tei => 'http://www.tei-c.org/ns/1.0', xml => 'http://www.w3.org/XML/1998/namespace');
   if(exists $params{id}) {
   	$self->{ID} = $params{id};
@@ -270,7 +270,7 @@ sub addHead {
 sub setUnauthorizedFlag {
   my $self = shift;
   $self->{unauthorized} = 1;
-  $self->addMetadata('authorized','ne',1);
+  $self->addMetadata('authorized','no',1);
   return $self;
 }
 
