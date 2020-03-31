@@ -17,6 +17,66 @@ my ($debug, $test, $filename, $filelist, $neotag_model);
 
 # id stores last used value
 # prefixid prefix for id
+my $default_ne_conf = ['unknown', 'name', {}];
+# [ ParCzech_category, ParlaClarinElement, {ParlaClarinAttribute => ParlaClarinValue}]
+my %namedEntities = (
+    A => [ 'numbers in addresses', '',{} ],
+    ah => [ 'numbers in addresses - street numbers', '',{} ],
+    at => [ 'numbers in addresses - phone/fax numbers', '',{} ],
+    az => [ 'numbers in addresses - zip codes', '',{} ],
+    G => [ 'geographical names', '',{} ],
+    g_ => [ 'geographical names - underspecified', '',{} ],
+    gc => [ 'geographical names - states', '',{} ],
+    gh => [ 'geographical names - hydronyms', '',{} ],
+    gl => [ 'geographical names - nature areas / objects', '',{} ],
+    gq => [ 'geographical names - urban parts', '',{} ],
+    gr => [ 'geographical names - territorial names', '',{} ],
+    gs => [ 'geographical names - streets, squares', '',{} ],
+    gt => [ 'geographical names - continents', '',{} ],
+    gu => [ 'geographical names - cities/towns', '',{} ],
+    I => [ 'institutions', '',{} ],
+    i_ => [ 'institutions - underspecified', '',{} ],
+    ia => [ 'institutions - conferences/contests', '',{} ],
+    ic => [ 'institutions - cult./educ./scient. inst.', '',{} ],
+    if => [ 'institutions - companies, concerns...', '',{} ],
+    io => [ 'institutions - government/political inst.', '',{} ],
+    M => [ 'media names', '',{} ],
+    me => [ 'media names - email address', '',{} ],
+    mi => [ 'media names - internet links', '',{} ],
+    mn => [ 'media names - periodical', '',{} ],
+    ms => [ 'media names - radio and tv stations', '',{} ],
+    N => [ 'number expressions', '',{} ],
+    n_ => [ 'number expressions - underspecified', '',{} ],
+    na => [ 'number expressions - age', '',{} ],
+    nb => [ 'number expressions - vol./page/chap./sec./fig. numbers', '',{} ],
+    nc => [ 'number expressions - cardinal numbers', '',{} ],
+    ni => [ 'number expressions - itemizer', '',{} ],
+    no => [ 'number expressions - ordinal numbers', '',{} ],
+    ns => [ 'number expressions - sport score', '',{} ],
+    O => [ 'artifact names', '',{} ],
+    o_ => [ 'artifact names - underspecified', '',{} ],
+    oa => [ 'artifact names - cultural artifacts (books, movies)', '',{} ],
+    oe => [ 'artifact names - measure units', '',{} ],
+    om => [ 'artifact names - currency units', '',{} ],
+    op => [ 'artifact names - products', '',{} ],
+    or => [ 'artifact names - directives, norms', '',{} ],
+    P => [ 'personal names', '',{} ],
+    p_ => [ 'personal names - underspecified', '',{} ],
+    pc => [ 'personal names - inhabitant names', '',{} ],
+    pd => [ 'personal names - (academic) titles', '',{} ],
+    pf => [ 'personal names - first names', '',{} ],
+    pm => [ 'personal names - second names', '',{} ],
+    pp => [ 'personal names - relig./myth persons', '',{} ],
+    ps => [ 'personal names - surnames', '',{} ],
+    T => [ 'time expressions', '',{} ],
+    td => [ 'time expressions - days', '',{} ],
+    tf => [ 'time expressions - feasts', '',{} ],
+    th => [ 'time expressions - hours', '',{} ],
+    tm => [ 'time expressions - months', '',{} ],
+    ty => [ 'time expressions - years', '',{} ]
+  );
+
+=old
 my %namedEntities = (
   #generate_common_entities({},qw//),
   G  => { placeName => { prefixid => 'place', id => 0 } },
@@ -54,8 +114,9 @@ my %namedEntities = (
   op => { name => { prefixid => 'op', id => 0, type => 'product' } },# not in TEI
   or => { name => { prefixid => 'or', id => 0, type => 'norm/directive' } },# not in TEI
   o_ => { name => { prefixid => 'o_', id => 0, type => 'underspecified' } }, # not in TEI
-
 );
+=cut
+
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
@@ -118,7 +179,7 @@ while($filename = shift @input_files) {
     print "Invalid XML in $filename";
     next;
   }
-
+  my $entId = 0;
   my @parents = $doc->findnodes('//*[./tok]'); # all parent nodes that contain tokens
   while(my $parent = shift @parents) {
     my @childnodes = $parent->childNodes(); # find all child tokens
@@ -166,7 +227,7 @@ while($filename = shift @input_files) {
         my $node = $sentence_nodes[$i];
         for (; $e < @sorted_entities && $sorted_entities[$e]->{start} == $i - $skipped; $e++) {
 #          $newxml .= sprintf '<ne type="%s">', encode_entities($sorted_entities[$e]->{type});
-          my $newnode = new_nametag_element($sorted_entities[$e]->{type});
+          my $newnode = new_nametag_element($sorted_entities[$e]->{type},$entId++);
           $stack[$#stack]->appendChild($newnode);
           push @stack, $newnode;
           push @open_entities, $sorted_entities[$e]->{start} + $sorted_entities[$e]->{length} - 1;
@@ -255,21 +316,12 @@ sub makenode {
 
 sub new_nametag_element {
   my $tag = shift;
-  unless(exists $namedEntities{$tag}){
-    $namedEntities{$tag} = {
-      name => {
-        prefixid => $tag,
-        id =>0,
-        type => $tag
-        }
-      };
-  }
-  my ($name) = keys %{$namedEntities{$tag}};
-  my $entSpec = $namedEntities{$tag}->{$name};
-  my $node = XML::LibXML::Element->new($name);
-  $node->setAttribute('id',($entSpec->{prefixid}//'NE') . $entSpec->{id});
-  $entSpec->{id}++;
-  $node->setAttribute($_,encode_entities($entSpec->{$_})) for (grep {not($_ eq 'id' || $_ eq 'prefixid')} keys %$entSpec);
+  my $id = shift;
+  my $ne_conf = $namedEntities{$tag} // $default_ne_conf;
+
+  my $node = XML::LibXML::Element->new('namedEntity');
+  $node->setAttribute('id','ne-' . $id);
+  $node->setAttribute('type', $ne_conf->[0]);
   return $node;
 }
 
