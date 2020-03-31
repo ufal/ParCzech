@@ -8,8 +8,8 @@ pid=$$
 
 
 export DATA_DIR=$PWD/out
-# export SCRAPPER_CACHE=1 # For development ONLY!
-# export SCRAPPER_FAST=1 # For development ONLY!
+export SCRAPPER_CACHE=1 # For development ONLY!
+export SCRAPPER_FAST=1 # For development ONLY!
 export SHARED=.
 export TEITOK=./TEITOK
 export TEITOK_CORPUS=$TEITOK/projects/CORPUS
@@ -258,7 +258,7 @@ export FINALIZE_EXCLUDE="*.nntg.xml"
 
 rsync -a --prune-empty-dirs --exclude "filelist" --exclude "$FINALIZE_EXCLUDE" $FINALIZE_INPUT/ $TEITOK_CORPUS/xmlfiles
 
-cp "$CL_OUTDIR_TEI/$ID/person.xml" "$TEITOK_CORPUS/Resources/person.xml"
+cp -f "$CL_OUTDIR_TEI/$ID/person.xml" "$TEITOK_CORPUS/Resources/person.xml"
 
 
 
