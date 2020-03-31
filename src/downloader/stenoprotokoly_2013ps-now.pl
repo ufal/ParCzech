@@ -103,6 +103,7 @@ for my $sch_link (@steno_voleb_obd) {
     for my $sitting_link (@sittings_links) {
       $sitting_link = URI->new_abs($sitting_link,$sch_link);
       my ($sitting_id) = $sitting_link =~ m/-(\d+)\.htm/;
+      $sitting_id = sprintf("%02d",$sitting_id);
       push @steno_sittings, [$sitting_link, $term_id, $meeting_id, $sitting_id] if is_new($sitting_link,1) || exists $unauthorized->{$term_id}->{$meeting_id}->{$sitting_id};
     }
   }
