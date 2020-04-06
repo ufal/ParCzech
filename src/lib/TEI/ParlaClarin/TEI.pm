@@ -101,7 +101,7 @@ sub toFile {
     }
     if($suffix || $unauthorized){
   	  #updateIds({DOM => $teiDoc, NS => $self->{NS}},$self->{ID},$self->{ID}.$authorized.$suffix)
-  	  updateIds({DOM => $self->{DOM}},$self->{ID},$self->{ID}.$unauthorized.$suffix)
+  	  updateIds({DOM => $self->{DOM}},$self->{ID},$self->{ID}.$suffix.$unauthorized)
     }
     $filename = "$filename$suffix$unauthorized.xml";
   }
@@ -182,7 +182,7 @@ sub updateIds {
   my $self = shift;
   my $old = shift;
   my $new = shift;
-  foreach my $node ($self->{DOM}->findnodes('//*[@xml:id]')) {
+  foreach my $node ($self->{DOM}->findnodes('//*[@id]')) {
     #my $attr = $node->getAttributeNS($self->{NS}->{xml}, 'id');
     my $attr = $node->getAttribute('id');
     $attr =~ s/^$old/$new/;
