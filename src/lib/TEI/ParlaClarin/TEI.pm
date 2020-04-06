@@ -91,6 +91,7 @@ sub toFile {
 
   $self->addMetadata('term',$id_parts[0],1);
   $self->addMetadata('meeting',join('/',@id_parts[0,1]),1);
+  $self->addMetadata('topic',join('/',map {s/[^0-9]*//g;$_} @id_parts[0,1,3]),1);
 
   unless($params{outputfile}) {
     my $suffix = '';
