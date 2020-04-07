@@ -8,8 +8,6 @@ pid=$$
 
 
 export DATA_DIR=$PWD/out
-#export SCRAPPER_CACHE=1 # For development ONLY!
-#export SCRAPPER_FAST=1 # For development ONLY!
 export SHARED=.
 export TEITOK=./TEITOK
 export TEITOK_CORPUS=$TEITOK/projects/CORPUS
@@ -108,15 +106,16 @@ done
 #      www.psp.cz              ## directory structure with downloaded mp3 files
 ###############################
 
-log_process "audio_download"
-log "downloading audio $ID"
+#log_process "audio_download"
+#log "downloading audio $ID"
 
+# downloading moved to merging part
 export AUDIO_PATH_ORIG=$DATA_DIR/audio-orig
 mkdir -p $AUDIO_PATH_ORIG
 
-grep -r "audio/mp3" $CL_OUTDIR_TEI/$ID|sed "s/.*url=\"//;s/\".*//" > $AUDIO_PATH_ORIG/${ID}.audio.list
-wget --no-clobber --directory-prefix $AUDIO_PATH_ORIG --force-directories -w 1 -i $AUDIO_PATH_ORIG/${ID}.audio.list 2>&1 | grep -B 2 ' 404 ' > $AUDIO_PATH_ORIG/${ID}.404.list
-mv $AUDIO_PATH_ORIG/${ID}.audio.list $AUDIO_PATH_ORIG/${ID}.audio.list.done
+#grep -ro "[^<]*audio/mp3[^>]*" $CL_OUTDIR_TEI/$ID|sed "s/.*url=\"//;s/\".*//" > $AUDIO_PATH_ORIG/${ID}.audio.list
+#wget --no-clobber --directory-prefix $AUDIO_PATH_ORIG --force-directories -w 1 -i $AUDIO_PATH_ORIG/${ID}.audio.list 2>&1 | grep -B 2 ' 404 ' > $AUDIO_PATH_ORIG/${ID}.404.list
+#mv $AUDIO_PATH_ORIG/${ID}.audio.list $AUDIO_PATH_ORIG/${ID}.audio.list.done
 
 
 
@@ -172,6 +171,10 @@ do
   log "merging to $AUDIO_PATH_MERGED/$MERGED_AUDIO_FILE";
   mkdir -p $AUDIO_PATH_CORPUS/${MERGED_AUDIO_FILE%/*}
   mkdir $AUDIO_PATH_MERGED/tmp
+
+  echo $AUDIO_LIST > $AUDIO_PATH_MERGED/tmp/download-audio.list
+  wget --no-clobber --directory-prefix $AUDIO_PATH_ORIG --force-directories -w 1 -i $AUDIO_PATH_MERGED/tmp/download-audio.list 2>&1 | grep -B 2 ' 404 ' >> $AUDIO_PATH_ORIG/${ID}.404.list
+
   for url in $AUDIO_LIST
   do
     AUDIO_REL_PATH=${url#*//}
