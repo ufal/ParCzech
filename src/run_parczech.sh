@@ -172,7 +172,7 @@ do
   mkdir -p $AUDIO_PATH_CORPUS/${MERGED_AUDIO_FILE%/*}
   mkdir $AUDIO_PATH_MERGED/tmp
 
-  echo $AUDIO_LIST > $AUDIO_PATH_MERGED/tmp/download-audio.list
+  echo "$AUDIO_LIST" | tr " " "\n" > $AUDIO_PATH_MERGED/tmp/download-audio.list
   wget --no-clobber --directory-prefix $AUDIO_PATH_ORIG --force-directories -w 1 -i $AUDIO_PATH_MERGED/tmp/download-audio.list 2>&1 | grep -B 2 ' 404 ' >> $AUDIO_PATH_ORIG/${ID}.404.list
 
   for url in $AUDIO_LIST
