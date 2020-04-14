@@ -61,7 +61,7 @@ my $re_schuze = qr/\([^\(\)]*(?:Schůze|Jednání)\s*/;
 my $re_zacatek = qr/(?:začal[ao]|zahájen[ao]|pokračoval[ao]|pokračuje)\s*/;
 my $re_konec = qr/(?:skončil|skončen|ukončen)[ao]\s*/;
 my $re_prerus = qr/přerušen[ao]\s*/;
-my $re_cas = qr/\s*(?:v|ve|do)?\s*(\d+)[\.:]\s*(\d+)?\s*(?:hodin|hod\.|h\.|do|\.|min|\))/;
+my $re_cas = qr/\s*(?:v|ve|do|od)?\s*(\d+)[\.:]\s*(\d+)?\s*(?:hodin|hod\.|h\.|do|\.|min|\))/;
 
 
 my @URLs_parlament;
