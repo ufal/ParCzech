@@ -399,11 +399,28 @@ sub export_steno_record {
   unless($textcontent) {
   	return;
   }
+  my @content;
+  for my $itm (@{$$ref_post->{content}}){
+    if(ref $itm) {
+      push @content, $itm
+    } else {
+      # detect notes:
+      while($itm){
+        if($itm =~ s/^[^\(]+//){ # text
+          push @content, $&;
+        } elsif ($itm =~ s/^\(.*?\)//) {
+          push @content, $teiCorpus->createNoteNode(type => 'comment', text => $&);
+        } elsif ($itm =~ s/^.*//) {
+          push @content, $itm; # this should not  happen but we don't wont loose some text
+        }
+      }
+    }
+  }
 
   $teiCorpus->addUtterance(
     id => $id,
     author => { author_full => $$ref_author->{author}, name => $$ref_author->{authorname}, id => $$ref_author->{author_id}},
-    text => $$ref_post->{content},
+    text => \@content, #$$ref_post->{content},
     link =>  $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//'')
     );
   export_record_yaml(

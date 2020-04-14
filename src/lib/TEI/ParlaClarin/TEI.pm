@@ -299,7 +299,14 @@ sub createTimeNoteNode {
   return $note;
 }
 
-
+sub createNoteNode {
+  my $self = shift;
+  my %params = @_;
+  my $note = XML::LibXML::Element->new("note");
+  $note->setAttribute('type',$params{type}) if exists $params{type};
+  $note->appendText($params{text}//'');
+  return $note;
+}
 
 sub addSittingDate {
   my $self = shift;
