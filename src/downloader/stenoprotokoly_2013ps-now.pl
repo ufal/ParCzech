@@ -293,13 +293,7 @@ sub record_exporter {
       push@{$$ref_post->{content}}, $noteNode;
       $$ref_post->{date} = $datetime;
       next;
-    } elsif ($cnt_html =~ m/${re_schuze}.*${re_prerus}${re_cas}\)?/) {
-      my $texttime = $&;
-      my $time = "$1:".($2//'00');
-      $datetime = $strp->parse_datetime("$date $time");
-      $teiCorpus->addTimeNote(to=>$datetime, texttime=>$texttime);
-      next;
-    } elsif ($cnt_html =~ m/${re_schuze}.*${re_konec}${re_cas}\)?/) {
+    } elsif ($cnt_html =~ m/${re_schuze}.*${re_prerus}${re_cas}.*\)/) {
       my $texttime = $&;
       my $time = "$1:".($2//'00');
 
@@ -308,7 +302,17 @@ sub record_exporter {
 
       $datetime = $strp->parse_datetime("$date $time");
       $teiCorpus->addTimeNote(to=>$datetime, texttime=>$texttime);
-    } elsif ($cnt_html =~ m/${re_schuze}.*${re_zacatek}${re_cas}\)?/) {
+      next;
+    } elsif ($cnt_html =~ m/${re_schuze}.*${re_konec}${re_cas}.*\)/) {
+      my $texttime = $&;
+      my $time = "$1:".($2//'00');
+
+      # export previeous utterance
+      export_steno_record($ref_author,$ref_post);
+
+      $datetime = $strp->parse_datetime("$date $time");
+      $teiCorpus->addTimeNote(to=>$datetime, texttime=>$texttime);
+    } elsif ($cnt_html =~ m/${re_schuze}.*${re_zacatek}${re_cas}.*\)/) {
       my $texttime = $&;
       my $time = "$1:".($2//'00');
 
