@@ -105,6 +105,7 @@ while($filename = shift @input_files) {
         $parent->appendChild($chnode);
       } else { # text node
         my $text = $chnode->textContent();
+        $text =~ s/^\s*//;
         $tokenizer->setText($text);
         my $ti = 0;
         while($tokenizer->nextSentence($forms, undef)){
