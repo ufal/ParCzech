@@ -63,7 +63,9 @@ done
 
 rsync -a --update --prune-empty-dirs --include="$FILE_WILDCARD" --exclude='*.*' $ANNOTATED_XML_DIR/ $ANNOTATED_XML_DIR_OUTPUT
 
-
+# adding to anotated files:
+# <editionStmt><edition>$CORPUS_ID</edition></editionStmt>
+find $ANNOTATED_XML_DIR_OUTPUT -type f -exec sed -i 's@^\(\s*\)<teiHeader>@\1<teiHeader>\n\1  <editionStmt>\n\1    <edition>'$CORPUS_ID'</edition>\n\1  </editionStmt>@' {} \;
 
 
 grep -rFH 'u who="#' $RAW_XML_DIR_OUTPUT|grep -o 'who="#[^"]*'|sed 's/.*#//'|sort|uniq |awk 'BEGIN {print "<?xml version=\"1.0\" encoding=\"UTF8\"?>\n<personList>"} /.*/ {print "  <person ref=\"" $0 "\" />"} END {print "</personList>"}' | xsltproc corpus-builder/filterperson.xslt - > $RAW_XML_DIR_OUTPUT/person.xml
