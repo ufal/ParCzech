@@ -3,9 +3,35 @@
 D=`dirname $0`
 cd $D
 
+usage() {
+  echo -e "Usage: $0 -a -i CORPUS_IDENTIFICATOR -p FILE_PATTERN \n \t -a exports audio" 1>&2
+  exit 1
+}
 
-CORPUS_ID=$1
-FILE_WILDCARD=$2
+EXPORT_AUDIO=
+
+while getopts  ':i:p:a'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
+  case "$opt" in
+    'i')
+      CORPUS_ID=$OPTARG
+      ;;
+    'p')
+      FILE_WILDCARD=$OPTARG
+      ;;
+    'a')
+      EXPORT_AUDIO=true
+      ;;
+    *)
+      usage
+  esac
+done
+
+
+if [ -z "$CORPUS_ID" ] || [ -z "$FILE_WILDCARD" ] ; then
+  usage
+fi
+#CORPUS_ID=$1
+#FILE_WILDCARD=$2
 # 2013-*.xml
 
 SOFT_SIZE_LIMIT=10000000000
@@ -37,13 +63,22 @@ done
 
 rsync -a --update --prune-empty-dirs --include="$FILE_WILDCARD" --exclude='*.*' $ANNOTATED_XML_DIR/ $ANNOTATED_XML_DIR_OUTPUT
 
+
+
+
 grep -rFH 'u who="#' $RAW_XML_DIR_OUTPUT|grep -o 'who="#[^"]*'|sed 's/.*#//'|sort|uniq |awk 'BEGIN {print "<?xml version=\"1.0\" encoding=\"UTF8\"?>\n<personList>"} /.*/ {print "  <person ref=\"" $0 "\" />"} END {print "</personList>"}' | xsltproc corpus-builder/filterperson.xslt - > $RAW_XML_DIR_OUTPUT/person.xml
 cp $RAW_XML_DIR_OUTPUT/person.xml $ANNOTATED_XML_DIR_OUTPUT/person.xml
 
 
 
+
 tar -czf  ${ANNOTATED_XML_DIR_OUTPUT}.tar.gz --mode='a+rwX' --directory=$ANNOTATED_XML_DIR_OUTPUT/.. ${ANNOTATED_XML_DIR_OUTPUT##*/}
 tar -czf  ${RAW_XML_DIR_OUTPUT}.tar.gz --mode='a+rwX' --directory=$RAW_XML_DIR_OUTPUT/.. ${RAW_XML_DIR_OUTPUT##*/}
+
+if [ -z "$EXPORT_AUDIO" ] ; then
+  echo "Skipping audio"
+  exit 0
+fi
 
 AUDIO_LIST=`grep -rFH 'audio/mp3' $RAW_XML_DIR_OUTPUT| grep -o "[^\"]*\.mp3"|sort`
 
