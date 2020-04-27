@@ -58,10 +58,10 @@ AUDIO_FILE_OUTPUT_TEMPLATE=$CORPORA_DIR/$CORPUS_ID/${CORPUS_ID}-audio-
 
 for d in `ls -d $RAW_XML_DIR/*/`
 do
-  rsync -a --update --prune-empty-dirs --include="$FILE_WILDCARD" --exclude='*.*' $d $RAW_XML_DIR_OUTPUT
+  rsync -a --update --prune-empty-dirs --include="$FILE_WILDCARD" --include='/*/' --exclude='*' $d $RAW_XML_DIR_OUTPUT
 done
 
-rsync -a --update --prune-empty-dirs --include="$FILE_WILDCARD" --exclude='*.*' $ANNOTATED_XML_DIR/ $ANNOTATED_XML_DIR_OUTPUT
+rsync -a --update --prune-empty-dirs --include="$FILE_WILDCARD"  --include='/*/' --exclude='*' $ANNOTATED_XML_DIR/ $ANNOTATED_XML_DIR_OUTPUT
 
 # adding to anotated files:
 # <editionStmt><edition>$CORPUS_ID</edition></editionStmt>
