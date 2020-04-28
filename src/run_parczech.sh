@@ -224,7 +224,13 @@ mkdir -p $MORPHODITA_TEI
 rsync -a --prune-empty-dirs $AUDIO_PATH_TEI/ $MORPHODITA_TEI
 find $MORPHODITA_TEI -type f -name '*.xml' > $MORPHODITA_TEI/filelist
 
- perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models/czech-morfflex-pdt-161115.tagger  --filelist $MORPHODITA_TEI/filelist --debug
+perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models/czech-morfflex-pdt-161115.tagger  --filelist $MORPHODITA_TEI/filelist --debug
+### paginate (backuped to *.nopb.xml)
+perl paginator-module/paginator.pl  --filelist $MORPHODITA_TEI/filelist
+### convert tags (backuped to *.pdtuposf.xml)
+perl pdt2uposf-module/pdt2uposf.pl  --filelist $MORPHODITA_TEI/filelist --fixlemma
+
+
 
 ###############################
 ###     NameTag tei         ###
@@ -241,7 +247,7 @@ export NAMETAG_TEI=$DATA_DIR/nametag-tei/${ID}
 mkdir -p $NAMETAG_TEI
 
 # copy tokenized+PoSed+Lematized files (ignore backups *.nmorph.xml)
-rsync -a --prune-empty-dirs --exclude '*.nmorph.xml' $MORPHODITA_TEI/ $NAMETAG_TEI
+rsync -a --prune-empty-dirs --exclude '*.nmorph.xml' --exclude '*.nopb.xml' --exclude '*.pdtuposf.xml' $MORPHODITA_TEI/ $NAMETAG_TEI
 
 find $NAMETAG_TEI -type f -name '*.xml' > $NAMETAG_TEI/filelist
 perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304-no_numbers.ner --filelist $NAMETAG_TEI/filelist --debug
