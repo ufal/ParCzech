@@ -11,19 +11,23 @@ use Lingua::Interset::Converter;
 
 my $scriptname = $0;
 
-my ($debug, $test, $filename, $filelist, $keepinputattribute, $fixlemma);
+my ($debug, $test, $filename, $filelist, $fixlemma,$inputattrnewname);
 
 my $inputattr='pos';
-my @outputattrs=qw/pos feat/;
+$inputattrnewname='xpos';
+my @outputattrs=qw/upos feats/;
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # process to string, do not change the database
             'fixlemma' => \$fixlemma, # remove tails from lemmas
-            'keepinputattribute' => \$keepinputattribute,
+            'inputattr=s' => \$inputattr,
+            'inputattrnewname=s' => \$inputattrnewname, # if empty attrite is removed
             'filename=s' => \$filename, # input file
             'filelist=s' => \$filelist, # file that contains files (it increase speed of script - MorphoDiTa model is inicialized single time)
             );
+
+push @outputattrs, $inputattrnewname if $inputattrnewname;
 
 my $tag_converter = new Lingua::Interset::Converter("from" => "cs::pdt", "to" => "mul::uposf");
 usage_exit() unless ( $filename  || $filelist );
@@ -72,10 +76,11 @@ while($filename = shift @input_files) {
   for my $node ($doc->findnodes('//text//tok[@'.$inputattr.']')) {
     my $pos = $node->getAttribute($inputattr);
     next unless length($pos) == 15;
-    $node->removeAttribute($inputattr) unless $keepinputattribute;
-    my @uposf= split "\t", $tag_converter->convert($pos);
-    for my $i (0..$#uposf) {
-      $node->setAttribute($outputattrs[$i],$uposf[$i]) if $i < @outputattrs;
+    $node->removeAttribute($inputattr);
+    my @values= split "\t", $tag_converter->convert($pos);
+    push @values, $pos if $inputattrnewname;
+    for my $i (0..$#values) {
+      $node->setAttribute($outputattrs[$i],$values[$i]) if $i < @outputattrs;
     }
   }
   if($fixlemma) {
