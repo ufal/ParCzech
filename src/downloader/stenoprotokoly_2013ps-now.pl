@@ -22,12 +22,14 @@ my $tei_dir = 'out_tei';
 my $yaml_dir = 'out_tei';
 my $run_date = ScrapperUfal::get_timestamp('%Y%m%dT%H%M%S');
 my $prune_regex = undef;
+my $debug_level = -0;
 
 Getopt::Long::GetOptions(
   'tei=s' => \$tei_dir,
   'yaml=s' => \$yaml_dir,
   'id=s' => \$run_date,
-  'prune=s' => \$prune_regex
+  'prune=s' => \$prune_regex,
+  'debug=i' => \$debug_level
   );
 
 my $yaml_file_path = File::Spec->catfile( $yaml_dir,"$run_date.yml");
@@ -91,8 +93,10 @@ for my $ps_link (@URLs_parlament) {
 }
 
 # get sittings
+# example input https://www.psp.cz/eknih/2013ps/stenprot/index.htm
 for my $sch_link (@steno_voleb_obd) {
   make_request($sch_link);
+  debug_print( "Getting sittings from $sch_link", __LINE__);
   my ($term_id) = $sch_link =~ m/(\d{4})ps/;
   next unless doc_loaded;
   for my $meeting_node (xpath_node('//*[@id="main-content"]/a[./b]')) {
@@ -104,6 +108,7 @@ for my $sch_link (@steno_voleb_obd) {
       $sitting_link = URI->new_abs($sitting_link,$sch_link);
       my ($sitting_id) = $sitting_link =~ m/-(\d+)\.htm/;
       $sitting_id = sprintf("%02d",$sitting_id);
+      debug_print( "\tnew sitting ".join('-', $term_id, $meeting_id, $sitting_id)."\t$sitting_link", __LINE__);
       push @steno_sittings, [$sitting_link, $term_id, $meeting_id, $sitting_id] if is_new($sitting_link,1) || exists $unauthorized->{$term_id}->{$meeting_id}->{$sitting_id};
     }
   }
@@ -121,11 +126,13 @@ for my $steno_s (@steno_sittings) {
   }
   make_request($sitting_link);
   next unless doc_loaded;
+  debug_print( "Getting sitting page " .join('-', $term_id, $meeting_id, $sitting_id)."\t$sitting_link", __LINE__);
 
   # get opening speeches link
   my ($topic_anchor_link,$anchor) = xpath_string('//*[@id="main-content"]/a[starts-with(./@href,"s")][1]/@href') =~ m/(.*)#(.*)/;
   my $is_topic_page = 1;
   my $is_new_topic = 1;
+  debug_print( "\topening " .join('-', $term_id, $meeting_id, $sitting_id, '000'), __LINE__);
   push @steno_topic_anchor,[URI->new_abs($topic_anchor_link,$sitting_link),'',$is_topic_page, $is_new_topic,$term_id, $meeting_id, $sitting_id, '000'];
 
   # get topic links
@@ -135,6 +142,7 @@ for my $steno_s (@steno_sittings) {
   	next if exists $seen{$l}; # add non topic page only onetimes !!!
   	$seen{$l} = 1;
   	($topic_anchor_link,$anchor) = $l =~ m/(.*)#(.*)/;
+    debug_print( "\ttopic " .join('-', $term_id, $meeting_id, $sitting_id)."\t".URI->new_abs($topic_anchor_link,$sitting_link) , __LINE__);
     push @steno_topic_anchor,[URI->new_abs($topic_anchor_link,$sitting_link),$anchor,$is_topic_page, $is_new_topic,$term_id, $meeting_id, $sitting_id];
   }
 }
@@ -148,8 +156,12 @@ my $teiCorpus;
 while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
   my ($topic_anchor_link,$anchor,$is_topic_page,$is_new_topic,$term_id, $meeting_id, $sitting_id, $topic_id) = @$steno_top;
   # načíst stránku
+  debug_print( "".($is_topic_page ? 'TOPICPAGE'."(new? $is_new_topic)" : 'PAGE').": " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id)."\t$topic_anchor_link", __LINE__);
+
   unless($previeous_link eq $topic_anchor_link){ # test whether is document loaded from previeous iteration
     make_request($topic_anchor_link);
+    debug_print( " -> LOADING \t($previeous_link -> $topic_anchor_link)", __LINE__);
+
     $previeous_link = $topic_anchor_link;
     next unless doc_loaded;
   }
@@ -175,12 +187,14 @@ while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
     if($get_next_page){
       my $url_next = xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]//a[@class="next"]/@href');
       if($url_next) {
+        debug_print( "\tadding page (link):\t" .join('-', $term_id, $meeting_id, $sitting_id, $topic_id)."\t$topic_anchor_link", __LINE__);
         unshift @steno_topic_anchor,[URI->new_abs($url_next,$topic_anchor_link),'',1,0,$term_id, $meeting_id, $sitting_id, $topic_id];
       } else {
         my $number;
         ($url_next,$number) = $topic_anchor_link =~ m/(.*schuz\/s.*)(\d\d\d).htm$/;
         if($url_next) {
           $number = int($number) + 1;
+          debug_print( "\tadding page (guess):\t" .join('-', $term_id, $meeting_id, $sitting_id, $topic_id)."\t$number", __LINE__);
           unshift @steno_topic_anchor,[URI->new_abs($url_next.sprintf("%03d.htm",$number),$topic_anchor_link),'',1,0,$term_id, $meeting_id, $sitting_id, $topic_id];
         }
       }
@@ -191,7 +205,10 @@ while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
 
   	# get whole topic link
   	my $anchor_node = xpath_node('//p[./b/a/@id = "'.$anchor.'"]') // xpath_node('//a[@id = "'.$anchor.'"]') ;
+    # first topic(if any) precedes anchor_node:
     my @link = (xpath_string('./preceding-sibling::p[@align="center"][1]/preceding-sibling::div[1][@class="media-links"]/a[@class="bqbs"]/@href',$anchor_node));
+debug_print( "\t====== $anchor_node", __LINE__);
+
     if(
     	xpath_node('./following-sibling::p[@align="center"][1][./preceding-sibling::p[./b/a/@id][1]/b/a/@id = "'.$anchor.'"]',$anchor_node) # anchor node is followed by title (no anchor between)
     	&&
@@ -199,10 +216,14 @@ while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
       ){ # if there is only Předsedající speech, then wrong or no topic has been set in $link. Evample: https://www.psp.cz/eknih/2017ps/stenprot/001schuz/s001015.htm#r3
       # following topic title that does not have speaker
       #$link = xpath_string('./following-sibling::p[@align="center"][1]/preceding-sibling::div[1][@class="media-links"]/a[@class="bqbs"]/@href',$anchor_node);
+
       @link = xpath_string('./following-sibling::p[@align="center"]/preceding-sibling::div[1][@class="media-links"][preceding-sibling::p[./b/a/@id][1]/b/a/@id = "'.$anchor.'"]/a[@class="bqbs"]/@href',$anchor_node);
+
       # do not add last caption if it is followed by author anchor ($anchor_node is not the last author anchor on page)
       if(xpath_node('./following-sibling::p/b/a[@id]',$anchor_node)){
-      	pop @link
+      	 my $r = pop @link;
+        debug_print( "\tNOT adding :\t$r", __LINE__);
+
       	} else {
       		#print STDERR "TITLE CAN BE ON NEXT PAGE !!! $topic_anchor_link\n";
       	}
@@ -213,12 +234,14 @@ while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
         $l = URI->new_abs($l,$topic_anchor_link);
         #next unless exists $seen_topics{$l};
         #$seen_topics{$l} = 1;
+        debug_print( "\tadding topic :\t" .join('-', $term_id, $meeting_id, $sitting_id, $topic_id)."\t$l", __LINE__);
         unshift @steno_topic_anchor,[$l,'',1,1,$term_id, $meeting_id, $sitting_id, $topic_id];
       }
     } else {
   			# TODO bod nemá vlastní stránku !!!
   			# nebo kotva nasměrovala na následující stránku !!!
   			my $previeous_page = xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]//a[@class="prev"]/@href');
+            debug_print( "\tadding previeous :\t" .join('-', $term_id, $meeting_id, $sitting_id)."\t$previeous_page", __LINE__) if $previeous_page;
             push @steno_topic_anchor,[URI->new_abs($previeous_page,$topic_anchor_link),'_d',0, 1,$term_id, $meeting_id, $sitting_id] if $previeous_page;
  			# print STDERR "This topic is glued with previeous one or topic is on previeous_page: \n\t$topic_anchor_link#$anchor -> $previeous_page\n";
   	}
@@ -446,6 +469,12 @@ sub export_steno_record {
   $$ref_post->{content} = []; # clean content (keep datetime !!!)
 }
 
-
+sub debug_print {
+  my $msg = shift;
+  my $line = shift;
+  my $min_level = shift // 1;
+  return unless $debug_level >= $min_level;
+  print STDERR "$line : $msg\n";
+}
 
 
