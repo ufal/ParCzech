@@ -228,6 +228,9 @@ debug_print( "\t====== $anchor_node", __LINE__);
       		#print STDERR "TITLE CAN BE ON NEXT PAGE !!! $topic_anchor_link\n";
       	}
     }
+    unless($anchor_node){ # no anchor node - take last topic on page !!!
+      @link = xpath_string('//*[@id="main-content"]/div[@class="media-links"][last()]/a[@class="bqbs"]/@href')
+    }
   	if(@link) {
   	  for my $l (@link) {
         ($topic_id) = $l =~ m/b\d{3}(\d{3})\d{2}\.htm/;
