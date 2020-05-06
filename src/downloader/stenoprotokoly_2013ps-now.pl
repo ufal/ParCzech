@@ -20,6 +20,7 @@ my $URL_start = "$URL/eknih/";
 
 my $tei_dir = 'out_tei';
 my $yaml_dir = 'out_tei';
+my $cache_dir;
 my $run_date = ScrapperUfal::get_timestamp('%Y%m%dT%H%M%S');
 my $prune_regex = undef;
 my $debug_level = -0;
@@ -27,6 +28,7 @@ my $debug_level = -0;
 Getopt::Long::GetOptions(
   'tei=s' => \$tei_dir,
   'yaml=s' => \$yaml_dir,
+  'cache=s' => \$cache_dir,
   'id=s' => \$run_date,
   'prune=s' => \$prune_regex,
   'debug=i' => \$debug_level
@@ -40,6 +42,13 @@ File::Path::mkpath($tei_out_dir) unless -d $tei_out_dir;
 File::Path::mkpath($yaml_dir) unless -d $yaml_dir;
 ScrapperUfal::set_export_output($yaml_file_path);
 
+if ($cache_dir) {
+  my $cache_out_dir = File::Spec->catdir( $cache_dir,$run_date);
+  File::Path::mkpath($cache_out_dir) unless -d $cache_out_dir;
+  $ENV{SCRAPPER_CACHE} = 1;
+  $ScrapperUfal::Browser::cache_dir=$cache_out_dir;
+  ScrapperUfal::Browser::use_devel_cache();
+}
 
 
 sub DEBUG {

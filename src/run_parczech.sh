@@ -61,10 +61,14 @@ log "downloading $ID"
 export CL_WORKDIR=$DATA_DIR/downloader
 export CL_OUTDIR_YAML=$DATA_DIR/downloader-yaml
 export CL_OUTDIR_TEI=$DATA_DIR/downloader-tei
+export CL_OUTDIR_CACHE=$DATA_DIR/downloader-cache
+export CL_OUTDIR_HTML=$DATA_DIR/downloader-html
 export CL_SCRIPT=stenoprotokoly_2013ps-now.pl
 mkdir -p $CL_WORKDIR
 mkdir -p $CL_OUTDIR_YAML
 mkdir -p $CL_OUTDIR_TEI
+mkdir -p $CL_OUTDIR_CACHE
+mkdir -p $CL_OUTDIR_HTML
 
 export LAST_ID=`ls $CL_OUTDIR_TEI|grep -v "sha1sum.list"|sort|tail -n 1`
 
@@ -75,7 +79,7 @@ if [ -f "$CL_OUTDIR_TEI/$LAST_ID/person.xml" ]; then
   cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$CL_OUTDIR_TEI/$ID"
 fi
 
-perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML --id $ID # --prune '201.-04[01]-..$'
+perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML  --cache $CL_OUTDIR_CACHE --id $ID # --prune '201.-04[01]-..$'
 
 # remove duplicities:
 # calculate hashes for new files
@@ -95,6 +99,9 @@ do
   fi
 done
 
+
+### cache to html
+./cache_to_dir_tree.sh -c $CL_OUTDIR_CACHE/$ID -o $CL_OUTDIR_HTML/$ID
 
 ###############################
 ###    Download audio       ###
