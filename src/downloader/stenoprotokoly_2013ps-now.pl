@@ -68,6 +68,12 @@ my $strp_act = DateTime::Format::Strptime->new(
   time_zone => 'Europe/Prague'
 );
 
+my $strp_sit = DateTime::Format::Strptime->new(
+  pattern   => '%e. %B %Y',
+  locale    => 'cs_CZ',
+  time_zone => 'Europe/Prague'
+);
+
 my $re_schuze = qr/\([^\(\)]*(?:Schůze|Jednání)\s*/;
 my $re_zacatek = qr/(?:začal[ao]|zahájen[ao]|pokračoval[ao]|pokračuje)\s*/;
 my $re_konec = qr/(?:skončil|skončen|ukončen)[ao]\s*/;
@@ -80,6 +86,8 @@ my @steno_voleb_obd;
 my @steno_sittings;
 my @steno_topic_anchor;
 my @steno_topic_links;
+my @day_audio_page_links; # list of urls that contain audio_links
+my %day_audio_links; # stores audio links - page -> audio_link
 
 my $unauthorized = JSON::from_json(ScrapperUfal::get_note('unauthorized')||'{}');
 my $new_unauthorized = {};
@@ -109,10 +117,16 @@ for my $sch_link (@steno_voleb_obd) {
   my ($term_id) = $sch_link =~ m/(\d{4})ps/;
   next unless doc_loaded;
   for my $meeting_node (xpath_node('//*[@id="main-content"]/a[./b]')) {
+=node
+    <a href="001schuz/index.htm"><b>1. schůze</b></a>
+=cut
     my $meeting_link = URI->new_abs($meeting_node->getAttribute('href'),$sch_link);
     my ($meeting_id) = $meeting_link =~ m/(\d\d\d)schuz/;
     $meeting_id .= 'psse' if $meeting_link =~ m/psse/;
     my @sittings_links = xpath_string('./following-sibling::a[contains(@href,"'.$meeting_id.'schuz")]/@href',$meeting_node);
+=sittings
+    (<a href="001schuz/1-1.html">25.</a>, <a href="001schuz/1-2.html">27.&nbsp;listopadu&nbsp;2013</a>)
+=cut
     for my $sitting_link (@sittings_links) {
       $sitting_link = URI->new_abs($sitting_link,$sch_link);
       my ($sitting_id) = $sitting_link =~ m/-(\d+)\.htm/;
@@ -139,145 +153,95 @@ for my $steno_s (@steno_sittings) {
 
   # get opening speeches link
   my ($topic_anchor_link,$anchor) = xpath_string('//*[@id="main-content"]/a[starts-with(./@href,"s")][1]/@href') =~ m/(.*)#(.*)/;
-  my $is_topic_page = 1;
-  my $is_new_topic = 1;
-  debug_print( "\topening " .join('-', $term_id, $meeting_id, $sitting_id, '000'), __LINE__);
-  push @steno_topic_anchor,[URI->new_abs($topic_anchor_link,$sitting_link),'',$is_topic_page, $is_new_topic,$term_id, $meeting_id, $sitting_id, '000'];
+  debug_print( "\topening " .join('-', $term_id, $meeting_id, $sitting_id, ''), __LINE__);
+  push @steno_topic_anchor,[URI->new_abs($topic_anchor_link,$sitting_link),$term_id, $meeting_id, $sitting_id, ''];
 
-  # get topic links
-  $is_topic_page = 0;
-  my %seen;
-  for my $l (xpath_string('//*[@id="main-content"]/a[@name]/following-sibling::b[1]/following-sibling::a[1]/@href')){
-  	next if exists $seen{$l}; # add non topic page only onetimes !!!
-  	$seen{$l} = 1;
-  	($topic_anchor_link,$anchor) = $l =~ m/(.*)#(.*)/;
-    debug_print( "\ttopic " .join('-', $term_id, $meeting_id, $sitting_id)."\t".URI->new_abs($topic_anchor_link,$sitting_link) , __LINE__);
-    push @steno_topic_anchor,[URI->new_abs($topic_anchor_link,$sitting_link),$anchor,$is_topic_page, $is_new_topic,$term_id, $meeting_id, $sitting_id];
+  my $date = trim xpath_string('//h1[@class="page-title-x"]');
+  if($date) {
+    $date =~ s/^.*,\s*//;
+    $date = $strp_sit->parse_datetime($date);
+    my ($audio_link_prefix) = $sitting_link =~ m/^(.*)\/stenprot.*/;
+    push @day_audio_page_links, "$audio_link_prefix/audio/". $date->strftime('%Y/%m/%d') .'/index.htm';
   }
 }
 
-my $previeous_link = '';
+for my $day_audio_page_link (@day_audio_page_links) {
+  make_request($day_audio_page_link);
+  next unless doc_loaded;
+  for my $item (xpath_node('//tr/td[last()][./a/@href]')){
+    my $text_link = xpath_string('./a/@href',$item);
+    next unless $text_link =~ m/s\d{6}.htm/;
+    my $mp3_link = xpath_string('./preceding-sibling::td[1]/a/@href',$item);
+    next unless $mp3_link =~ m/mp3$/;
+    $day_audio_links{URI->new_abs($text_link, $day_audio_page_link)->as_string} = URI->new_abs($mp3_link, $day_audio_page_link)->as_string;
+  }
+}
+
 my $author = {};
 my $post = {};
+my $last_sitting_date;
 my %seen_topics;
 my $teiCorpus;
 
+
 while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
-  my ($topic_anchor_link,$anchor,$is_topic_page,$is_new_topic,$term_id, $meeting_id, $sitting_id, $topic_id) = @$steno_top;
-  # načíst stránku
-  debug_print( "".($is_topic_page ? 'TOPICPAGE'."(new? $is_new_topic)" : 'PAGE').": " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id)."\t$topic_anchor_link", __LINE__);
+  my ($page_link,$term_id, $meeting_id, $sitting_id, $topic_id) = @$steno_top;
+  make_request($page_link);
+  debug_print( " -> LOADING \t$page_link", __LINE__);
+  next unless doc_loaded;
+  my $sitting_date = trim xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]/p[@class="date"]');
 
-  unless($previeous_link eq $topic_anchor_link){ # test whether is document loaded from previeous iteration
-    make_request($topic_anchor_link);
-    debug_print( " -> LOADING \t($previeous_link -> $topic_anchor_link)", __LINE__);
-
-    $previeous_link = $topic_anchor_link;
-    next unless doc_loaded;
+  if($sitting_date){
+    $sitting_date =~ s/^[^ ]* //;
+    $sitting_date = $strp->parse_datetime("$sitting_date 00:00");
   }
+  if($topic_id eq ''){
+    $topic_id = '000';
+    debug_print( "downloading new sitting " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__);
+    export_steno_record(\$author,\$post);
+    export_TEI();
+    $author = {};
+    init_TEI($term_id, $meeting_id, $sitting_id, $topic_id);
+  } elsif (defined($last_sitting_date) && $sitting_date != $last_sitting_date) {
+    next;
+  }
+  $last_sitting_date = $sitting_date;
+  $post->{link} = $page_link;
+  $post->{id}->{term} = $term_id;
+  $post->{id}->{meeting} = $meeting_id;
+  $post->{id}->{sitting} = $sitting_id;
+  $post->{id}->{topic} = $topic_id;
 
-  if($is_topic_page){
-    if($is_new_topic){
-  	  export_steno_record(\$author,\$post);
-  	  export_TEI();
-  	  init_TEI($term_id, $meeting_id, $sitting_id, $topic_id);
+
+  # get whole page
+  $topic_id = record_exporter($page_link, \$author,\$post) // $topic_id;
+
+  # add next page if exists
+  # push @steno_topic_anchor,[$link,'',1,0,$term_id, $meeting_id, $sitting_id, $topic_id];
+  my $url_next = xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]//a[@class="next"]/@href');
+  if($url_next) {
+    debug_print( "\tadding page (link):\t" .join('-', $term_id, $meeting_id, $sitting_id, $topic_id)."\t$page_link", __LINE__);
+    unshift @steno_topic_anchor,[URI->new_abs($url_next,$page_link),$term_id, $meeting_id, $sitting_id, $topic_id];
+  } else { # guessing next page
+    my $number;
+    ($url_next,$number) = $page_link =~ m/(.*schuz\/s.*)(\d\d\d).htm$/;
+    if($url_next) {
+      $number = int($number) + 1;
+      debug_print( "\tadding page (guess):\t" .join('-', $term_id, $meeting_id, $sitting_id, $topic_id)."\t$number", __LINE__);
+      unshift @steno_topic_anchor,[URI->new_abs($url_next.sprintf("%03d.htm",$number),$page_link), $term_id, $meeting_id, $sitting_id, $topic_id];
     }
-    $post->{link} = $topic_anchor_link;
-    $post->{id}->{term} = $term_id;
-    $post->{id}->{meeting} = $meeting_id;
-    $post->{id}->{sitting} = $sitting_id;
-    $post->{id}->{topic} = $topic_id;
-
-
-    # get whole page
-    my $get_next_page = record_exporter($topic_anchor_link, \$author,\$post,$anchor);
-
-    # add next page if exists
-    # push @steno_topic_anchor,[$link,'',1,0,$term_id, $meeting_id, $sitting_id, $topic_id];
-    if($get_next_page){
-      my $url_next = xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]//a[@class="next"]/@href');
-      if($url_next) {
-        debug_print( "\tadding page (link):\t" .join('-', $term_id, $meeting_id, $sitting_id, $topic_id)."\t$topic_anchor_link", __LINE__);
-        unshift @steno_topic_anchor,[URI->new_abs($url_next,$topic_anchor_link),'',1,0,$term_id, $meeting_id, $sitting_id, $topic_id];
-      } else {
-        my $number;
-        ($url_next,$number) = $topic_anchor_link =~ m/(.*schuz\/s.*)(\d\d\d).htm$/;
-        if($url_next) {
-          $number = int($number) + 1;
-          debug_print( "\tadding page (guess):\t" .join('-', $term_id, $meeting_id, $sitting_id, $topic_id)."\t$number", __LINE__);
-          unshift @steno_topic_anchor,[URI->new_abs($url_next.sprintf("%03d.htm",$number),$topic_anchor_link),'',1,0,$term_id, $meeting_id, $sitting_id, $topic_id];
-        }
-      }
-    }
-  } else {
-  	# jenom najdu odkaz na stránku a přidám ho na začátek @steno_topic_anchor
-  	# zapamatuji si předchozího autora !!! (bude to autor titulku), pokud se dodrží pořadí stahování, tak už je v paměti...
-
-  	# get whole topic link
-  	my $anchor_node = xpath_node('//p[./b/a/@id = "'.$anchor.'"]') // xpath_node('//a[@id = "'.$anchor.'"]') ;
-    # first topic(if any) precedes anchor_node:
-    my @link = (xpath_string('./preceding-sibling::p[@align="center"][1]/preceding-sibling::div[1][@class="media-links"]/a[@class="bqbs"]/@href',$anchor_node));
-debug_print( "\t====== $anchor_node", __LINE__);
-
-    if(
-    	xpath_node('./following-sibling::p[@align="center"][1][./preceding-sibling::p[./b/a/@id][1]/b/a/@id = "'.$anchor.'"]',$anchor_node) # anchor node is followed by title (no anchor between)
-    	&&
-    	xpath_node('./following-sibling::p[@align="center"][2][./preceding-sibling::p[./b/a/@id][1]/b/a/@id = "'.$anchor.'"]',$anchor_node) # no speaker between two following titles
-      ){ # if there is only Předsedající speech, then wrong or no topic has been set in $link. Evample: https://www.psp.cz/eknih/2017ps/stenprot/001schuz/s001015.htm#r3
-      # following topic title that does not have speaker
-      #$link = xpath_string('./following-sibling::p[@align="center"][1]/preceding-sibling::div[1][@class="media-links"]/a[@class="bqbs"]/@href',$anchor_node);
-
-      @link = xpath_string('./following-sibling::p[@align="center"]/preceding-sibling::div[1][@class="media-links"][preceding-sibling::p[./b/a/@id][1]/b/a/@id = "'.$anchor.'"]/a[@class="bqbs"]/@href',$anchor_node);
-
-      # do not add last caption if it is followed by author anchor ($anchor_node is not the last author anchor on page)
-      if(xpath_node('./following-sibling::p/b/a[@id]',$anchor_node)){
-      	 my $r = pop @link;
-        debug_print( "\tNOT adding :\t$r", __LINE__);
-
-      	} else {
-      		#print STDERR "TITLE CAN BE ON NEXT PAGE !!! $topic_anchor_link\n";
-      	}
-    }
-    unless($anchor_node){ # no anchor node - take last topic on page !!!
-      @link = xpath_string('//*[@id="main-content"]/div[@class="media-links"][last()]/a[@class="bqbs"]/@href')
-    }
-  	if(@link) {
-  	  for my $l (@link) {
-        ($topic_id) = $l =~ m/b\d{3}(\d{3})\d{2}\.htm/;
-        $l = URI->new_abs($l,$topic_anchor_link);
-        #next unless exists $seen_topics{$l};
-        #$seen_topics{$l} = 1;
-        debug_print( "\tadding topic :\t" .join('-', $term_id, $meeting_id, $sitting_id, $topic_id)."\t$l", __LINE__);
-        unshift @steno_topic_anchor,[$l,'',1,1,$term_id, $meeting_id, $sitting_id, $topic_id];
-      }
-    } else {
-  			# TODO bod nemá vlastní stránku !!!
-  			# nebo kotva nasměrovala na následující stránku !!!
-  			my $previeous_page = xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]//a[@class="prev"]/@href');
-            debug_print( "\tadding previeous :\t" .join('-', $term_id, $meeting_id, $sitting_id)."\t$previeous_page", __LINE__) if $previeous_page;
-            push @steno_topic_anchor,[URI->new_abs($previeous_page,$topic_anchor_link),'_d',0, 1,$term_id, $meeting_id, $sitting_id] if $previeous_page;
- 			# print STDERR "This topic is glued with previeous one or topic is on previeous_page: \n\t$topic_anchor_link#$anchor -> $previeous_page\n";
-  	}
-
-  	# remember current author
-
   }
   ScrapperUfal::set_note('unauthorized',JSON::to_json($new_unauthorized));
 }
-
-
 ScrapperUfal::set_note('unauthorized',JSON::to_json($new_unauthorized));
 
 ####################################################################################################
 
 sub record_exporter {
-  my ($link, $ref_author, $ref_post,$anchor) = @_;
-  my $get_next_page = 1;
+  my ($link, $ref_author, $ref_post) = @_;
+  my $topic_id;
   my $datetime;
-  my $jumb_to_anchor = '';
   my $act_date;
-  if($anchor){
-  	# TODO skip begining to anchor
-  }
 
   if($act_date=xpath_string('//*[@id="main-content"]/p[@class = "status"]')) {
   	$act_date =~ s/^[^\d]*//;
@@ -288,9 +252,8 @@ sub record_exporter {
   	}
   }
 
-  if(my $page_mp3_url = xpath_string('//div[@class="aside"]//ul[@class="link-list"]/li[contains(text(),"MP3")]/a/@href')){
-    $teiCorpus->addAudioNote(url => URI->new_abs($page_mp3_url, $link));
-  }
+  add_audio_to_teiCorpus($link); # add audio if possible
+
 
   my $date = trim xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]/p[@class="date"]/a');
   if($date){
@@ -298,14 +261,20 @@ sub record_exporter {
     $teiCorpus->addSittingDate($strp->parse_datetime("$date 00:00"));
   }
 
-  for my $cnt (xpath_node('//*[@id="main-content"]/'.$jumb_to_anchor.'*[not(has(@class,"document-nav"))] | //*[@id="main-content"]/'.$jumb_to_anchor.'text()')) {
+  for my $cnt (xpath_node('//*[@id="main-content"]/*[not(has(@class,"document-nav"))] | //*[@id="main-content"]/text()')) {
   	my $cnt_html = trim dump_html($cnt);
     my $cnt_text =trim ScrapperUfal::html2text($cnt);
-    if(xpath_node('./a[../@class="media-links" and @class="bqbs"]',$cnt)){ # end condition, record will be exported within next make_request iteration
-      $get_next_page = 0;
+    if($topic_id = xpath_node('./a[../@class="media-links" and @class="bqbs"]/@href',$cnt)){ # end condition, record will be exported within next make_request iteration
       # export previeous utterance
       export_steno_record($ref_author,$ref_post);
-      last;
+      export_TEI();
+
+      # NEW TOPIC !!!
+      $topic_id =~ s/^.*b\d\d\d(\d\d\d)\d\d\.htm.*/$1/;
+      ${$ref_post}->{id}->{topic} = $topic_id;
+      init_TEI( map {${$ref_post}->{id}->{$_} } qw/term meeting sitting topic/ );
+      add_audio_to_teiCorpus($link); # add audio if possible
+
     }
     if(xpath_node('.//strong[contains(text(), "eautorizováno !" )]',$cnt) ) { # Neautorizováno or neautorizováno
       set_current_tei_unauthorized($act_date);
@@ -384,11 +353,21 @@ sub record_exporter {
       push @{$$ref_post->{content}}, $cnt_text;
     }
   }
-  return $get_next_page;
+  return $topic_id;
+}
+
+sub add_audio_to_teiCorpus {
+  my $link = shift;
+  if(my $page_mp3_url = xpath_string('//div[@class="aside"]//ul[@class="link-list"]/li[contains(text(),"MP3")]/a/@href')){
+    $teiCorpus->addAudioNote(url => URI->new_abs($page_mp3_url, $link));
+  } else { # get mp3 link from mp3file list page
+    $teiCorpus->addAudioNote(url => $day_audio_links{$link->as_string}) if $day_audio_links{$link};
+  }
 }
 
 sub init_TEI {
   my ($term_id, $meeting_id, $sitting_id, $topic_id) = @_;
+  debug_print( "NEW DOCUMENT " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__);
   $teiCorpus = TEI::ParlaClarin::TEI->new(id => "$term_id-$meeting_id-$sitting_id-$topic_id", output_dir => $tei_out_dir);
 }
 
