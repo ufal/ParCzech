@@ -23,7 +23,7 @@ my $yaml_dir = 'out_tei';
 my $cache_dir;
 my $run_date = ScrapperUfal::get_timestamp('%Y%m%dT%H%M%S');
 my $prune_regex = undef;
-my $debug_level = -0;
+my $debug_level = 0;
 
 Getopt::Long::GetOptions(
   'tei=s' => \$tei_dir,
@@ -258,15 +258,14 @@ sub record_exporter {
   my $date = trim xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]/p[@class="date"]/a');
   if($date){
     $date =~ s/^[^ ]* //;
-    $teiCorpus->addSittingDate($strp->parse_datetime("$date 00:00"));
+    $datetime = $strp->parse_datetime("$date 00:00");
+    $teiCorpus->addSittingDate($datetime);
   }
 
   for my $cnt (xpath_node('//*[@id="main-content"]/*[not(has(@class,"document-nav"))] | //*[@id="main-content"]/text()')) {
   	my $cnt_html = trim dump_html($cnt);
     my $cnt_text =trim ScrapperUfal::html2text($cnt);
     if($topic_id = xpath_node('./a[../@class="media-links" and @class="bqbs"]/@href',$cnt)){ # end condition, record will be exported within next make_request iteration
-      # export previeous utterance
-      export_steno_record($ref_author,$ref_post);
       export_TEI();
 
       # NEW TOPIC !!!
@@ -274,6 +273,12 @@ sub record_exporter {
       ${$ref_post}->{id}->{topic} = $topic_id;
       init_TEI( map {${$ref_post}->{id}->{$_} } qw/term meeting sitting topic/ );
       add_audio_to_teiCorpus($link); # add audio if possible
+      $teiCorpus->addUtterance(
+       # id => $id,
+        author => { author_full => $$ref_author->{author}, name => $$ref_author->{authorname}, id => $$ref_author->{author_id}},
+
+       # link =>  $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//'')
+      );
 
     }
     if(xpath_node('.//strong[contains(text(), "eautorizováno !" )]',$cnt) ) { # Neautorizováno or neautorizováno
@@ -281,7 +286,7 @@ sub record_exporter {
     } elsif (my $s = xpath_string('./@class',$cnt) eq "status") {
       next;
     } elsif (my $mp3 = xpath_string('./a[@class = "audio"]/@href',$cnt)) {
-      $teiCorpus->addAudioNote(url => URI->new_abs($mp3,$ link));
+      $teiCorpus->addAudioNote(url => URI->new_abs($mp3,$link));
       next;
     } elsif (xpath_string('./text()',$cnt) eq '***') {
       next;
@@ -294,15 +299,12 @@ sub record_exporter {
       my $time = "$1:".($2//'00');
       $datetime = $strp->parse_datetime("$date $time");
       my $noteNode = $teiCorpus->createTimeNoteNode(from=>$datetime, texttime=>$texttime);
-      push@{$$ref_post->{content}}, $noteNode;
+      $teiCorpus->addToElemsQueue($noteNode);
       $$ref_post->{date} = $datetime;
       next;
     } elsif ($cnt_html =~ m/${re_schuze}.*${re_prerus}${re_cas}.*\)/) {
       my $texttime = $&;
       my $time = "$1:".($2//'00');
-
-      # export previeous utterance
-      export_steno_record($ref_author,$ref_post);
 
       $datetime = $strp->parse_datetime("$date $time");
       $teiCorpus->addTimeNote(to=>$datetime, texttime=>$texttime);
@@ -311,8 +313,6 @@ sub record_exporter {
       my $texttime = $&;
       my $time = "$1:".($2//'00');
 
-      # export previeous utterance
-      export_steno_record($ref_author,$ref_post);
 
       $datetime = $strp->parse_datetime("$date $time");
       $teiCorpus->addTimeNote(to=>$datetime, texttime=>$texttime);
@@ -324,8 +324,7 @@ sub record_exporter {
       $teiCorpus->addTimeNote(from=>$datetime, texttime=>$texttime);
       next;
     } elsif(my $a = xpath_node('./b[not(../@align = "center" or ../@align = "CENTER" ) and (.//a or starts-with(text(),"Poslan"))]',$cnt)) { # new utterance
-      # export previeous utterance
-      export_steno_record($ref_author,$ref_post);
+
       # fill new utterance
       my $auth;
       my $auth_id;
@@ -345,12 +344,34 @@ sub record_exporter {
       $$ref_author->{author_id} = $auth_id;
       ($$ref_post->{speechnote}) = grep {m/^###.*|\@\@$/} xpath_string('./comment()',$cnt);
       $$ref_post->{id}->{post} = $post_id;
-      push @{$$ref_post->{content}}, $cnt_text;
+      $$ref_post->{id}->{post} = 'r0' unless exists $$ref_post->{id}->{post};
+      my $id = join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic post/);
+      $teiCorpus->addUtterance(
+        id => $id,
+        author => { author_full => $$ref_author->{author}, name => $$ref_author->{authorname}, id => $$ref_author->{author_id}},
+        link =>  $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//'')
+      );
+      export_text($cnt_text);
+      export_record_yaml(
+        id => $id,
+        url => $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//''),
+        type => 'speech',
+        author => $$ref_author->{author} // undef,
+        author_name => $$ref_author->{authorname} // undef,
+        author_id => $$ref_author->{author_id} // undef,
+        topic_id => join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic/) // undef,
+        #speech_note => $$post->{speechnote} // undef,
+        date => $datetime // undef,
+        );
+
+
+
+
     } elsif($cnt_text) {
       if($cnt->nodeType == XML::LibXML::XML_ELEMENT_NODE && lc($cnt->getAttribute('align')//'') eq 'center'){
         $teiCorpus->addHead($cnt_text);
       }
-      push @{$$ref_post->{content}}, $cnt_text;
+      $teiCorpus->addToUtterance($cnt_text); # no notes are expected in header
     }
   }
   return $topic_id;
@@ -399,6 +420,19 @@ sub set_document_date {
   my $id = $teiCorpus->teiID();
   return unless is_new($id, $date);
   $teiCorpus->setActDate($date);
+}
+
+sub export_text {
+  my $text = shift;
+  while($text){
+    if($text =~ s/^[^\(]+//){ # text
+      $teiCorpus->addToUtterance($&);
+    } elsif ($text =~ s/^\(.*?\)//) {
+      $teiCorpus->addToElemsQueue($teiCorpus->createNoteNode(type => 'comment', text => $&));
+    } elsif ($text =~ s/^.*//) {
+      $teiCorpus->addToUtterance($&); # this should not  happen but we don't wont loose some text
+    }
+  }
 }
 
 sub export_steno_record {

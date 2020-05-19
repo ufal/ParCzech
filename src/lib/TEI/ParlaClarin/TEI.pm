@@ -25,6 +25,7 @@ sub new {
   $self->{ROOT} = $root_node;
   $self->{PERSON_IDS} = {};
   $self->{THIS_TEI_PERSON_IDS} = {};
+  $self->{QUEUE} = [];
   $self->{activeUtterance} = undef;
   my $personlistfilename = 'person.xml';
   my $personlistfilepath = File::Spec->catfile($self->{output}->{dir},$personlistfilename);
@@ -198,6 +199,7 @@ sub updateIds {
 
 sub addUtterance { # don't change actTEI
   my $self = shift;
+  $self->appendQueue(); # appending to <text>
   my %params = @_;
   my $tei_text = _get_child_node_or_create($self->{ROOT},'text');
   my $u = XML::LibXML::Element->new("u");
@@ -223,7 +225,6 @@ sub addUtterance { # don't change actTEI
     } else {
       $u->appendText($t.' ');
     }
-
   }
   $u->appendChild($_) for (@{$params{html}//[]});
 
@@ -231,6 +232,29 @@ sub addUtterance { # don't change actTEI
   $self->{activeUtterance} = $u;
   $self->{STATS}->{u}++;
   return $self;
+}
+sub addToElemsQueue {
+  my $self = shift;
+  my $element = shift;
+  push @{$self->{QUEUE}},$element;
+}
+sub addToUtterance {
+  my $self = shift;
+  my $element = shift;
+  # adding element to queue and than append whole queue to utterance
+  push @{$self->{QUEUE}},$element;
+  $self->appendQueue($self->{activeUtterance});
+}
+sub appendQueue {
+  my $self = shift;
+  my $element = shift // _get_child_node_or_create($self->{ROOT},'text');
+  while ( my $t = shift @{$self->{QUEUE}}) {
+    if(ref $t) {
+      $element->appendChild($t);
+    } else {
+      $element->appendText($t.' ');
+    }
+  }
 }
 
 sub addAuthor {
