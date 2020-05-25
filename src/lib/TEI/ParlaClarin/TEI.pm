@@ -36,8 +36,16 @@ sub new {
 
   bless($self,$class);
   $self->{PERSONLIST} = $self->getPersonlistDOM($personlistfilepath);
-  $self->{METADATA} = _get_child_node_or_create($self->{HEADER},'notesStmt');
-  $self->addMetadata('authorized','yes');
+  $self->{TITLESTMT} = _get_child_node_or_create($self->{HEADER},'fileDesc', 'titleStmt');
+  if($params{'title'}) {
+    $self->{TITLESTMT}->appendTextChild('title', $_) for (  ! ref($params{title}) eq 'ARRAY' ? $params{title} : @{$params{title}} );
+  }
+  if($params{'edition'}) {
+    $self->{TITLESTMT}->parentNode->addNewChild(undef,'editionStmt')->appendTextChild('edition', $params{'edition'});
+  }
+  $self->{TITLESTMT}->parentNode->addNewChild(undef,'publicationStmt')->addNewChild(undef,'p');
+  $self->{TITLESTMT}->parentNode->addNewChild(undef,'sourceDesc')->addNewChild(undef,'p');
+  $self->addMeetingData('authorized','yes');
   $self->addNamespaces($root_node, tei => 'http://www.tei-c.org/ns/1.0', xml => 'http://www.w3.org/XML/1998/namespace');
   if(exists $params{id}) {
   	$self->{ID} = $params{id};
@@ -62,7 +70,7 @@ sub load_tei {
     $self->{DOM} = $dom;
     $self->{ROOT} = $dom->documentElement();
     $self->{HEADER} = _get_child_node_or_create($self->{ROOT},'teiHeader');
-    $self->{METADATA} = _get_child_node_or_create($self->{HEADER},'notesStmt');
+    $self->{TITLESTMT} = _get_child_node_or_create($self->{HEADER},'fileDesc', 'titleStmt');
     $self->{PERSON_IDS} = {};
     $self->{THIS_TEI_PERSON_IDS} = {};
     $self->{activeUtterance} = undef;
@@ -91,9 +99,9 @@ sub toFile {
   my $dir = dirname($filename);
   File::Path::mkpath($dir) unless -d $dir;
 
-  $self->addMetadata('term',$id_parts[0],1);
-  $self->addMetadata('meeting',join('/',@id_parts[0,1]),1);
-  $self->addMetadata('topic',join('/',map {s/[^0-9]*//g;$_} @id_parts[0,1,3]),1);
+  $self->addMeetingData('term',$id_parts[0],1);
+  $self->addMeetingData('meeting',join('/',@id_parts[0,1]),1);
+  $self->addMeetingData('agenda',join('/',map {s/[^0-9]*//g;$_} @id_parts[0,1,3]),1);
 
   unless($params{outputfile}) {
     my $suffix = '';
@@ -110,7 +118,7 @@ sub toFile {
   my $listPerson;
   if(%{$self->{THIS_TEI_PERSON_IDS}}){
   	$listPerson = XML::LibXML::Element->new("listPerson");
-  	_get_child_node_or_create($self->{ROOT},'teiHeader')->appendChild($listPerson);
+  	_get_child_node_or_create($self->{ROOT},'teiHeader', 'profileDesc', 'particDesc')->appendChild($listPerson);
     for my $pid (sort keys %{$self->{THIS_TEI_PERSON_IDS}}) {
       my $pers = XML::LibXML::Element->new("person");
       $pers->setAttributeNS($self->{NS}->{xml}, 'id', $pid);
@@ -283,7 +291,17 @@ sub addAuthor {
 sub addHead {
   my $self = shift;
   my $text = shift;
-  _get_child_node_or_create(_get_child_node_or_create($self->{HEADER},'fileDesc'),'titleStmt')->appendTextChild('title',$text//'');
+  return unless $text;
+  my ($node) = $self->{TITLESTMT}->findnodes('./title[last()]');
+  my $titlenode = XML::LibXML::Element->new("title");
+  $titlenode->appendText($text);
+  if($node) { # titlenodes should be at the begining !!!
+    $self->{TITLESTMT}->insertAfter($titlenode,$node)
+  } elsif ($self->{TITLESTMT}->firstChild()) {
+    $self->{TITLESTMT}->insertBefore($titlenode, $self->{TITLESTMT}->firstChild());
+  } else {
+    $self->{TITLESTMT}->appendChild($titlenode);
+  }
   return $self;
 }
 
@@ -330,7 +348,7 @@ sub createNoteNode {
 sub addSittingDate {
   my $self = shift;
   my $date = shift;
-  $self->addMetadata('sittingdate',$date->strftime('%Y-%m-%d')) if $date;
+  $self->addMeetingData('sittingdate',$date->strftime('%Y-%m-%d')) if $date;
 }
 
 sub addAudioNote {
@@ -408,20 +426,22 @@ sub teiID {
   return $self->{ID};
 }
 
-sub addMetadata {
+sub addMeetingData {
   my $self = shift;
   my ($key, $value, $force) = @_; # force means overwrite if key exists
-  my $noteNode;
-  ($noteNode) = $self->{METADATA}->findnodes('./note[@n="'.$key.'"]');
-  return undef if !$force && $noteNode;
-  unless($noteNode){
-    $noteNode = $self->{METADATA}->addNewChild(undef,'note');
-    $noteNode->setAttribute('n',"$key");
+  my $meetingNode;
+  my $ana = "#parla.$key";
+  ($meetingNode) = $self->{TITLESTMT}->findnodes('./meeting[@ana="'.$ana.'"]');
+  return undef if !$force && $meetingNode;
+  unless($meetingNode){
+    $meetingNode = $self->{TITLESTMT}->addNewChild(undef,'meeting');
+    $meetingNode->setAttribute('ana',"$ana");
   } else {
-    $noteNode->removeChildNodes(); # remove possibly existing text
+    $meetingNode->removeChildNodes(); # remove possibly existing text
   }
-  $noteNode->appendText($value);
-  return $noteNode;
+  $meetingNode->setAttribute('n',"$value");
+  $meetingNode->appendText($value);
+  return $meetingNode;
 }
 # ===========================
 

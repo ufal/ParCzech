@@ -388,7 +388,9 @@ sub add_audio_to_teiCorpus {
 sub init_TEI {
   my ($term_id, $meeting_id, $sitting_id, $topic_id) = @_;
   debug_print( "NEW DOCUMENT " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__);
-  $teiCorpus = TEI::ParlaClarin::TEI->new(id => "$term_id-$meeting_id-$sitting_id-$topic_id", output_dir => $tei_out_dir);
+  $teiCorpus = TEI::ParlaClarin::TEI->new(id => "$term_id-$meeting_id-$sitting_id-$topic_id", output_dir => $tei_out_dir,
+                                          title => ["Parliament of the Czech Republic, Chamber of Deputies"],
+                                          edition => "2.0b" );
 }
 
 sub export_TEI {
