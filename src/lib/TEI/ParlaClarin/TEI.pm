@@ -86,6 +86,8 @@ sub toFile {
   my $self = shift;
   my %params = @_;
   my @id_parts = split '-', $self->{ID};
+  $self->appendQueue(); # append queue  to <text>
+
   my $filename = $params{outputfile} // File::Spec->catfile($self->{output}->{dir},join("-",@id_parts[0,1]),$self->{ID});
   my $dir = dirname($filename);
   File::Path::mkpath($dir) unless -d $dir;

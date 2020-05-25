@@ -198,7 +198,6 @@ while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
   if($topic_id eq ''){
     $topic_id = '000';
     debug_print( "downloading new sitting " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__);
-    export_steno_record(\$author,\$post);
     export_TEI();
     $author = {};
     init_TEI($term_id, $meeting_id, $sitting_id, $topic_id);
@@ -435,64 +434,6 @@ sub export_text {
   }
 }
 
-sub export_steno_record {
-  my ($ref_author, $ref_post) = @_;
-  unless($teiCorpus) {
-  	$teiCorpus = init_TEI(map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic/) ;
-  }
-  my %post = %{$$ref_post};
-  $$ref_post->{id}->{post} = 'r0' unless exists $$ref_post->{id}->{post};
-  my $id = join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic post/);
-  my $textcontent = trim join(' ',@{$$ref_post->{content} //[]}) ;
-  unless($textcontent) {
-  	return;
-  }
-  my @content;
-  for my $itm (@{$$ref_post->{content}}){
-    if(ref $itm) {
-      push @content, $itm
-    } else {
-      # detect notes:
-      while($itm){
-        if($itm =~ s/^[^\(]+//){ # text
-          push @content, $&;
-        } elsif ($itm =~ s/^\(.*?\)//) {
-          push @content, $teiCorpus->createNoteNode(type => 'comment', text => $&);
-        } elsif ($itm =~ s/^.*//) {
-          push @content, $itm; # this should not  happen but we don't wont loose some text
-        }
-      }
-    }
-  }
-
-  $teiCorpus->addUtterance(
-    id => $id,
-    author => { author_full => $$ref_author->{author}, name => $$ref_author->{authorname}, id => $$ref_author->{author_id}},
-    text => \@content, #$$ref_post->{content},
-    link =>  $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//'')
-    );
-  export_record_yaml(
-    id => $id,
-    url => $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//''),
-    type => 'speech',
-    content => $textcontent,
-    #ord => $speakerno,
-    author => $$ref_author->{author} // undef,
-    author_name => $$ref_author->{authorname} // undef,
-    author_id => $$ref_author->{author_id} // undef,
-    topic_id => join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic/) // undef,
-    speech_note => $post{speechnote} // undef,
-    date => $$ref_post->{date},
-    #scalar @hlas ?(voting => \@hlas) : (),
-    #scalar @tisk ?(prints => \@tisk) : (),
-    #authorized => $args{authorized},
-    #interpelation => $post{interpelation} // undef,
-    #mp3 => $args{mp3},
-    );
-
-  delete $$ref_post->{id}->{post};
-  $$ref_post->{content} = []; # clean content (keep datetime !!!)
-}
 
 sub debug_print {
   my $msg = shift;
