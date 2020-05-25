@@ -38,11 +38,10 @@ sub new {
   $self->{PERSONLIST} = $self->getPersonlistDOM($personlistfilepath);
   $self->{METADATA} = _get_child_node_or_create($self->{HEADER},'notesStmt');
   $self->addMetadata('authorized','yes');
-  # $self->addNamespaces($root_node, tei => 'http://www.tei-c.org/ns/1.0', xml => 'http://www.w3.org/XML/1998/namespace');
+  $self->addNamespaces($root_node, tei => 'http://www.tei-c.org/ns/1.0', xml => 'http://www.w3.org/XML/1998/namespace');
   if(exists $params{id}) {
   	$self->{ID} = $params{id};
-  	#$root_node->setAttributeNS($self->{NS}->{xml}, 'id', $params{id});
-  	$root_node->setAttribute('id', $params{id});
+  	$root_node->setAttributeNS($self->{NS}->{xml}, 'id', $params{id});
   }
   return $self;
 }
@@ -104,8 +103,7 @@ sub toFile {
       $suffix = chr(ord($suffix)+1);
     }
     if($suffix || $unauthorized){
-  	  #updateIds({DOM => $teiDoc, NS => $self->{NS}},$self->{ID},$self->{ID}.$authorized.$suffix)
-  	  updateIds({DOM => $self->{DOM}},$self->{ID},$self->{ID}.$suffix.$unauthorized)
+      updateIds({DOM => $self->{DOM}, NS => $self->{NS}},$self->{ID}, $self->{ID}.$suffix.$unauthorized)
     }
     $filename = "$filename$suffix$unauthorized.xml";
   }
@@ -115,8 +113,7 @@ sub toFile {
   	_get_child_node_or_create($self->{ROOT},'teiHeader')->appendChild($listPerson);
     for my $pid (sort keys %{$self->{THIS_TEI_PERSON_IDS}}) {
       my $pers = XML::LibXML::Element->new("person");
-      #$pers->setAttributeNS($self->{NS}->{xml}, 'id', $pid);
-      $pers->setAttribute('id', $pid);
+      $pers->setAttributeNS($self->{NS}->{xml}, 'id', $pid);
       $pers->setAttribute('corresp', $self->{personlistfile}->{name}."#".$pid);
       $listPerson->appendChild($pers);
     }
@@ -187,11 +184,9 @@ sub updateIds {
   my $old = shift;
   my $new = shift;
   foreach my $node ($self->{DOM}->findnodes('//*[@id]')) {
-    #my $attr = $node->getAttributeNS($self->{NS}->{xml}, 'id');
-    my $attr = $node->getAttribute('id');
+    my $attr = $node->getAttributeNS($self->{NS}->{xml}, 'id');
     $attr =~ s/^$old/$new/;
-    #$node->setAttributeNS($self->{NS}->{xml}, 'id', $attr);
-    $node->setAttribute('id', $attr);
+    $node->setAttributeNS($self->{NS}->{xml}, 'id', $attr);
   }
   return $self;
 }
@@ -216,8 +211,7 @@ sub addUtterance { # don't change actTEI
       $tei_text->appendChild($note);
     }
   }
-  #$u->setAttributeNS($self->{NS}->{xml}, 'id', $params{id}) if exists $params{id};
-  $u->setAttribute('id', $params{id}) if exists $params{id};
+  $u->setAttributeNS($self->{NS}->{xml}, 'id', $params{id}) if exists $params{id};
   if(exists $params{link}) {
     $u->setAttribute('source',$params{link});
   }
@@ -272,8 +266,7 @@ sub addAuthor {
   }
 
   my $person = XML::LibXML::Element->new("person");
-  #$person->setAttributeNS($self->{NS}->{xml}, 'id', $xmlid);
-  $person->setAttribute('id', $xmlid);
+  $person->setAttributeNS($self->{NS}->{xml}, 'id', $xmlid);
   my $persname = XML::LibXML::Element->new("persName");
   $person->appendChild($persname);
   $persname->appendText($params{name});
@@ -400,8 +393,8 @@ sub getPersonlistDOM {
   my $DOM;
   if(-f $filepath) {
     $DOM = XML::LibXML->load_xml(location => $filepath);
-    #$self->{PERSON_IDS}->{$_->getAttributeNS($self->{NS}->{xml}, 'id')} = $_ for $DOM->documentElement()->findnodes(".//person"); ###########
-    $self->{PERSON_IDS}->{$_->getAttribute('id')} = $_ for $DOM->documentElement()->findnodes(".//person"); ###########
+    $self->{PERSON_IDS}->{$_->getAttributeNS($self->{NS}->{xml}, 'id')} = $_ for $DOM->documentElement()->findnodes(".//person"); ###########
+    #$self->{PERSON_IDS}->{$_->getAttribute('id')} = $_ for $DOM->documentElement()->findnodes(".//person"); ###########
   } else {
     $DOM = XML::LibXML::Document->new("1.0", "UTF8");
     my $root =  XML::LibXML::Element->new("personList");
