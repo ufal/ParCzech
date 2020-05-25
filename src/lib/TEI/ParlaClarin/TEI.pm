@@ -85,7 +85,7 @@ sub toFile {
   my $self = shift;
   my %params = @_;
   my @id_parts = split '-', $self->{ID};
-  $self->appendQueue(); # append queue  to <text>
+  $self->appendQueue(); # append queue  to <text><body><div>
 
   my $filename = $params{outputfile} // File::Spec->catfile($self->{output}->{dir},join("-",@id_parts[0,1]),$self->{ID});
   my $dir = dirname($filename);
@@ -196,9 +196,9 @@ sub updateIds {
 
 sub addUtterance { # don't change actTEI
   my $self = shift;
-  $self->appendQueue(); # appending to <text>
+  $self->appendQueue(); # appending to <text><body><div>
   my %params = @_;
-  my $tei_text = _get_child_node_or_create($self->{ROOT},'text');
+  my $tei_text = _get_child_node_or_create($self->{ROOT},'text', 'body', 'div');
   my $u = XML::LibXML::Element->new("u");
   if(exists $params{author}) {
     my $author_xml_id = $self->addAuthor(%{$params{author}});
@@ -243,7 +243,7 @@ sub addToUtterance {
 }
 sub appendQueue {
   my $self = shift;
-  my $element = shift // _get_child_node_or_create($self->{ROOT},'text');
+  my $element = shift // _get_child_node_or_create($self->{ROOT},'text', 'body', 'div');
   while ( my $t = shift @{$self->{QUEUE}}) {
     if(ref $t) {
       $element->appendChild($t);
@@ -297,7 +297,7 @@ sub setUnauthorizedFlag {
 sub addTimeNote {
   my $self = shift;
   my %params = @_;
-  my $tei_text = _get_child_node_or_create($self->{ROOT},'text');
+  my $tei_text = _get_child_node_or_create($self->{ROOT},'text', 'body', 'div');
   my $note = $self->createTimeNoteNode(%params);
   $tei_text->appendChild($note);
   return $note;
@@ -336,7 +336,7 @@ sub addSittingDate {
 sub addAudioNote {
   my $self = shift;
   my %params = @_;
-  my $tei_text = _get_child_node_or_create($self->{ROOT},'text');
+  my $tei_text = _get_child_node_or_create($self->{ROOT},'text', 'body', 'div');
   my $note = XML::LibXML::Element->new("note");
   $note->setAttribute('type','media');
   my $media = XML::LibXML::Element->new("media");
@@ -425,11 +425,13 @@ sub addMetadata {
 }
 # ===========================
 
-sub _get_child_node_or_create {
+sub _get_child_node_or_create { # allow create multiple tree ancestors
   my $node = shift;
   my $newName = shift;
-  return $_ for (reverse $node->findnodes("./$newName")); # get last valid child
-  return $node->addNewChild(undef,$newName);
+  return $node unless $newName;
+  my ($child) = reverse $node->findnodes("./$newName"); # get last valid child
+  $child = $node->addNewChild(undef,$newName) unless $child;
+  return _get_child_node_or_create($child, @_);
 }
 
 
