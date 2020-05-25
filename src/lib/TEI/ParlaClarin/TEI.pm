@@ -41,7 +41,7 @@ sub new {
   $self->addNamespaces($root_node, tei => 'http://www.tei-c.org/ns/1.0', xml => 'http://www.w3.org/XML/1998/namespace');
   if(exists $params{id}) {
   	$self->{ID} = $params{id};
-  	$root_node->setAttributeNS($self->{NS}->{xml}, 'id', $params{id});
+  	$root_node->setAttributeNS($self->{NS}->{xml}, 'id', 'doc-'.$params{id});
   }
   return $self;
 }
@@ -185,7 +185,7 @@ sub updateIds {
   my $new = shift;
   foreach my $node ($self->{DOM}->findnodes('//*[@id]')) {
     my $attr = $node->getAttributeNS($self->{NS}->{xml}, 'id');
-    $attr =~ s/^$old/$new/;
+    $attr =~ s/$old/$new/;
     $node->setAttributeNS($self->{NS}->{xml}, 'id', $attr);
   }
   return $self;
@@ -211,7 +211,7 @@ sub addUtterance { # don't change actTEI
       $tei_text->appendChild($note);
     }
   }
-  $u->setAttributeNS($self->{NS}->{xml}, 'id', $params{id}) if exists $params{id};
+  $u->setAttributeNS($self->{NS}->{xml}, 'id', "utt-".$params{id}) if exists $params{id};
   if(exists $params{link}) {
     $u->setAttribute('source',$params{link});
   }
@@ -257,7 +257,7 @@ sub addAuthor {
   my $self = shift;
   my %params = @_;
   return unless $params{id};
-  my $xmlid = _to_xmlid($params{name},$params{id});
+  my $xmlid = _to_xmlid('pers-', $params{name},$params{id});
   return unless $xmlid;
   return $xmlid if exists $self->{THIS_TEI_PERSON_IDS}->{$xmlid};
   if(exists $self->{PERSON_IDS}->{$xmlid}) {
