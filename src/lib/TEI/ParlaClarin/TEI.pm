@@ -348,7 +348,13 @@ sub createNoteNode {
 sub addSittingDate {
   my $self = shift;
   my $date = shift;
-  $self->addMeetingData('sittingdate',$date->strftime('%Y-%m-%d')) if $date;
+  return unless $date;
+  my $node = _get_child_node_or_create($self->{HEADER},qw/profileDesc settingDesc setting date/);
+  $node->appendText($date->strftime('%Y-%m-%d'));
+  $node->setAttribute('when', $date->strftime('%Y-%m-%d'));
+  $node->setAttribute('ana', '#parla.sitting');
+
+  #$self->addMeetingData('sittingdate',$date->strftime('%Y-%m-%d')) if $date;
 }
 
 sub addAudioNote {
