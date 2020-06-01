@@ -19,6 +19,7 @@ $elements_names = "u,seg,head";
 my $word_element_name = 'w';
 my $punct_element_name = 'pc';
 my $sent_element_name = 's';
+my $full_lemma = undef;
 
 my @tags;
 
@@ -33,6 +34,7 @@ $sentsplit = 1;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize, tag and lemmatize to string, do not change the database
+            'full-lemma' => \$full_lemma,
             'filename=s' => \$filename, # input file
             'filelist=s' => \$filelist, # file that contains files (it increase speed of script - MorphoDiTa model is inicialized single time)
             'model=s' => \$mtagger, # morphodita tagger
@@ -151,6 +153,7 @@ while($filename = shift @input_files) {
             $ti += length($form);
             my $tokenNode = XML::LibXML::Element->new( $lemma->{tag} =~ /^Z/ ? $punct_element_name : $word_element_name );
             $tokenNode->setAttributeNS($xmlNS, 'id', "w-$wid");
+            $lemma->{lemma} =~ s/^(.+?)[-_`].*/$1/ unless $full_lemma;
             $tokenNode->setAttribute('lemma', $lemma->{lemma});
             for my $attr (keys %tag_converter){
               my ($format,$converter) = @{$tag_converter{$attr}};
