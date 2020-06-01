@@ -7,12 +7,27 @@ use Getopt::Long;
 use POSIX qw(strftime);
 
 use Ufal::MorphoDiTa;
+use Lingua::Interset::Converter;
 
 my $scriptname = $0;
 
 my ($debug, $test, $filename, $filelist, $mdita_model, $elements_names, $sentsplit, $mtagger);
 
-$elements_names = "u,head";
+my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
+
+$elements_names = "u,seg,head";
+my $word_element_name = 'w';
+my $punct_element_name = 'pc';
+my $sent_element_name = 's';
+
+my @tags;
+
+my %known_tag_fixes=(
+  'msd mul::uposf' => sub {my $tag=shift; $tag =~ s/^(.*?)\t/UposTag=$1|/; $tag =~ s/\|_$//; $tag},
+  'pos mul::uposf' => sub {my $tag=shift; $tag =~ s/\t.*//; $tag},
+  'ana cs::pdt'    => sub {my $tag=shift; "pdt:$tag"},
+  );
+
 $sentsplit = 1;
 
 GetOptions ( ## Command line options
@@ -23,9 +38,22 @@ GetOptions ( ## Command line options
             'model=s' => \$mtagger, # morphodita tagger
             'elements=s' => \$elements_names,
             'sent=i' => \$sentsplit, # split into sentences
-
+            'word-element=s' => \$word_element_name,
+            'punct-element=s' => \$punct_element_name,
+            'sent-element=s' => \$sent_element_name,
+            'tags=s' => \@tags, # tag attribute name|format (pos cs::pdt)
             );
 
+@tags = ('tag cs::pdt') unless @tags;
+
+
+my %tag_converter = map {
+                      my ($attr,$format) = split(' ',$_);
+                      $attr => [
+                        $format,
+                        ( $format eq 'cs::pdt' ? undef : new Lingua::Interset::Converter("from" => "cs::pdt", "to" => $format))
+                        ]
+                      } @tags;
 
 usage_exit() unless ( $filename  || $filelist );
 
@@ -79,7 +107,7 @@ while($filename = shift @input_files) {
     print " -- empty file $filename\n";
     next;
   }
-  if ( $rawxml =~ /<\/tok>/ ) {
+  if ( $rawxml =~ /<\/${word_element_name}>/ ) {
     print " -- file is already tokenized - $filename\n";
     next;
   }
@@ -110,8 +138,8 @@ while($filename = shift @input_files) {
         my $ti = 0;
         while($tokenizer->nextSentence($forms, undef)){
           if($sentsplit){
-            $sentNode = XML::LibXML::Element->new( 's' );
-            $sentNode->setAttribute('id', "s-$sid");
+            $sentNode = XML::LibXML::Element->new( $sent_element_name );
+            $sentNode->setAttributeNS($xmlNS, 'id', "s-$sid");
             $parent->appendChild($sentNode);
             $sid++;
           }
@@ -121,11 +149,16 @@ while($filename = shift @input_files) {
             my $form = $forms->get($i);
             my $lemma = $lemmas->get($i);
             $ti += length($form);
-            my $tokenNode = XML::LibXML::Element->new( 'tok' );
-            $tokenNode->setAttribute('id', "w-$wid");
+            my $tokenNode = XML::LibXML::Element->new( $lemma->{tag} =~ /^Z/ ? $punct_element_name : $word_element_name );
+            $tokenNode->setAttributeNS($xmlNS, 'id', "w-$wid");
             $tokenNode->setAttribute('lemma', $lemma->{lemma});
-            $tokenNode->setAttribute('pos', $lemma->{tag});
-            $tokenNode->setAttribute('form', $form);
+            for my $attr (keys %tag_converter){
+              my ($format,$converter) = @{$tag_converter{$attr}};
+              my $value = ! $converter ? $lemma->{tag} : $converter->convert($lemma->{tag});
+              $value = $known_tag_fixes{"$attr $format"}->($value) if exists $known_tag_fixes{"$attr $format"};
+              $tokenNode->setAttribute($attr, $value);
+            }
+            # $tokenNode->setAttribute('form', $form);
             $tokenNode->appendText($form);
             $sentNode->appendChild($tokenNode);
 
