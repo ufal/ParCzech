@@ -166,6 +166,8 @@ while($filename = shift @input_files) {
 
               $sentNode->appendText(' ');
               $ti++;
+            } else {
+              $tokenNode->setAttribute('join', 'right');
             }
             $ti++ while substr($text, $ti, 1) =~ m/\s/; # skip next spaces
 
