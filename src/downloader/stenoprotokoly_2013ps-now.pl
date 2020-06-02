@@ -251,6 +251,7 @@ sub record_exporter {
   	}
   }
 
+  add_pagebreak_to_teiCorpus($link);
   add_audio_to_teiCorpus($link); # add audio if possible
 
 
@@ -271,6 +272,7 @@ sub record_exporter {
       $topic_id =~ s/^.*b\d\d\d(\d\d\d)\d\d\.htm.*/$1/;
       ${$ref_post}->{id}->{topic} = $topic_id;
       init_TEI( map {${$ref_post}->{id}->{$_} } qw/term meeting sitting topic/ );
+      add_pagebreak_to_teiCorpus($link);
       add_audio_to_teiCorpus($link); # add audio if possible
       $teiCorpus->addUtterance(
        # id => $id,
@@ -374,6 +376,11 @@ sub record_exporter {
     }
   }
   return $topic_id;
+}
+
+sub add_pagebreak_to_teiCorpus {
+  my $link = shift;
+  $teiCorpus->addPageBreak(source => $link)
 }
 
 sub add_audio_to_teiCorpus {

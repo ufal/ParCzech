@@ -233,7 +233,7 @@ find $MORPHODITA_TEI -type f -name '*.xml' > $MORPHODITA_TEI/filelist
 
 perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models/czech-morfflex-pdt-161115.tagger  --filelist $MORPHODITA_TEI/filelist --debug --tags="msd mul::uposf" --tags="ana cs::multext" --tags="pos mul::uposf"
 ### paginate (backuped to *.nopb.xml)
-perl paginator-module/paginator.pl  --filelist $MORPHODITA_TEI/filelist
+# perl paginator-module/paginator.pl  --filelist $MORPHODITA_TEI/filelist
 ### convert tags (backuped to *.pdtuposf.xml)
 # perl pdt2uposf-module/pdt2uposf.pl  --filelist $MORPHODITA_TEI/filelist --fixlemma
 

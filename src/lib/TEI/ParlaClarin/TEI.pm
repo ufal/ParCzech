@@ -18,6 +18,7 @@ use open OUT => ':utf8';
 sub new {
   my ($class, %params) = @_;
   my $self;
+  $self->{PAGECOUNTER} = 0;
   $self->{STATS}->{u} = 0;
   $self->{output}->{dir} = $params{output_dir} // '.';
   $self->{DOM} = XML::LibXML::Document->new("1.0", "UTF8");
@@ -93,7 +94,7 @@ sub toFile {
   my $self = shift;
   my %params = @_;
   my @id_parts = split '-', $self->{ID};
-  $self->appendQueue(); # append queue  to <text><body><div>
+  $self->appendQueue(1); # append queue  to <text><body><div>
 
   my $filename = $params{outputfile} // File::Spec->catfile($self->{output}->{dir},join("-",@id_parts[0,1]),$self->{ID});
   my $dir = dirname($filename);
@@ -204,7 +205,7 @@ sub updateIds {
 
 sub addUtterance { # don't change actTEI
   my $self = shift;
-  $self->appendQueue(); # appending to <text><body><div>
+  $self->appendQueue(0); # appending to <text><body><div>
   my %params = @_;
   my $tei_text = _get_child_node_or_create($self->{ROOT},'text', 'body', 'div');
   my $u = XML::LibXML::Element->new("u");
@@ -240,25 +241,41 @@ sub addUtterance { # don't change actTEI
 sub addToElemsQueue {
   my $self = shift;
   my $element = shift;
-  push @{$self->{QUEUE}},$element;
+  my $no_endprint = shift // 0; # if zero - no printing at closing tei (audio and pb)
+  push @{$self->{QUEUE}},[$element, $no_endprint];
 }
 sub addToUtterance {
   my $self = shift;
   my $element = shift;
   # adding element to queue and than append whole queue to utterance
-  push @{$self->{QUEUE}},$element;
-  $self->appendQueue($self->{activeUtterance});
+  push @{$self->{QUEUE}},[$element,0];
+  $self->appendQueue(0, $self->{activeUtterance});
 }
 sub appendQueue {
   my $self = shift;
+  my $isend = shift;
   my $element = shift // _get_child_node_or_create($self->{ROOT},'text', 'body', 'div');
-  while ( my $t = shift @{$self->{QUEUE}}) {
+  while ( my $elem = shift @{$self->{QUEUE}}) {
+    my ($t, $noendprint) = @$elem;
+    next if $isend && $noendprint;
     if(ref $t) {
       $element->appendChild($t);
     } else {
       $element->appendText($t.' ');
     }
   }
+}
+
+sub addPageBreak {
+  my $self = shift;
+  my %params = @_;
+  my $pbNode =  XML::LibXML::Element->new("pb");
+  $pbNode->setAttribute('source', $params{source}) if defined $params{source};
+  $self->{PAGECOUNTER}++;
+  $pbNode->setAttribute('n', $self->{PAGECOUNTER});
+  $pbNode->setAttributeNS($self->{NS}->{xml}, 'id', sprintf("pb-%03d",$self->{PAGECOUNTER}));
+  $self->addToElemsQueue($pbNode,1);
+  return $self;
 }
 
 sub addAuthor {
@@ -360,14 +377,15 @@ sub addSittingDate {
 sub addAudioNote {
   my $self = shift;
   my %params = @_;
-  my $tei_text = _get_child_node_or_create($self->{ROOT},'text', 'body', 'div');
+  # my $tei_text = _get_child_node_or_create($self->{ROOT},'text', 'body', 'div');
   my $note = XML::LibXML::Element->new("note");
   $note->setAttribute('type','media');
   my $media = XML::LibXML::Element->new("media");
   $media->setAttribute('mimeType',$params{mimeType} // 'audio/mp3');
   $media->setAttribute('url',$params{url}) if exists $params{url};
   $note->appendChild($media);
-  $tei_text->appendChild($note);
+  # $tei_text->appendChild($note);
+  $self->addToElemsQueue($note);
   return $self;
 }
 
