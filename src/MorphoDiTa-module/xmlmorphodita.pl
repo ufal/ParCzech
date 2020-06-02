@@ -27,7 +27,21 @@ my %known_tag_fixes=(
   'msd mul::uposf' => sub {my $tag=shift; $tag =~ s/^(.*?)\t/UposTag=$1|/; $tag =~ s/\|_$//; $tag},
   'pos mul::uposf' => sub {my $tag=shift; $tag =~ s/\t.*//; $tag},
   'ana cs::pdt'    => sub {my $tag=shift; "pdt:$tag"},
+  'ana cs::multext'=> sub {my $tag=shift; "mte:$tag"},
+           # there exists morphosyntactic specs in tei http://nl.ijs.si/ME/V6/msd/tables/msd-fslib-cs.xml (for Czech)
   );
+
+my %run_once_for_every_file = (
+  'ana cs::multext'=> sub { # add encoding info tp teiHeader
+    # teiHeader/encodingDesc/listPrefixDef/<prefixDef ident="mte" matchPattern="(.+)" replacementPattern="http://nl.ijs.si/ME/V6/msd/tables/msd-fslib-cs.xml#$1" />
+    my $xml = shift;
+    my $node = makenode($xml,'//teiHeader/encodingDesc/listPrefixDef/prefixDef');
+    $node->setAttribute('ident', 'mte');
+    $node->setAttribute('matchPattern', '(.+)');
+    $node->setAttribute('replacementPattern', 'http://nl.ijs.si/ME/V6/msd/tables/msd-fslib-cs.xml#$1');
+    $node->appendTextChild('p','Feature-structure elements definition of the Czech MULTEXT-East Version 6 MSDs');
+  }
+);
 
 $sentsplit = 1;
 
@@ -120,7 +134,9 @@ while($filename = shift @input_files) {
     print "Invalid XML in $filename";
     next;
   }
-
+  for my $tag (@tags){
+    $run_once_for_every_file{$tag}->($doc) if exists $run_once_for_every_file{$tag};
+  }
   my @parents = $doc->findnodes('//text//*[contains(" '.join(' ',split(',',$elements_names)).' ", concat(" ",name()," "))]');
   while(my $parent = shift @parents) {
     my @childnodes = $parent->childNodes(); # find all child tokens
