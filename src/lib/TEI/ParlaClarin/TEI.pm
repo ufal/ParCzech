@@ -332,9 +332,8 @@ sub setUnauthorizedFlag {
 sub addTimeNote {
   my $self = shift;
   my %params = @_;
-  my $tei_text = _get_child_node_or_create($self->{ROOT},'text', 'body', 'div');
   my $note = $self->createTimeNoteNode(%params);
-  $tei_text->appendChild($note);
+  $self->addToElemsQueue($note);
   return $note;
 }
 
