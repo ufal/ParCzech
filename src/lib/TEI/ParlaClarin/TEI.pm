@@ -261,7 +261,8 @@ sub appendQueue {
     if(ref $t) {
       $element->appendChild($t);
     } else {
-      $element->appendText($t.' ');
+      $element->appendTextChild('seg', $t);
+      $element->appendText(' ');
     }
   }
 }
