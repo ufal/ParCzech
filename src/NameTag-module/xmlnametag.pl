@@ -226,6 +226,7 @@ my %namedEntities = (
 
 my @token_names;
 my $tei_fslib_file;
+my $tei_fslib_url = 'ne-fslib.xml';
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
@@ -235,6 +236,7 @@ GetOptions ( ## Command line options
             'model=s' => \$neotag_model, # neotag model
             'token-name=s' => \@token_names, #
             'tei-fslib=s' => \$tei_fslib_file,
+            'tei-fslib-url=s' => \$tei_fslib_url,
             );
 
 @token_names = ('tok') unless @token_names;
@@ -381,7 +383,13 @@ while($filename = shift @input_files) {
   my $when = strftime "%Y-%m-%d", localtime;
   $revnode->setAttribute("when", $when);
   $revnode->appendText("tagged using xmlnametag.pl");
-
+  if($tei_fslib_url) {
+    my $node = makenode($doc,'//teiHeader/encodingDesc/listPrefixDef/prefixDef[@ident="ne"]');
+    $node->setAttribute('ident', 'ne');
+    $node->setAttribute('matchPattern', '(.+)');
+    $node->setAttribute('replacementPattern', $tei_fslib_url.'#$1');
+    $node->appendTextChild('p','Feature-structure elements definition of the Named Entities');
+  }
   my $xmlfile = $doc->toString;
 
   if ( $test ) {
