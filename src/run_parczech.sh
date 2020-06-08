@@ -229,10 +229,10 @@ export MORPHODITA_TEI=$DATA_DIR/morphodita-tei/${ID}
 export MORPHODITA_TEI_INPUT=$CL_OUTDIR_TEI/${ID}
 mkdir -p $MORPHODITA_TEI
 
-rsync -a --prune-empty-dirs $MORPHODITA_TEI_INPUT/ $MORPHODITA_TEI
+rsync -a --exclude "person.xml" --prune-empty-dirs $MORPHODITA_TEI_INPUT/ $MORPHODITA_TEI
 find $MORPHODITA_TEI -type f -name '*.xml' > $MORPHODITA_TEI/filelist
 
-perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models/czech-morfflex-pdt-161115.tagger  --filelist $MORPHODITA_TEI/filelist --debug --tags="msd mul::uposf" --tags="ana cs::multext" --tags="pos mul::uposf"
+perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models/czech-morfflex-pdt-161115.tagger  --filelist $MORPHODITA_TEI/filelist --tags="msd mul::uposf" --tags="ana cs::multext" --tags="pos mul::uposf"
 ### paginate (backuped to *.nopb.xml)
 # perl paginator-module/paginator.pl  --filelist $MORPHODITA_TEI/filelist
 ### convert tags (backuped to *.pdtuposf.xml)
@@ -258,7 +258,7 @@ mkdir -p $NAMETAG_TEI
 rsync -a --prune-empty-dirs --exclude '*.nmorph.xml' --exclude '*.nopb.xml' --exclude '*.pdtuposf.xml' $MORPHODITA_TEI/ $NAMETAG_TEI
 
 find $NAMETAG_TEI -type f -name '*.xml' > $NAMETAG_TEI/filelist
-perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304-no_numbers.ner --filelist $NAMETAG_TEI/filelist --debug --token-name="w" --token-name="pc"
+perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304-no_numbers.ner --filelist $NAMETAG_TEI/filelist --token-name="w" --token-name="pc"
 
 
 ###############################
