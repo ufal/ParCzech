@@ -2,6 +2,7 @@ use warnings;
 use strict;
 use open qw(:std :utf8);
 use Encode qw(decode encode);
+use XML::LibXML::PrettyPrint;
 use XML::LibXML;
 use Getopt::Long;
 use POSIX qw(strftime);
@@ -390,6 +391,16 @@ while($filename = shift @input_files) {
     $node->setAttribute('replacementPattern', $tei_fslib_url.'#$1');
     $node->appendTextChild('p','Feature-structure elements definition of the Named Entities');
   }
+  my $pp = XML::LibXML::PrettyPrint->new(
+    indent_string => "  ",
+    element => {
+        inline   => [qw//], # note
+        #block    => [qw//],
+        #compact  => [qw//],
+        preserves_whitespace => [qw/seg/],
+        }
+    );
+  $pp->pretty_print($doc);
   my $xmlfile = $doc->toString;
 
   if ( $test ) {
