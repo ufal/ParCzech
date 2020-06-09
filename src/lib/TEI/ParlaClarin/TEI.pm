@@ -36,6 +36,8 @@ sub new {
   $root_node->appendChild($self->{HEADER});
 
   bless($self,$class);
+  $self->addNamespaces($root_node, tei => 'http://www.tei-c.org/ns/1.0', xml => 'http://www.w3.org/XML/1998/namespace');
+
   $self->{PERSONLIST} = $self->getPersonlistDOM($personlistfilepath);
   $self->{TITLESTMT} = _get_child_node_or_create($self->{HEADER},'fileDesc', 'titleStmt');
   if($params{'title'}) {
@@ -47,7 +49,6 @@ sub new {
   $self->{TITLESTMT}->parentNode->addNewChild(undef,'publicationStmt')->addNewChild(undef,'p');
   $self->{TITLESTMT}->parentNode->addNewChild(undef,'sourceDesc')->addNewChild(undef,'p');
   $self->addMeetingData('authorized','yes');
-  $self->addNamespaces($root_node, tei => 'http://www.tei-c.org/ns/1.0', xml => 'http://www.w3.org/XML/1998/namespace');
   if(exists $params{id}) {
   	$self->{ID} = $params{id};
   	$root_node->setAttributeNS($self->{NS}->{xml}, 'id', 'doc-'.$params{id});
@@ -77,7 +78,8 @@ sub load_tei {
     $self->{activeUtterance} = undef;
     bless($self,$class);
     $self->{PERSONLIST} = $self->getPersonlistDOM($params{person_list}) if $params{person_list};
-    $self->{ID} = $self->{ROOT}->getAttribute('id');
+    # TODO -> add namespaces !!!
+    $self->{ID} = $self->{ROOT}->getAttributeNS('http://www.w3.org/XML/1998/namespace','id');
     return $self;
   } else {
     return undef;
