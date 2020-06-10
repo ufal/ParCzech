@@ -65,7 +65,8 @@ GetOptions ( ## Command line options
 
 my %tag_converter = map {
                       my ($attr,$format) = split(' ',$_);
-                      $attr => [
+                      "$attr $format" => [
+                        $attr,
                         $format,
                         ( $format eq 'cs::pdt' ? undef : new Lingua::Interset::Converter("from" => "cs::pdt", "to" => $format))
                         ]
@@ -171,11 +172,12 @@ while($filename = shift @input_files) {
             $tokenNode->setAttributeNS($xmlNS, 'id', "w-$wid");
             $lemma->{lemma} =~ s/^(.+?)[-_`].*/$1/ unless $full_lemma;
             $tokenNode->setAttribute('lemma', $lemma->{lemma});
-            for my $attr (keys %tag_converter){
-              my ($format,$converter) = @{$tag_converter{$attr}};
+            for my $key (keys %tag_converter){
+              my ($attr, $format,$converter) = @{$tag_converter{$key}};
               my $value = ! $converter ? $lemma->{tag} : $converter->convert($lemma->{tag});
               $value = $known_tag_fixes{"$attr $format"}->($value) if exists $known_tag_fixes{"$attr $format"};
-              $tokenNode->setAttribute($attr, $value);
+
+              $tokenNode->setAttribute($attr, ($tokenNode->hasAttribute($attr) ? $tokenNode->getAttribute($attr).' ' : '').$value);
             }
             # $tokenNode->setAttribute('form', $form);
             $tokenNode->appendText($form);
