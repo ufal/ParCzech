@@ -79,7 +79,7 @@ if [ -f "$CL_OUTDIR_TEI/$LAST_ID/person.xml" ]; then
   cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$CL_OUTDIR_TEI/$ID"
 fi
 
-perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML  --cache $CL_OUTDIR_CACHE --id $ID  --prune '2013-060'
+perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML  --cache $CL_OUTDIR_CACHE --id $ID  --prune '2013-060-01'
 
 # remove duplicities:
 # calculate hashes for new files
@@ -232,7 +232,7 @@ mkdir -p $MORPHODITA_TEI
 rsync -a --exclude "person.xml" --prune-empty-dirs $MORPHODITA_TEI_INPUT/ $MORPHODITA_TEI
 find $MORPHODITA_TEI -type f -name '*.xml' > $MORPHODITA_TEI/filelist
 
-perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models/czech-morfflex-pdt-161115.tagger  --filelist $MORPHODITA_TEI/filelist --tags="msd mul::uposf" --tags="ana cs::multext" --tags="ana cs::pdt" --tags="pos mul::uposf"
+perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models/czech-morfflex-pdt-161115.tagger  --filelist $MORPHODITA_TEI/filelist --tags="msd mul::uposf" --tags="ana cs::multext" --tags="ana cs::pdt" --tags="pos mul::uposf" --no-backup-file
 ### paginate (backuped to *.nopb.xml)
 # perl paginator-module/paginator.pl  --filelist $MORPHODITA_TEI/filelist
 ### convert tags (backuped to *.pdtuposf.xml)
@@ -258,22 +258,37 @@ mkdir -p $NAMETAG_TEI
 rsync -a --prune-empty-dirs --exclude '*.nmorph.xml' --exclude '*.nopb.xml' --exclude '*.pdtuposf.xml' $MORPHODITA_TEI/ $NAMETAG_TEI
 
 find $NAMETAG_TEI -type f -name '*.xml' > $NAMETAG_TEI/filelist
-perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304-no_numbers.ner --filelist $NAMETAG_TEI/filelist --token-name="w" --token-name="pc"
+perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304-no_numbers.ner --filelist $NAMETAG_TEI/filelist --token-name="w" --token-name="pc" --no-backup-file
 
 
 ###############################
 ###     FINALIZE            ###
+### converting to teitok    ###
 #  input:
 #    nametag-tei/$ID
+#
+#
 ###############################
 
+export TEITOK_TEI=$DATA_DIR/teitok-tei/${ID}
+mkdir -p $TEITOK_TEI
+
+for tei_file in `cat $NAMETAG_TEI/filelist`
+do
+  out_file=`echo "$tei_file" | sed "s@^$NAMETAG_TEI@$TEITOK_TEI@" `
+  sh tei2teitok/tei2teitok.sh  -i $tei_file -o $out_file
+done
+
+
+
+
+###############################
 log_process "tei publishing"
 log "publishing tei $ID"
 
-export FINALIZE_INPUT=$NAMETAG_TEI
-export FINALIZE_EXCLUDE="*.nntg.xml"
+export FINALIZE_INPUT=$TEITOK_TEI
 
-rsync -a --prune-empty-dirs --exclude "filelist" --exclude "$FINALIZE_EXCLUDE" $FINALIZE_INPUT/ $TEITOK_CORPUS/xmlfiles
+rsync -a --prune-empty-dirs --exclude "filelist" $FINALIZE_INPUT/ $TEITOK_CORPUS/xmlfiles
 
 cp -f "$CL_OUTDIR_TEI/$ID/person.xml" "$TEITOK_CORPUS/Resources/person.xml"
 
