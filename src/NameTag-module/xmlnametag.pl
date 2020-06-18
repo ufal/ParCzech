@@ -13,7 +13,7 @@ use Ufal::NameTag;
 
 my $scriptname = $0;
 
-my ($debug, $test, $filename, $filelist, $neotag_model);
+my ($debug, $test, $filename, $filelist, $neotag_model, $no_backup_file);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -232,6 +232,7 @@ my $tei_fslib_url = 'ne-fslib.xml';
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tag to string, do not change the database
+            'no-backup-file' => \$no_backup_file,
             'filename=s' => \$filename, # input file
             'filelist=s' => \$filelist, # file that contains files to be nametagged (it increase speed of script - NameTag model is inicialized single time)
             'model=s' => \$neotag_model, # neotag model
@@ -408,13 +409,14 @@ while($filename = shift @input_files) {
     print  $xmlfile;
   } else {
 
-    # Make a backup of the file
-    my $buname;
-    ( $buname = $filename ) =~ s/xmlfiles.*\//backups\//;
-    my $date = strftime "%Y%m%d", localtime;
-    $buname =~ s/\.xml/-$date.nntg.xml/;
-    my $cmd = "/bin/cp $filename $buname";
-    `$cmd`;
+    unless(defined $no_backup_file) { # Make a backup of the file
+      my $buname;
+      ( $buname = $filename ) =~ s/xmlfiles.*\//backups\//;
+      my $date = strftime "%Y%m%d", localtime;
+      $buname =~ s/\.xml/-$date.nntg.xml/;
+      my $cmd = "/bin/cp $filename $buname";
+      `$cmd`;
+    }
 
     open FILE, ">$filename";
     binmode FILE;

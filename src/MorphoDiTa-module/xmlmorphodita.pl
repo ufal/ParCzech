@@ -11,7 +11,7 @@ use Lingua::Interset::Converter;
 
 my $scriptname = $0;
 
-my ($debug, $test, $filename, $filelist, $mdita_model, $elements_names, $sentsplit, $mtagger);
+my ($debug, $test, $filename, $filelist, $mdita_model, $elements_names, $sentsplit, $mtagger, $no_backup_file);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -63,6 +63,7 @@ GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize, tag and lemmatize to string, do not change the database
             'full-lemma' => \$full_lemma,
+            'no-backup-file' => \$no_backup_file,
             'filename=s' => \$filename, # input file
             'filelist=s' => \$filelist, # file that contains files (it increase speed of script - MorphoDiTa model is inicialized single time)
             'model=s' => \$mtagger, # morphodita tagger
@@ -225,13 +226,14 @@ while($filename = shift @input_files) {
     print  $xmlfile;
   } else {
 
-    # Make a backup of the file
-    my $buname;
-    ( $buname = $filename ) =~ s/xmlfiles.*\//backups\//;
-    my $date = strftime "%Y%m%d", localtime;
-    $buname =~ s/\.xml/-$date.nmorph.xml/;
-    my $cmd = "/bin/cp $filename $buname";
-    `$cmd`;
+    unless(defined $no_backup_file) { # Make a backup of the file
+      my $buname;
+      ( $buname = $filename ) =~ s/xmlfiles.*\//backups\//;
+      my $date = strftime "%Y%m%d", localtime;
+      $buname =~ s/\.xml/-$date.nmorph.xml/;
+      my $cmd = "/bin/cp $filename $buname";
+      `$cmd`;
+    }
 
     open FILE, ">$filename";
     binmode FILE;
