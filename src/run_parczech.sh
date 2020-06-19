@@ -5,6 +5,26 @@ cd $D
 
 pid=$$
 
+CONFIG_FILE="config.sh"
+DOWN_PARAMS=()
+
+usage() {
+  echo -e "Usage: $0 -c CONFIG_FILE -p PRUNE_TEMPLATE" 1>&2
+  exit 1
+}
+
+while getopts  ':c:p:'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
+  case "$opt" in
+    'c')
+      CONFIG_FILE=$OPTARG
+      ;;
+    'p')
+      DOWN_PARAMS+=(--prune $OPTARG )
+      ;;
+    *)
+      usage
+  esac
+done
 
 
 export DATA_DIR=$PWD/out
@@ -13,8 +33,8 @@ export TEITOK=./TEITOK
 export TEITOK_CORPUS=$TEITOK/projects/CORPUS
 
 set -o allexport
-if [ -f "config.sh" ]; then
-  source config.sh
+if [ -f "$CONFIG_FILE" ]; then
+  source "$CONFIG_FILE"
 fi
 set +o allexport
 
@@ -79,7 +99,7 @@ if [ -f "$CL_OUTDIR_TEI/$LAST_ID/person.xml" ]; then
   cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$CL_OUTDIR_TEI/$ID"
 fi
 
-perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML  --cache $CL_OUTDIR_CACHE --id $ID  --prune '2013-060-01'
+perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML  --cache $CL_OUTDIR_CACHE --id $ID  "${DOWN_PARAMS[@]}"
 
 # remove duplicities:
 # calculate hashes for new files
