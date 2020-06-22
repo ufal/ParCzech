@@ -375,7 +375,7 @@ sub record_exporter {
       if($cnt->nodeType == XML::LibXML::XML_ELEMENT_NODE && lc($cnt->getAttribute('align')//'') eq 'center'){
         $teiCorpus->addHead($cnt_text);
       }
-      $teiCorpus->addToUtterance($cnt_text); # no notes are expected in header
+      export_text($cnt_text);
     }
   }
   return $topic_id;
