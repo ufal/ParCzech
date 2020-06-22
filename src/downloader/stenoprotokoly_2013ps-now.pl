@@ -279,7 +279,12 @@ sub record_exporter {
       my $id = join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic post/);
       $teiCorpus->addUtterance(
         id => sprintf('%s-%s-%03d',$id,$link_id, ++$$ref_post_cntr),
-        author => { author_full => $$ref_author->{author}, name => $$ref_author->{authorname}, id => $$ref_author->{author_id}},
+        author => {
+          author_full => $$ref_author->{author},
+          name => $$ref_author->{authorname},
+          id => $$ref_author->{author_id},
+          role => $$ref_author->{role},
+        },
 
        # link =>  $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//'')
       );
@@ -346,13 +351,19 @@ sub record_exporter {
       ($$ref_author->{authorname}) = $auth =~ m/([^ ]*\s+[^ ]+?):?$/;
       $$ref_author->{author} = $auth;
       $$ref_author->{author_id} = $auth_id;
-      ($$ref_post->{speechnote}) = grep {m/^###.*|\@\@$/} xpath_string('./comment()',$cnt);
+      $$ref_author->{role} = get_role($$ref_author->{author});
+      ### ($$ref_post->{speechnote}) = grep {m/^###.*|\@\@$/} xpath_string('./comment()',$cnt); # not at this page
       $$ref_post->{id}->{post} = $post_id;
       $$ref_post->{id}->{post} = 'r0' unless exists $$ref_post->{id}->{post};
       my $id = join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic post/);
       $teiCorpus->addUtterance(
         id => sprintf('%s-%s-%03d',$id,$link_id, ++$$ref_post_cntr),
-        author => { author_full => $$ref_author->{author}, name => $$ref_author->{authorname}, id => $$ref_author->{author_id}},
+        author => {
+          author_full => $$ref_author->{author},
+          name => $$ref_author->{authorname},
+          id => $$ref_author->{author_id},
+          role => $$ref_author->{role},
+        },
         link =>  $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//'')
       );
       export_text($cnt_text);
@@ -446,6 +457,13 @@ sub export_text {
   }
 }
 
+sub get_role {
+  my $text = shift;
+  return 'chair' if $text =~ m/ PSP /; # Předseda / Místopředseda
+  return 'regular' if $text =~ m/^Poslan/i;
+  return 'guest' if $text =~ m/^Senátor/i;
+  return 'regular';
+}
 
 sub debug_print {
   my $msg = shift;

@@ -221,6 +221,7 @@ sub addUtterance { # don't change actTEI
       $note->appendText($params{author}->{author_full});
       $tei_text->appendChild($note);
     }
+    $u->setAttribute('ana', '#'.$params{author}->{role}) if $params{author}->{role};
   }
   $u->setAttributeNS($self->{NS}->{xml}, 'id', "utt-".$params{id}) if exists $params{id};
   if(exists $params{link}) {
