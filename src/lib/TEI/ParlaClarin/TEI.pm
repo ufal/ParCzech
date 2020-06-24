@@ -250,9 +250,17 @@ sub addToElemsQueue {
 sub addToUtterance {
   my $self = shift;
   my $element = shift;
+  my $segment = shift;
+
+  if(!defined($segment) && scalar @{$self->{QUEUE}} ) { # print queue if segment is not defined
+    $self->{activeUtterance}->appendText("\n") if $self->{activeUtterance}->hasChildNodes(); #just formating
+    $self->appendQueue(0,$self->{activeUtterance})
+  }
   # adding element to queue and than append whole queue to utterance
   push @{$self->{QUEUE}},[$element,0];
-  $self->appendQueue(0, $self->{activeUtterance});
+  $self->{activeUtterance}->appendText("\n") if $self->{activeUtterance}->hasChildNodes(); # just formating
+  $segment = $self->{activeUtterance}->addNewChild(undef, 'seg') unless $segment;
+  return $self->appendQueue(0, $segment);
 }
 sub appendQueue {
   my $self = shift;
@@ -264,10 +272,11 @@ sub appendQueue {
     if(ref $t) {
       $element->appendChild($t);
     } else {
-      $element->appendTextChild('seg', $t);
-      $element->appendText(' ');
+      $element->appendText($t);
     }
   }
+  ## retturn segment if not closed
+  return $element;
 }
 
 sub addPageBreak {

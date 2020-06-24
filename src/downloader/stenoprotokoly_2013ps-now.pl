@@ -446,15 +446,18 @@ sub set_document_date {
 
 sub export_text {
   my $text = shift;
+  # start <seg>
+  my $segm = undef;
   while($text){
     if($text =~ s/^[^\(]+//){ # text
-      $teiCorpus->addToUtterance($&);
+      $segm = $teiCorpus->addToUtterance($&,$segm);
     } elsif ($text =~ s/^\(.*?\)//) {
       $teiCorpus->addToElemsQueue($teiCorpus->createNoteNode(type => 'comment', text => $&));
     } elsif ($text =~ s/^.*//) {
-      $teiCorpus->addToUtterance($&); # this should not  happen but we don't wont loose some text
+      $segm = $teiCorpus->addToUtterance($&, $segm); # this should not  happen but we don't wont loose some text
     }
   }
+  # end </seg>
 }
 
 sub get_role {
