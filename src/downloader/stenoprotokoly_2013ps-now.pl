@@ -9,6 +9,8 @@ use TEI::ParlaClarin::TEI;
 use Getopt::Long;
 use Data::Dumper;
 
+use XML::LibXML qw(:libxml);
+
 =description
 This scrapping script works only for terms from 2013
 =cut
@@ -366,7 +368,7 @@ sub record_exporter {
         },
         link =>  $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//'')
       );
-      export_text($cnt_text);
+      export_text($cnt, 1);
       export_record_yaml(
         id => $id,
         url => $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//''),
@@ -386,7 +388,7 @@ sub record_exporter {
       if($cnt->nodeType == XML::LibXML::XML_ELEMENT_NODE && lc($cnt->getAttribute('align')//'') eq 'center'){
         $teiCorpus->addHead($cnt_text);
       }
-      export_text($cnt_text);
+      export_text($cnt, 1);
     }
   }
   return $topic_id;
@@ -445,19 +447,66 @@ sub set_document_date {
 }
 
 sub export_text {
-  my $text = shift;
+  my $cnt = shift;
+  my $is_first = shift; # remove initial : it true
+  # my $text = shift;
   # start <seg>
+  my @child_nodes;
   my $segm = undef;
-  while($text){
-    if($text =~ s/^[^\(]+//){ # text
-      $segm = $teiCorpus->addToUtterance($&,$segm);
-    } elsif ($text =~ s/^\(.*?\)//) {
-      $teiCorpus->addToElemsQueue($teiCorpus->createNoteNode(type => 'comment', text => $&));
-    } elsif ($text =~ s/^.*//) {
-      $segm = $teiCorpus->addToUtterance($&, $segm); # this should not  happen but we don't wont loose some text
+  print STDERR "================================CNT\n$cnt\n";
+  if($cnt->nodeType() == XML_TEXT_NODE){
+    push @child_nodes, $cnt;
+  } else {
+    @child_nodes = $cnt->childNodes();
+  }
+  for my $childnode (@child_nodes) {
+    my $text;
+    $text = ScrapperUfal::html2text($childnode) unless xpath_node('./self::*[name()="a"]', $childnode); print STDERR " TODO TEST IT !!! $childnode \n";
+    if($text) { # text or text in node that is not converted
+      $text =~ s/\s*:?\s*// if $is_first; # remove initial : and spaces
+      undef $is_first;
+      while($text){
+        if($text =~ s/^[^\(]+//){ # text
+          $segm = $teiCorpus->addToUtterance($&,$segm);
+        } elsif ($text =~ s/^\(.*?\)//) {
+          $teiCorpus->addToElemsQueue($teiCorpus->createNoteNode(type => 'comment', text => $&));
+        } elsif ($text =~ s/^.*//) {
+        $segm = $teiCorpus->addToUtterance($&, $segm); # this should not  happen but we don't wont loose some text
+        }
+      }
+    } else { # link that should be appended
+print STDERR "TODO ============ APPEND:\n$childnode\n";
+      $teiCorpus->addToUtterance(create_ref_node($childnode),$segm);
     }
   }
   # end </seg>
+}
+
+sub create_ref_node {
+  my $a = shift;
+  my $href = $a->hasAttribute('href') ? $a->getAttribute('href') : '';
+  $href = URI->new_abs($href,$URL) if $href;
+  my $id = $a->hasAttribute('id') ? $a->getAttribute('id') : '';
+  my $text = ScrapperUfal::html2text($a);
+
+  my $ref = XML::LibXML::Element->new("ref");
+  my $type;
+  my $n;
+  if($href =~ m/hlasy.sqw/) {
+    $type = 'voting';
+    ($n) = ($href =~ m/.*G=(\d+)/);
+  }
+  if($href =~ m/historie.sqw/){
+    $type = 'print';
+    $n = $href;
+    $n =~ s@.*T=(\d+).*?O=(\d+)@$2/$1@;
+  }
+  $ref->setAttribute('ana',"#parla.$type") if $type;
+  $ref->setAttribute('n',$n) if $n;
+  $ref->setAttribute('source',$href) if $href;
+
+  $ref->appendText($text);
+  return $ref;
 }
 
 sub get_role {
