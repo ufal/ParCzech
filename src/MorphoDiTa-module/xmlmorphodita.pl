@@ -161,8 +161,13 @@ while($filename = shift @input_files) {
 #    my @stack = ($parent);
 #    my $newxml = '';
 
+    my $space = undef;
     while(my $chnode = shift @childnodes) {
       my $sentNode = $parent;
+      if($space) {
+        $parent->appendText($space);
+        undef $space;
+      }
       if ( $chnode->nodeType != XML_TEXT_NODE ) { # not text node
         $parent->appendChild($chnode);
       } else { # text node
@@ -175,6 +180,10 @@ while($filename = shift @input_files) {
           if($sentsplit){
             $sentNode = XML::LibXML::Element->new( $sent_element_name );
             $sentNode->setAttributeNS($xmlNS, 'id', "s-$sid");
+            if($space) {
+              $parent->appendText($space);
+              undef $space;
+            }
             $parent->appendChild($sentNode);
             $sid++;
           }
@@ -197,11 +206,15 @@ while($filename = shift @input_files) {
             }
             # $tokenNode->setAttribute('form', $form);
             $tokenNode->appendText($form);
+            if($space){
+              $sentNode->appendText($space);
+              undef $space;
+            }
+
             $sentNode->appendChild($tokenNode);
 
             if(substr($text, $ti, 1) =~ m/\s/){ # skip first space and append space to node
-
-              $sentNode->appendText(' ');
+              $space = " ";
               $ti++;
             } else {
               $tokenNode->setAttribute('join', 'right');
