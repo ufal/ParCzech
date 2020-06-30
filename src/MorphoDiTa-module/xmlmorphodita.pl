@@ -167,11 +167,9 @@ while($filename = shift @input_files) {
         $chtext = $chnode->textContent();
         $chtextsize = length($chtext);
       }
-print STDERR $chnode->nodeType,"\t\t",$chnode,"\n";
       $text .= $chtext;
       push @childnodes,{node => $chnode, text => $chtext, size => $chtextsize};
     }
-print STDERR "TEXT:=========================\n", $text,"\n$parent\n=============================\n";
 
     #$parent->removeChildNodes();
 #    my @stack = ($parent);
@@ -219,6 +217,11 @@ print STDERR "TEXT:=========================\n", $text,"\n$parent\n=============
         }
         if( $childnodes[$chi]->{node}->nodeType != XML_TEXT_NODE
             && $cti == 0) { ### is it first token?
+          if($space) {
+            $sentNode->appendText($space);
+            undef $space;
+          }
+
           my $newchild = $childnodes[$chi]->{node}->cloneNode(0); # Expecting only text child nodes - no deep copy
           $sentNode->appendChild($newchild);
           $sentNode = $newchild; ## TODO use stack ???
