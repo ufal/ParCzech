@@ -21,7 +21,7 @@ sub new {
   $self->{PAGECOUNTER} = 0;
   $self->{STATS}->{u} = 0;
   $self->{output}->{dir} = $params{output_dir} // '.';
-  $self->{DOM} = XML::LibXML::Document->new("1.0", "UTF8");
+  $self->{DOM} = XML::LibXML::Document->new("1.0", "utf-8");
   my $root_node =  XML::LibXML::Element->new("TEI");
   $self->{ROOT} = $root_node;
   $self->{PERSON_IDS} = {};
