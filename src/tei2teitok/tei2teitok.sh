@@ -53,4 +53,5 @@ FILE_OUT=`realpath --relative-to="$D" "$FILE_OUT"`
 
 cd $D
 
-$XSL_TRANSFORM tei2teitok.xsl "$FILE_IN" "$FILE_OUT"
+echo $PERSON_LIST_PATH
+$XSL_TRANSFORM tei2teitok.xsl "$FILE_IN" "$FILE_OUT" personlist-path=$PERSON_LIST_PATH

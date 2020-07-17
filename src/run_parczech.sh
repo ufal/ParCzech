@@ -90,13 +90,14 @@ mkdir -p $CL_OUTDIR_TEI
 mkdir -p $CL_OUTDIR_CACHE
 mkdir -p $CL_OUTDIR_HTML
 
+export PERSON_LIST_PATH="$CL_OUTDIR_TEI/$ID/person.xml"
 export LAST_ID=`ls $CL_OUTDIR_TEI|grep -v "sha1sum.list"|sort|tail -n 1`
 
 
 if [ -f "$CL_OUTDIR_TEI/$LAST_ID/person.xml" ]; then
   echo "moving $CL_OUTDIR_TEI/$LAST_ID/person.xml"
   mkdir -p "$CL_OUTDIR_TEI/$ID"
-  cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$CL_OUTDIR_TEI/$ID"
+  cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$PERSON_LIST_PATH"
 fi
 
 perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML  --cache $CL_OUTDIR_CACHE --id $ID  "${DOWN_PARAMS[@]}"
@@ -296,7 +297,7 @@ mkdir -p $TEITOK_TEI
 for tei_file in `cat $NAMETAG_TEI/filelist`
 do
   out_file=`echo "$tei_file" | sed "s@^$NAMETAG_TEI@$TEITOK_TEI@" `
-  sh tei2teitok/tei2teitok.sh  -i $tei_file -o $out_file -c `realpath $CONFIG_FILE`
+  sh tei2teitok/tei2teitok.sh  -i $tei_file -o $out_file # -c `realpath $CONFIG_FILE`
 done
 
 
@@ -310,7 +311,7 @@ export FINALIZE_INPUT=$TEITOK_TEI
 
 rsync -a --prune-empty-dirs --exclude "filelist" $FINALIZE_INPUT/ $TEITOK_CORPUS/xmlfiles
 
-cp -f "$CL_OUTDIR_TEI/$ID/person.xml" "$TEITOK_CORPUS/Resources/person.xml"
+cp -f "$PERSON_LIST_PATH" "$TEITOK_CORPUS/Resources/person.xml"
 
 
 
