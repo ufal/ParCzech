@@ -2,6 +2,7 @@
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns="teitok:parczech">
   <xsl:output method="xml" indent="no" encoding="UTF-8" />
   <xsl:param name="personlist-path" />
+
   <xsl:variable name="personlist-doc" select="document($personlist-path)" />
   <xsl:key name="id-personlist" match="person" use="@*[local-name(.) = 'id']" />
 
@@ -88,7 +89,7 @@
         <xsl:attribute name="href">
           <xsl:value-of select="normalize-space(key('id-personlist',$person,$personlist-doc)/idno[@type='URI'])"/>
         </xsl:attribute>
-        <xsl:text>\f08e</xsl:text>
+        <xsl:attribute name="class">external-link</xsl:attribute>
       </xsl:element>
 
     </xsl:element>
@@ -103,7 +104,7 @@
         <xsl:attribute name="href">
           <xsl:value-of select="@source"/>
         </xsl:attribute>
-        <xsl:text>\f08e</xsl:text>
+        <xsl:attribute name="class">external-link</xsl:attribute>
       </xsl:element>
       <xsl:apply-templates select="node()"/>
     </xsl:element>
@@ -117,7 +118,7 @@
         <xsl:attribute name="href">
           <xsl:value-of select="@source"/>
         </xsl:attribute>
-        <xsl:text>\f08e</xsl:text>
+        <xsl:attribute name="class">external-link</xsl:attribute>
       </xsl:element>
       <xsl:apply-templates select="node()"/>
     </xsl:element>
