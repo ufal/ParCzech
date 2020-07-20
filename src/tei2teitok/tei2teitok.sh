@@ -31,6 +31,7 @@ done
 
 set -o allexport
 if [ -f "$CONFIG_FILE" ]; then
+  echo "loading config $CONFIG_FILE"
   source "$CONFIG_FILE"
 fi
 set +o allexport
