@@ -297,7 +297,7 @@ mkdir -p $TEITOK_TEI
 for tei_file in `cat $NAMETAG_TEI/filelist`
 do
   out_file=`echo "$tei_file" | sed "s@^$NAMETAG_TEI@$TEITOK_TEI@" `
-  sh tei2teitok/tei2teitok.sh  -i $tei_file -o $out_file -c `realpath $CONFIG_FILE`
+  ./tei2teitok/tei2teitok.sh  -i $tei_file -o $out_file -c `realpath $CONFIG_FILE`
 done
 
 
