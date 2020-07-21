@@ -118,7 +118,7 @@
         <xsl:attribute name="href">
           <xsl:value-of select="@source"/>
         </xsl:attribute>
-        <xsl:attribute name="class">external-link</xsl:attribute>
+        <xsl:attribute name="class">external-link page-link</xsl:attribute>
       </xsl:element>
       <xsl:apply-templates select="node()"/>
     </xsl:element>
