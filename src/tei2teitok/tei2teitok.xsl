@@ -75,6 +75,7 @@
       <xsl:attribute name="type"> <!-- copy ana -->
         <xsl:value-of select="substring-after(@ana, '#')"/>
       </xsl:attribute>
+      <xsl:attribute name="target">_blank</xsl:attribute>
       <xsl:apply-templates select="node()"/>
     </xsl:element>
   </xsl:template>
@@ -85,12 +86,10 @@
       <xsl:apply-templates select="@*"/> <!-- copy attributes -->
       <xsl:apply-templates select="node()"/>
       <xsl:variable name="person" select="substring-after(./following-sibling::u[1]/@who, '#')"/>
-      <xsl:element name="a">
-        <xsl:attribute name="href">
-          <xsl:value-of select="normalize-space(key('id-personlist',$person,$personlist-doc)/idno[@type='URI'])"/>
-        </xsl:attribute>
-        <xsl:attribute name="class">external-link</xsl:attribute>
-      </xsl:element>
+
+      <xsl:call-template name="externalLink">
+        <xsl:with-param name="link" select="normalize-space(key('id-personlist',$person,$personlist-doc)/idno[@type='URI'])"/>
+      </xsl:call-template>
 
     </xsl:element>
   </xsl:template>
@@ -100,12 +99,9 @@
   <xsl:template match="*[local-name(.) = 'u' and @source]">
     <xsl:element name="{local-name(.)}">
       <xsl:apply-templates select="@*"/> <!-- copy attributes -->
-      <xsl:element name="a">
-        <xsl:attribute name="href">
-          <xsl:value-of select="@source"/>
-        </xsl:attribute>
-        <xsl:attribute name="class">external-link</xsl:attribute>
-      </xsl:element>
+      <xsl:call-template name="externalLink">
+        <xsl:with-param name="link" select="@source"/>
+      </xsl:call-template>
       <xsl:apply-templates select="node()"/>
     </xsl:element>
   </xsl:template>
@@ -114,20 +110,13 @@
   <xsl:template match="*[local-name(.) = 'pb' and @source]">
     <xsl:element name="{local-name(.)}">
       <xsl:apply-templates select="@*"/> <!-- copy attributes -->
-      <xsl:element name="a">
-        <xsl:attribute name="href">
-          <xsl:value-of select="@source"/>
-        </xsl:attribute>
-        <xsl:attribute name="class">external-link page-link</xsl:attribute>
-      </xsl:element>
+      <xsl:call-template name="externalLink">
+        <xsl:with-param name="link" select="@source"/>
+        <xsl:with-param name="additionalClasses" select='"page-link"' />
+      </xsl:call-template>
       <xsl:apply-templates select="node()"/>
     </xsl:element>
   </xsl:template>
-
-
-
-
-
 
 <!-- ================================================ -->
   <!-- remove element namespaces-->
@@ -158,6 +147,17 @@
         <xsl:with-param name="feats" select="$nextfeats"/>
       </xsl:call-template>
     </xsl:if>
+  </xsl:template>
+  <xsl:template name="externalLink">
+    <xsl:param name="link" />
+    <xsl:param name="additionalClasses" />
+    <xsl:element name="a">
+      <xsl:attribute name="href">
+        <xsl:value-of select="$link"/>
+      </xsl:attribute>
+      <xsl:attribute name="target">_blank</xsl:attribute>
+      <xsl:attribute name="class"><xsl:value-of select="normalize-space(concat('external-link ',$additionalClasses))" /></xsl:attribute>
+    </xsl:element>
   </xsl:template>
 
 </xsl:stylesheet>
