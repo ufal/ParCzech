@@ -89,6 +89,7 @@
 
       <xsl:call-template name="externalLink">
         <xsl:with-param name="link" select="normalize-space(key('id-personlist',$person,$personlist-doc)/idno[@type='URI'])"/>
+        <xsl:with-param name="additionalClasses" select='"person-link"' />
       </xsl:call-template>
 
     </xsl:element>
@@ -101,6 +102,7 @@
       <xsl:apply-templates select="@*"/> <!-- copy attributes -->
       <xsl:call-template name="externalLink">
         <xsl:with-param name="link" select="@source"/>
+        <xsl:with-param name="additionalClasses" select='"speech-link"' />
       </xsl:call-template>
       <xsl:apply-templates select="node()"/>
     </xsl:element>
