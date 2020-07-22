@@ -207,6 +207,7 @@ while($filename = shift @input_files) {
 
       for (my $i = 0; $i < $lemmas->size(); $i++) { ### tokens loop
         my $form = $forms->get($i);
+        print "$i)$form \t-> childNodeIndex=$chi childNodeTextIndex=$cti TI=$ti \n\t'",substr($text, $ti, 20),"{...}'\n" if $debug;
         my $lemma = $lemmas->get($i);
         $ti += length($form);
         while ( $chi < @childnodes
@@ -221,6 +222,7 @@ while($filename = shift @input_files) {
             $sentNode->appendText($space);
             undef $space;
           }
+        print ">>>>>> NODE ",$childnodes[$chi]->{node},"\n" if $debug;
 
           my $newchild = $childnodes[$chi]->{node}->cloneNode(0); # Expecting only text child nodes - no deep copy
           $sentNode->appendChild($newchild);
@@ -256,8 +258,10 @@ while($filename = shift @input_files) {
         } else {
           $tokenNode->setAttribute('join', 'right');
         }
-        $ti++ while substr($text, $ti, 1) =~ m/\s/; # skip next spaces ???? this should not happen !!!
-
+        while(substr($text, $ti, 1) =~ m/\s/){ # skip next spaces ???? this should not happen !!!
+          $ti++;
+          $cti++;
+        }
         $wid++;
         if($childnodes[$chi]->{size} <= $cti){
           $sentNode = $sentNode->parentNode() if $childnodes[$chi]->{node}->nodeType != XML_TEXT_NODE;
