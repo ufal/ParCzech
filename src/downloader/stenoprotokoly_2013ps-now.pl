@@ -387,6 +387,7 @@ sub record_exporter {
     } elsif($cnt_text) {
       if($cnt->nodeType == XML::LibXML::XML_ELEMENT_NODE && lc($cnt->getAttribute('align')//'') eq 'center'){
         $teiCorpus->addHead($cnt_text);
+        $cnt = xpath_node('./b', $cnt) // $cnt;
       }
       export_text($cnt, 1);
     }
@@ -453,17 +454,19 @@ sub export_text {
   # start <seg>
   my @child_nodes;
   my $segm = undef;
-  print STDERR "================================CNT\n$cnt\n";
   if($cnt->nodeType() == XML_TEXT_NODE){
     push @child_nodes, $cnt;
   } else {
     @child_nodes = $cnt->childNodes();
   }
   for my $childnode (@child_nodes) {
-    my $text;
-    $text = ScrapperUfal::html2text($childnode) unless xpath_node('./self::*[name()="a"]', $childnode); print STDERR " TODO TEST IT !!! $childnode \n";
-    if($text) { # text or text in node that is not converted
+    if(xpath_node('./self::*[name()="a"]', $childnode)) { # link that should be appended
+      print STDERR "TODO ============ APPEND:\n$childnode\n";
+      $teiCorpus->addToUtterance(create_ref_node($childnode),$segm);
+    } else { # text or text in node that is not converted
+      my $text = ScrapperUfal::html2text($childnode);
       $text =~ s/\s*:?\s*// if $is_first; # remove initial : and spaces
+      $text =~ s/\s\s+/ /g ; # squeeze spaces
       undef $is_first;
       while($text){
         if($text =~ s/^[^\(]+//){ # text
@@ -474,9 +477,6 @@ sub export_text {
         $segm = $teiCorpus->addToUtterance($&, $segm); # this should not  happen but we don't wont loose some text
         }
       }
-    } else { # link that should be appended
-print STDERR "TODO ============ APPEND:\n$childnode\n";
-      $teiCorpus->addToUtterance(create_ref_node($childnode),$segm);
     }
   }
   # end </seg>
