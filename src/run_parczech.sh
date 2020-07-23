@@ -5,6 +5,26 @@ cd $D
 
 pid=$$
 
+CONFIG_FILE="config.sh"
+DOWN_PARAMS=()
+
+usage() {
+  echo -e "Usage: $0 -c CONFIG_FILE -p PRUNE_TEMPLATE" 1>&2
+  exit 1
+}
+
+while getopts  ':c:p:'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
+  case "$opt" in
+    'c')
+      CONFIG_FILE=$OPTARG
+      ;;
+    'p')
+      DOWN_PARAMS+=(--prune $OPTARG )
+      ;;
+    *)
+      usage
+  esac
+done
 
 
 export DATA_DIR=$PWD/out
@@ -13,8 +33,8 @@ export TEITOK=./TEITOK
 export TEITOK_CORPUS=$TEITOK/projects/CORPUS
 
 set -o allexport
-if [ -f "config.sh" ]; then
-  source config.sh
+if [ -f "$CONFIG_FILE" ]; then
+  source "$CONFIG_FILE"
 fi
 set +o allexport
 
@@ -70,16 +90,17 @@ mkdir -p $CL_OUTDIR_TEI
 mkdir -p $CL_OUTDIR_CACHE
 mkdir -p $CL_OUTDIR_HTML
 
+export PERSON_LIST_PATH="$CL_OUTDIR_TEI/$ID/person.xml"
 export LAST_ID=`ls $CL_OUTDIR_TEI|grep -v "sha1sum.list"|sort|tail -n 1`
 
 
 if [ -f "$CL_OUTDIR_TEI/$LAST_ID/person.xml" ]; then
   echo "moving $CL_OUTDIR_TEI/$LAST_ID/person.xml"
   mkdir -p "$CL_OUTDIR_TEI/$ID"
-  cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$CL_OUTDIR_TEI/$ID"
+  cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$PERSON_LIST_PATH"
 fi
 
-perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML  --cache $CL_OUTDIR_CACHE --id $ID # --prune '201.-04[01]-..$'
+perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML  --cache $CL_OUTDIR_CACHE --id $ID  "${DOWN_PARAMS[@]}"
 
 # remove duplicities:
 # calculate hashes for new files
@@ -118,7 +139,7 @@ done
 
 # downloading moved to merging part
 export AUDIO_PATH_ORIG=$DATA_DIR/audio-orig
-mkdir -p $AUDIO_PATH_ORIG
+#mkdir -p $AUDIO_PATH_ORIG
 
 #grep -ro "[^<]*audio/mp3[^>]*" $CL_OUTDIR_TEI/$ID|sed "s/.*url=\"//;s/\".*//" > $AUDIO_PATH_ORIG/${ID}.audio.list
 #wget --no-clobber --directory-prefix $AUDIO_PATH_ORIG --force-directories -w 1 -i $AUDIO_PATH_ORIG/${ID}.audio.list 2>&1 | grep -B 2 ' 404 ' > $AUDIO_PATH_ORIG/${ID}.404.list
@@ -136,64 +157,64 @@ mkdir -p $AUDIO_PATH_ORIG
 #    audio-tei/$ID
 ###############################
 
-log_process "audio_merging"
-log "merging audio $ID"
+# log_process "audio_merging"
+# log "merging audio $ID"
 
-export AUDIO_PATH_MERGED=$DATA_DIR/audio-merged/${ID}
-export AUDIO_PATH_TEI=$DATA_DIR/audio-tei/${ID}
-export AUDIO_PATH_CORPUS=$TEITOK_CORPUS/Audio
+# export AUDIO_PATH_MERGED=$DATA_DIR/audio-merged/${ID}
+# export AUDIO_PATH_TEI=$DATA_DIR/audio-tei/${ID}
+# export AUDIO_PATH_CORPUS=$TEITOK_CORPUS/Audio
 
-mkdir -p $AUDIO_PATH_MERGED
-mkdir -p $AUDIO_PATH_TEI
+# mkdir -p $AUDIO_PATH_MERGED
+# mkdir -p $AUDIO_PATH_TEI
 
-for tei in `find "$CL_OUTDIR_TEI/$ID" -type f ! -name "person.xml"`
-do
-  rm -rf $AUDIO_PATH_MERGED/tmp
-  MERGED_AUDIO_FILE=`echo "${tei#*tei/*/}"| sed "s/xml$/mp3/"`
-  MERGED_AUDIO_TEI=$AUDIO_PATH_TEI/${tei#*tei/*/}
+# for tei in `find "$CL_OUTDIR_TEI/$ID" -type f ! -name "person.xml"`
+# do
+#   rm -rf $AUDIO_PATH_MERGED/tmp
+#   MERGED_AUDIO_FILE=`echo "${tei#*tei/*/}"| sed "s/xml$/mp3/"`
+#   MERGED_AUDIO_TEI=$AUDIO_PATH_TEI/${tei#*tei/*/}
 
-  AUDIO_LIST=`perl -I lib -MTEI::ParlaClarin::TEI -e '
-    my $tei=TEI::ParlaClarin::TEI->load_tei(file => $ARGV[0]);
-    my @list = @{$tei->getAudioUrls()};
-    print STDERR $ARGV[2],"\n";
-    if(@list) {
-    	print STDERR join("\n",@list),"\n";
-      print join("\n",@list);
-      $tei->hideAudioUrls();
-      $tei->addAudioFile($ARGV[1]);
-    }
-    $tei->toFile(outputfile => $ARGV[2]);
-    exit 1 unless @list' $tei $MERGED_AUDIO_FILE $MERGED_AUDIO_TEI`
+#   AUDIO_LIST=`perl -I lib -MTEI::ParlaClarin::TEI -e '
+#     my $tei=TEI::ParlaClarin::TEI->load_tei(file => $ARGV[0]);
+#     my @list = @{$tei->getAudioUrls()};
+#     print STDERR $ARGV[2],"\n";
+#     if(@list) {
+#     	print STDERR join("\n",@list),"\n";
+#       print join("\n",@list);
+#       $tei->hideAudioUrls();
+#       $tei->addAudioFile($ARGV[1]);
+#     }
+#     $tei->toFile(outputfile => $ARGV[2]);
+#     exit 1 unless @list' $tei $MERGED_AUDIO_FILE $MERGED_AUDIO_TEI`
 
-  if [ $? -ne 0 ]; then
-  	echo "NO AUDIO   $MERGED_AUDIO_TEI"
-    echo "NO AUDIO   $MERGED_AUDIO_TEI" >> $AUDIO_PATH_MERGED/${ID}.log
-   	continue
-  fi
+#   if [ $? -ne 0 ]; then
+#   	echo "NO AUDIO   $MERGED_AUDIO_TEI"
+#     echo "NO AUDIO   $MERGED_AUDIO_TEI" >> $AUDIO_PATH_MERGED/${ID}.log
+#    	continue
+#   fi
 
-  if [ -f "$AUDIO_PATH_CORPUS/$MERGED_AUDIO_FILE" ]; then
-    echo "EXISTS   $AUDIO_PATH_CORPUS/$MERGED_AUDIO_FILE" >> $AUDIO_PATH_MERGED/${ID}.log
-    continue
-  fi
-  log "merging to $AUDIO_PATH_MERGED/$MERGED_AUDIO_FILE";
-  mkdir -p $AUDIO_PATH_CORPUS/${MERGED_AUDIO_FILE%/*}
-  mkdir $AUDIO_PATH_MERGED/tmp
+#   if [ -f "$AUDIO_PATH_CORPUS/$MERGED_AUDIO_FILE" ]; then
+#     echo "EXISTS   $AUDIO_PATH_CORPUS/$MERGED_AUDIO_FILE" >> $AUDIO_PATH_MERGED/${ID}.log
+#     continue
+#   fi
+#   log "merging to $AUDIO_PATH_MERGED/$MERGED_AUDIO_FILE";
+#   mkdir -p $AUDIO_PATH_CORPUS/${MERGED_AUDIO_FILE%/*}
+#   mkdir $AUDIO_PATH_MERGED/tmp
 
-  echo "$AUDIO_LIST" | tr " " "\n" > $AUDIO_PATH_MERGED/tmp/download-audio.list
-  wget --no-clobber --directory-prefix $AUDIO_PATH_ORIG --force-directories -w 1 -i $AUDIO_PATH_MERGED/tmp/download-audio.list 2>&1 | grep -B 2 ' 404 ' >> $AUDIO_PATH_ORIG/${ID}.404.list
+#   echo "$AUDIO_LIST" | tr " " "\n" > $AUDIO_PATH_MERGED/tmp/download-audio.list
+#   wget --no-clobber --directory-prefix $AUDIO_PATH_ORIG --force-directories -w 1 -i $AUDIO_PATH_MERGED/tmp/download-audio.list 2>&1 | grep -B 2 ' 404 ' >> $AUDIO_PATH_ORIG/${ID}.404.list
 
-  for url in $AUDIO_LIST
-  do
-    AUDIO_REL_PATH=${url#*//}
-    AUDIO_FILENAME=${url##*/}
-    echo $AUDIO_FILENAME $AUDIO_REL_PATH
-    ffmpeg -t 600 -i $AUDIO_PATH_ORIG/$AUDIO_REL_PATH -acodec copy $AUDIO_PATH_MERGED/tmp/$AUDIO_FILENAME
-    echo "$AUDIO_PATH_MERGED/tmp/$AUDIO_FILENAME" >> $AUDIO_PATH_MERGED/tmp/filelist
-  done  # dont crop last file
-  ffmpeg -i "concat:"$(cat $AUDIO_PATH_MERGED/tmp/filelist | tr "\n" "|" | sed "s/|$//") -acodec copy $AUDIO_PATH_CORPUS/$MERGED_AUDIO_FILE
-  rm -rf $AUDIO_PATH_MERGED/tmp
-  echo "CREATED    $AUDIO_PATH_CORPUS/$MERGED_AUDIO_FILE" >> $AUDIO_PATH_MERGED/${ID}.log
-done
+#   for url in $AUDIO_LIST
+#   do
+#     AUDIO_REL_PATH=${url#*//}
+#     AUDIO_FILENAME=${url##*/}
+#     echo $AUDIO_FILENAME $AUDIO_REL_PATH
+#     ffmpeg -t 600 -i $AUDIO_PATH_ORIG/$AUDIO_REL_PATH -acodec copy $AUDIO_PATH_MERGED/tmp/$AUDIO_FILENAME
+#     echo "$AUDIO_PATH_MERGED/tmp/$AUDIO_FILENAME" >> $AUDIO_PATH_MERGED/tmp/filelist
+#   done  # dont crop last file
+#   ffmpeg -i "concat:"$(cat $AUDIO_PATH_MERGED/tmp/filelist | tr "\n" "|" | sed "s/|$//") -acodec copy $AUDIO_PATH_CORPUS/$MERGED_AUDIO_FILE
+#   rm -rf $AUDIO_PATH_MERGED/tmp
+#   echo "CREATED    $AUDIO_PATH_CORPUS/$MERGED_AUDIO_FILE" >> $AUDIO_PATH_MERGED/${ID}.log
+#done
 
 
 ###############################
@@ -226,16 +247,17 @@ log_process "tei_morphodita"
 log "morphodita tei $ID"
 
 export MORPHODITA_TEI=$DATA_DIR/morphodita-tei/${ID}
+export MORPHODITA_TEI_INPUT=$CL_OUTDIR_TEI/${ID}
 mkdir -p $MORPHODITA_TEI
 
-rsync -a --prune-empty-dirs $AUDIO_PATH_TEI/ $MORPHODITA_TEI
+rsync -a --exclude "person.xml" --prune-empty-dirs $MORPHODITA_TEI_INPUT/ $MORPHODITA_TEI
 find $MORPHODITA_TEI -type f -name '*.xml' > $MORPHODITA_TEI/filelist
 
-perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models/czech-morfflex-pdt-161115.tagger  --filelist $MORPHODITA_TEI/filelist --debug
+perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models/czech-morfflex-pdt-161115.tagger  --filelist $MORPHODITA_TEI/filelist --tags="msd mul::uposf" --tags="ana cs::multext" --tags="ana cs::pdt" --tags="pos mul::uposf" --no-backup-file
 ### paginate (backuped to *.nopb.xml)
-perl paginator-module/paginator.pl  --filelist $MORPHODITA_TEI/filelist
+# perl paginator-module/paginator.pl  --filelist $MORPHODITA_TEI/filelist
 ### convert tags (backuped to *.pdtuposf.xml)
-perl pdt2uposf-module/pdt2uposf.pl  --filelist $MORPHODITA_TEI/filelist --fixlemma
+# perl pdt2uposf-module/pdt2uposf.pl  --filelist $MORPHODITA_TEI/filelist --fixlemma
 
 
 
@@ -257,24 +279,39 @@ mkdir -p $NAMETAG_TEI
 rsync -a --prune-empty-dirs --exclude '*.nmorph.xml' --exclude '*.nopb.xml' --exclude '*.pdtuposf.xml' $MORPHODITA_TEI/ $NAMETAG_TEI
 
 find $NAMETAG_TEI -type f -name '*.xml' > $NAMETAG_TEI/filelist
-perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304-no_numbers.ner --filelist $NAMETAG_TEI/filelist --debug
+perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304-no_numbers.ner --filelist $NAMETAG_TEI/filelist --token-name="w" --token-name="pc" --no-backup-file
 
 
 ###############################
 ###     FINALIZE            ###
+### converting to teitok    ###
 #  input:
 #    nametag-tei/$ID
+#
+#
 ###############################
 
+export TEITOK_TEI=$DATA_DIR/teitok-tei/${ID}
+mkdir -p $TEITOK_TEI
+
+for tei_file in `cat $NAMETAG_TEI/filelist`
+do
+  out_file=`echo "$tei_file" | sed "s@^$NAMETAG_TEI@$TEITOK_TEI@" `
+  ./tei2teitok/tei2teitok.sh  -i $tei_file -o $out_file -c `realpath $CONFIG_FILE`
+done
+
+
+
+
+###############################
 log_process "tei publishing"
 log "publishing tei $ID"
 
-export FINALIZE_INPUT=$NAMETAG_TEI
-export FINALIZE_EXCLUDE="*.nntg.xml"
+export FINALIZE_INPUT=$TEITOK_TEI
 
-rsync -a --prune-empty-dirs --exclude "filelist" --exclude "$FINALIZE_EXCLUDE" $FINALIZE_INPUT/ $TEITOK_CORPUS/xmlfiles
+rsync -a --prune-empty-dirs --exclude "filelist" $FINALIZE_INPUT/ $TEITOK_CORPUS/xmlfiles
 
-cp -f "$CL_OUTDIR_TEI/$ID/person.xml" "$TEITOK_CORPUS/Resources/person.xml"
+cp -f "$PERSON_LIST_PATH" "$TEITOK_CORPUS/Resources/person.xml"
 
 
 
