@@ -294,8 +294,8 @@ sub addPageBreak {
 sub addAuthor {
   my $self = shift;
   my %params = @_;
-  return unless $params{id};
-  my $xmlid = _to_xmlid('pers-', $params{name},$params{id});
+  return unless $params{id} or $params{govern_id};
+  my $xmlid = _to_xmlid($params{id} ? ('pers-', $params{name}, $params{id}) : ('pers-gov-',$params{govern_id}));
   return unless $xmlid;
   return $xmlid if exists $self->{THIS_TEI_PERSON_IDS}->{$xmlid};
   if(exists $self->{PERSON_IDS}->{$xmlid}) {
@@ -308,10 +308,16 @@ sub addAuthor {
   my $persname = XML::LibXML::Element->new("persName");
   $person->appendChild($persname);
   $persname->appendText($params{name});
-  my $idno =  XML::LibXML::Element->new("idno");
-  $person->appendChild($idno);
-  $idno->appendText('https://www.psp.cz/sqw/detail.sqw?id='.$params{id});
-  $idno->setAttribute('type', 'URI');
+  for my $link (
+      ['https://www.psp.cz/sqw/detail.sqw?id=',$params{id}],
+      ['https://www.vlada.cz/cz/clenove-vlady/',$params{govern_id},'/'],
+      ) {
+    next unless $link->[1];
+    my $idno =  XML::LibXML::Element->new("idno");
+    $person->appendChild($idno);
+    $idno->appendText( join('', @$link));
+    $idno->setAttribute('type', 'URI');
+  }
   $self->{PERSON_IDS}->{$xmlid} = $person;
   $self->{THIS_TEI_PERSON_IDS}->{$xmlid} = 1;
   $self->{PERSONLIST}->documentElement()->appendChild($person) if $self->{PERSONLIST};

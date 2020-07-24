@@ -285,6 +285,7 @@ sub record_exporter {
           author_full => $$ref_author->{author},
           name => $$ref_author->{authorname},
           id => $$ref_author->{author_id},
+          govern_id => $$ref_author->{auth_govern_id},
           role => $$ref_author->{role},
         },
 
@@ -339,11 +340,13 @@ sub record_exporter {
       # fill new utterance
       my $auth;
       my $auth_id;
+      my $govern_id;
       my $post_id;
 
       if ($a) {
         $auth =  trim xpath_string('.//* | ./text()',$a);
         ($auth_id) = (xpath_string('.//@href',$a)||'') =~ m/id=(\d+)/;
+        ($govern_id) = (xpath_string('.//@href',$a)||'') =~ m/clenove-vlady\/(.*?)\//;
         $post_id = xpath_string('.//@id',$a);
         $a->unbindNode();
         $cnt_text = ScrapperUfal::html2text($cnt);
@@ -353,6 +356,7 @@ sub record_exporter {
       ($$ref_author->{authorname}) = $auth =~ m/([^ ]*\s+[^ ]+?):?$/;
       $$ref_author->{author} = $auth;
       $$ref_author->{author_id} = $auth_id;
+      $$ref_author->{auth_govern_id} = $govern_id;
       $$ref_author->{role} = get_role($$ref_author->{author});
       ### ($$ref_post->{speechnote}) = grep {m/^###.*|\@\@$/} xpath_string('./comment()',$cnt); # not at this page
       $$ref_post->{id}->{post} = $post_id;
@@ -364,6 +368,7 @@ sub record_exporter {
           author_full => $$ref_author->{author},
           name => $$ref_author->{authorname},
           id => $$ref_author->{author_id},
+          govern_id => $$ref_author->{auth_govern_id},
           role => $$ref_author->{role},
         },
         link =>  $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//'')
@@ -375,7 +380,7 @@ sub record_exporter {
         type => 'speech',
         author => $$ref_author->{author} // undef,
         author_name => $$ref_author->{authorname} // undef,
-        author_id => $$ref_author->{author_id} // undef,
+        author_id => $$ref_author->{author_id} // $$ref_author->{auth_govern_id} // undef,
         topic_id => join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic/) // undef,
         #speech_note => $$post->{speechnote} // undef,
         date => $datetime // undef,
