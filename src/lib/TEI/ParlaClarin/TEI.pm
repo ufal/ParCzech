@@ -510,7 +510,7 @@ sub _get_child_node_or_create { # allow create multiple tree ancestors
   my $node = shift;
   my $newName = shift;
   return $node unless $newName;
-  my ($child) = reverse $XPC->findnodes("./tei:$newName", $node); # get last valid child
+  my ($child) = reverse $XPC->findnodes("./$newName", $node); # get last valid child
   $child = $node->addNewChild(undef,$newName) unless $child;
   return _get_child_node_or_create($XPC,$child, @_);
 }
