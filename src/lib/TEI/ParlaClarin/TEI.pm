@@ -36,10 +36,11 @@ sub new {
   $root_node->appendChild($self->{HEADER});
 
   bless($self,$class);
-  $self->addNamespaces($root_node, tei => 'http://www.tei-c.org/ns/1.0', xml => 'http://www.w3.org/XML/1998/namespace');
+  $self->{XPC} = XML::LibXML::XPathContext->new; # xpath context - easier finding nodes with namespace (including default namespace)
+  $self->addNamespaces($root_node, '' => 'http://www.tei-c.org/ns/1.0', xml => 'http://www.w3.org/XML/1998/namespace');
 
   $self->{PERSONLIST} = $self->getPersonlistDOM($personlistfilepath);
-  $self->{TITLESTMT} = _get_child_node_or_create($self->{HEADER},'fileDesc', 'titleStmt');
+  $self->{TITLESTMT} = _get_child_node_or_create($self->{XPC},$self->{HEADER},'fileDesc', 'titleStmt');
   if($params{'title'}) {
     $self->{TITLESTMT}->appendTextChild('title', $_) for (  ! ref($params{title}) eq 'ARRAY' ? $params{title} : @{$params{title}} );
   }
@@ -71,8 +72,10 @@ sub load_tei {
     }
     $self->{DOM} = $dom;
     $self->{ROOT} = $dom->documentElement();
-    $self->{HEADER} = _get_child_node_or_create($self->{ROOT},'teiHeader');
-    $self->{TITLESTMT} = _get_child_node_or_create($self->{HEADER},'fileDesc', 'titleStmt');
+    $self->{XPC} = XML::LibXML::XPathContext->new;
+    $self->setXPC('' => 'http://www.tei-c.org/ns/1.0', xml => 'http://www.w3.org/XML/1998/namespace');
+    $self->{HEADER} = _get_child_node_or_create($self->{XPC},$self->{ROOT},'teiHeader');
+    $self->{TITLESTMT} = _get_child_node_or_create($self->{XPC},$self->{HEADER},'fileDesc', 'titleStmt');
     $self->{PERSON_IDS} = {};
     $self->{THIS_TEI_PERSON_IDS} = {};
     $self->{activeUtterance} = undef;
@@ -121,7 +124,7 @@ sub toFile {
   my $listPerson;
   if(%{$self->{THIS_TEI_PERSON_IDS}}){
   	$listPerson = XML::LibXML::Element->new("listPerson");
-  	_get_child_node_or_create($self->{ROOT},'teiHeader', 'profileDesc', 'particDesc')->appendChild($listPerson);
+  	_get_child_node_or_create($self->{XPC},$self->{ROOT},'teiHeader', 'profileDesc', 'particDesc')->appendChild($listPerson);
     for my $pid (sort keys %{$self->{THIS_TEI_PERSON_IDS}}) {
       my $pers = XML::LibXML::Element->new("person");
       $pers->setAttributeNS($self->{NS}->{xml}, 'id', $pid);
@@ -153,13 +156,13 @@ sub toFile {
 sub getAudioUrls {
   my $self = shift;
   my %seen;
-  return [ sort grep {!$seen{$_}++} map {$_->getAttribute('url')} $self->{ROOT}->findnodes('.//media[@url][@mimeType="audio/mp3"]') ];
+  return [ sort grep {!$seen{$_}++} map {$_->getAttribute('url')} $self->{XPC}->findnodes('.//tei:media[@url][@mimeType="audio/mp3"]', $self->{ROOT}) ];
 }
 
 sub hideAudioUrls {
   my $self = shift;
-  for my $node ($self->{ROOT}->findnodes('.//note[@type="media"][./media[@url][@mimeType="audio/mp3"]]')){
-    my $url = $node->findnodes('.//media/@url');
+  for my $node ($self->{XPC}->findnodes('.//tei:note[@type="media"][./tei:media[@url][@mimeType="audio/mp3"]]', $self->{ROOT})){
+    my $url = $self->{XPC}->findnodes('.//tei:media/@url', $node);
     $node->replaceNode(XML::LibXML::Comment->new("AUDIO:$url"));
   }
 }
@@ -168,7 +171,7 @@ sub hideAudioUrls {
 sub addAudioFile {
   my $self = shift;
   my $file = shift;
-  my $rec = _get_child_node_or_create($self->{HEADER},'recordingStmt')->addNewChild(undef,'recording');
+  my $rec = _get_child_node_or_create($self->{XPC},$self->{HEADER},'recordingStmt')->addNewChild(undef,'recording');
   $rec->setAttribute('type', 'audio');
   my $media = $rec->addNewChild(undef,"media");
   $media->setAttribute('mimeType', 'audio/mp3');
@@ -183,10 +186,21 @@ sub addNamespaces {
   $self->{NS}={} unless exists $self->{NS};
   my %ns = @_;
   while( my ($prefix, $uri) = each %ns) {
-  	$elem->setNamespace($uri,$prefix,0);
+  	$elem->setNamespace($uri,$prefix,$prefix eq '' ? 1 : 0);
   	$self->{NS}->{$prefix} = $uri;
   }
+  $self->setXPC($elem, %ns);
   return $self;
+}
+
+sub setXPC {
+  my $self = shift;
+  my $elem = shift;
+  my %nslist = @_;
+  $self->{XPC} = XML::LibXML::XPathContext->new unless $self->{XPC};
+  while(my ($prefix, $uri) = each %nslist) {
+    $self->{XPC}->registerNs($prefix||'tei', $uri); # use tei if no prefix !!!, it can be used while searched with $self->{XPC}
+  }
 }
 
 
@@ -194,7 +208,7 @@ sub updateIds {
   my $self = shift;
   my $old = shift;
   my $new = shift;
-  foreach my $node ($self->{DOM}->findnodes('//*[@id]')) {
+  foreach my $node ($self->{XPC}->findnodes('//tei:*[@id]', $self->{DOM})) {
     my $attr = $node->getAttributeNS($self->{NS}->{xml}, 'id');
     $attr =~ s/$old/$new/;
     $node->setAttributeNS($self->{NS}->{xml}, 'id', $attr);
@@ -209,7 +223,7 @@ sub addUtterance { # don't change actTEI
   my $self = shift;
   $self->appendQueue(0); # appending to <text><body><div>
   my %params = @_;
-  my $tei_text = _get_child_node_or_create($self->{ROOT},'text', 'body', 'div');
+  my $tei_text = _get_child_node_or_create($self->{XPC},$self->{ROOT},'text', 'body', 'div');
   my $u = XML::LibXML::Element->new("u");
   if(exists $params{author}) {
     my $author_xml_id = $self->addAuthor(%{$params{author}});
@@ -265,7 +279,7 @@ sub addToUtterance {
 sub appendQueue {
   my $self = shift;
   my $isend = shift;
-  my $element = shift // _get_child_node_or_create($self->{ROOT},'text', 'body', 'div');
+  my $element = shift // _get_child_node_or_create($self->{XPC},$self->{ROOT},'text', 'body', 'div');
   while ( my $elem = shift @{$self->{QUEUE}}) {
     my ($t, $noendprint) = @$elem;
     next if $isend && $noendprint;
@@ -328,7 +342,7 @@ sub addHead {
   my $self = shift;
   my $text = shift;
   return unless $text;
-  my ($node) = $self->{TITLESTMT}->findnodes('./title[last()]');
+  my ($node) = $self->{XPC}->findnodes('./title[last()]', $self->{TITLESTMT});
   my $titlenode = XML::LibXML::Element->new("title");
   $titlenode->appendText($text);
   if($node) { # titlenodes should be at the begining !!!
@@ -384,7 +398,7 @@ sub addSittingDate {
   my $self = shift;
   my $date = shift;
   return unless $date;
-  my $node = _get_child_node_or_create($self->{HEADER},qw/profileDesc settingDesc setting date/);
+  my $node = _get_child_node_or_create($self->{XPC},$self->{HEADER},qw/profileDesc settingDesc setting date/);
   unless($node->textContent()) {
     $node->appendText($date->strftime('%Y-%m-%d'));
     $node->setAttribute('when', $date->strftime('%Y-%m-%d'));
@@ -427,7 +441,7 @@ sub size {
 sub setActDate {
   my $self = shift;
   my $date = shift;
-  my $profileDesc = _get_child_node_or_create($self->{HEADER}, "profileDesc");
+  my $profileDesc = _get_child_node_or_create($self->{XPC},$self->{HEADER}, "profileDesc");
   my $creation = XML::LibXML::Element->new("creation");
   my $date_node = XML::LibXML::Element->new("date");
   $date_node->setAttribute('when',$date);
@@ -439,7 +453,7 @@ sub setRevisionDate {
   my $self = shift;
   my $date = shift;
   my $status = shift;
-  my $revisionDesc = _get_child_node_or_create($self->{HEADER}, "revisionDesc");
+  my $revisionDesc = _get_child_node_or_create($self->{XPC},$self->{HEADER}, "revisionDesc");
   $revisionDesc->setAttribute('status',$status) if $status;
   if($date){
     my $date_node = XML::LibXML::Element->new("change");
@@ -455,12 +469,14 @@ sub getPersonlistDOM {
   my $DOM;
   if(-f $filepath) {
     $DOM = XML::LibXML->load_xml(location => $filepath);
-    $self->{PERSON_IDS}->{$_->getAttributeNS($self->{NS}->{xml}, 'id')} = $_ for $DOM->documentElement()->findnodes(".//person"); ###########
-    #$self->{PERSON_IDS}->{$_->getAttribute('id')} = $_ for $DOM->documentElement()->findnodes(".//person"); ###########
+    my $XMLNS=$DOM->documentElement()->lookupNamespaceURI( 'xml' );
+    $self->{PERSON_IDS}->{$_->getAttributeNS($XMLNS, 'id')} = $_ for $self->{XPC}->findnodes(".//tei:person",$DOM->documentElement()); ###########
   } else {
-    $DOM = XML::LibXML::Document->new("1.0", "UTF8");
+    $DOM = XML::LibXML::Document->new("1.0", "utf-8");
     my $root =  XML::LibXML::Element->new("personList");
     $DOM->setDocumentElement($root);
+    $self->addNamespaces($root, xml => 'http://www.w3.org/XML/1998/namespace');
+    $self->addNamespaces($root, '' => 'http://www.tei-c.org/ns/1.0');
   }
   return $DOM;
 }
@@ -490,12 +506,13 @@ sub addMeetingData {
 # ===========================
 
 sub _get_child_node_or_create { # allow create multiple tree ancestors
+  my $XPC = shift;
   my $node = shift;
   my $newName = shift;
   return $node unless $newName;
-  my ($child) = reverse $node->findnodes("./$newName"); # get last valid child
+  my ($child) = reverse $XPC->findnodes("./tei:$newName", $node); # get last valid child
   $child = $node->addNewChild(undef,$newName) unless $child;
-  return _get_child_node_or_create($child, @_);
+  return _get_child_node_or_create($XPC,$child, @_);
 }
 
 
