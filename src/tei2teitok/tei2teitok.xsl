@@ -12,8 +12,8 @@
 
   <xsl:variable name="ne-fslib" select="concat('./',substring-before(//*[local-name(.) = 'prefixDef' and @ident='ne']/@replacementPattern,'#'))"/>
   <xsl:variable name="ne-fslib-doc" select="document($ne-fslib)"/>
-  <xsl:key name="id-ne-fslib-fs" match="fs" use="@*[local-name(.) = 'id']"/>
-  <xsl:key name="id-ne-fslib-f" match="f" use="@*[local-name(.) = 'id']"/>
+  <xsl:key name="id-ne-fslib-fs" match="*[local-name(.) = 'fs']" use="@*[local-name(.) = 'id']"/>
+  <xsl:key name="id-ne-fslib-f" match="*[local-name(.) = 'f']" use="@*[local-name(.) = 'id']"/>
 
   <!-- TODO - add annotation to header (NOTE that it is not TEI format !!!) -->
 
@@ -140,7 +140,7 @@
     <xsl:if test="string-length($feats) &gt; 0">
       <xsl:variable name="v" select="substring-after(substring-before($feats, ' '),'#')"/>
       <!-- <xsl:value-of select="$ne-fslib-doc/div/fLib/f[@*[local-name(.) = 'id'] = $v ]/string"/> -->
-      <xsl:value-of select="key('id-ne-fslib-f',$v, $ne-fslib-doc)/string"/>
+      <xsl:value-of select="key('id-ne-fslib-f',$v, $ne-fslib-doc)/*[local-name(.) = 'string']"/>
       <xsl:variable name="nextfeats" select="substring-after($feats, ' ')"/>
       <xsl:if test="string-length($nextfeats) &gt; 0">
         <xsl:text> - </xsl:text>

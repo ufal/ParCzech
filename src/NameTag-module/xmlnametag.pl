@@ -15,11 +15,11 @@ my $scriptname = $0;
 
 my ($debug, $test, $filename, $filelist, $neotag_model, $no_backup_file);
 
-my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
-
+my $xmlNS = 'http://www.w3.org/XML/1998/namespace';
+my $teiNS = 'http://www.tei-c.org/ns/1.0';
 my $xpc = XML::LibXML::XPathContext->new;
 $xpc->registerNs('xml', $xmlNS);
-$xpc->registerNs('tei', 'http://www.tei-c.org/ns/1.0');
+$xpc->registerNs('tei', $teiNS);
 
 
 # id stores last used value
@@ -518,12 +518,12 @@ sub create_fslib {
   my $dom = XML::LibXML::Document->new("1.0", "UTF8");
   my $root_node =  XML::LibXML::Element->new("div");
   $dom->setDocumentElement($root_node);
-  $root_node->setNamespace('http://www.tei-c.org/ns/1.0','tei',0);
+  $root_node->setNamespace($teiNS,'',1);
   $root_node->setNamespace($xmlNS,'xml',0);
   $root_node->setAttributeNS($xmlNS,'id','ne');
   $root_node->setAttribute('type','part');
-  my $fLib = $root_node->addNewChild(undef, 'fLib');
-  my $fvLib = $root_node->addNewChild(undef, 'fvLib');
+  my $fLib = $root_node->addNewChild($teiNS, 'fLib');
+  my $fvLib = $root_node->addNewChild($teiNS, 'fvLib');
   fill_lib($fLib, $fvLib, feats => [], category => $ents->{'valuesname'}, values => $ents->{'values'});
   return $dom;
 }
@@ -535,13 +535,13 @@ sub fill_lib {
   return unless exists $opts{'category'};
   return unless exists $opts{'values'};
   for my $key (keys %{$opts{'values'}}){
-    my $f = $fLib->addNewChild(undef, 'f');
+    my $f = $fLib->addNewChild($teiNS, 'f');
     $f->setAttribute('name', $opts{'category'});
     $f->setAttributeNS($xmlNS,'id', "f-$key");
     $f->appendTextChild('string', $opts{'values'}->{$key}->{'symbol'});
 
     my @feats = (@{$opts{'feats'}//[]},"#f-$key");
-    my $fs = $fvLib->addNewChild(undef, 'fs');
+    my $fs = $fvLib->addNewChild($teiNS, 'fs');
     $fs->setAttributeNS($xmlNS,'id', "$key");
     $fs->setAttribute('feats', join(' ',@feats));
 
