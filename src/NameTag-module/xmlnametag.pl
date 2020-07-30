@@ -15,9 +15,11 @@ my $scriptname = $0;
 
 my ($debug, $test, $filename, $filelist, $neotag_model, $no_backup_file);
 
-my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
-
-
+my $xmlNS = 'http://www.w3.org/XML/1998/namespace';
+my $teiNS = 'http://www.tei-c.org/ns/1.0';
+my $xpc = XML::LibXML::XPathContext->new;
+$xpc->registerNs('xml', $xmlNS);
+$xpc->registerNs('tei', $teiNS);
 
 
 # id stores last used value
@@ -381,12 +383,12 @@ while($filename = shift @input_files) {
     } # end of utterance
   } # end of file
   # Add a revisionDesc to indicate the file was tagged with NameTag
-  my $revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"xmlnametag\"]");
+  my $revnode = makenode($doc, "/tei:TEI/tei:teiHeader/tei:revisionDesc/tei:change[\@who=\"xmlnametag\"]");
   my $when = strftime "%Y-%m-%d", localtime;
   $revnode->setAttribute("when", $when);
   $revnode->appendText("tagged using xmlnametag.pl");
   if($tei_fslib_url) {
-    my $node = makenode($doc,'//teiHeader/encodingDesc/listPrefixDef/prefixDef[@ident="ne"]');
+    my $node = makenode($doc,'//tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@ident="ne"]');
     $node->setAttribute('ident', 'ne');
     $node->setAttribute('matchPattern', '(.+)');
     $node->setAttribute('replacementPattern', $tei_fslib_url.'#$1');
@@ -431,24 +433,30 @@ while($filename = shift @input_files) {
 
 sub makenode {
   my ( $xml, $xquery ) = @_;
-  my @tmp = $xml->findnodes($xquery);
+  my @tmp = $xpc->findnodes($xquery,$xml);
   if ( scalar @tmp ) {
     my $node = shift(@tmp);
-    if ( $debug ) { print "Node exists: $xquery"; };
+    if ( $debug ) { print "Node exists: $xquery\n"; };
     return $node;
   } else {
-    if ( $xquery =~ /^(.*)\/(.*?)$/ ) {
-      my $parxp = $1; my $thisname = $2;
+    if ( $xquery =~ /^(.*)\/(.*?:)?(.*?)$/ ) {
+      my $parxp = $1;
+      my $nsPrefix = $2;
+      my $thisname = $3;
+      $nsPrefix =~ s/:$// if $nsPrefix;
+      my $nsUri = undef;
+      $nsUri = $xpc->lookupNs($nsPrefix) if $nsPrefix;
       my $parnode = makenode($xml, $parxp);
       my $thisatts = "";
       if ( $thisname =~ /^(.*)\[(.*?)\]$/ ) {
         $thisname = $1; $thisatts = $2;
       };
-      my $newchild = XML::LibXML::Element->new( $thisname );
+      if ( $debug ) { print "Creating node: $xquery (",($nsUri ? "$nsUri:":""),"$thisname)\n"; };
+      my $newchild = $parnode->addNewChild($nsUri, $thisname); #XML::LibXML::Element->new( $thisname );
 
       # Set any attributes defined for this node
       if ( $thisatts ne '' ) {
-        if ( $debug ) { print "setting attributes $thisatts"; };
+        if ( $debug ) { print "setting attributes $thisatts\n"; };
         foreach my $ap ( split ( " and ", $thisatts ) ) {
           if ( $ap =~ /\@([^ ]+) *= *"(.*?)"/ ) {
             my $an = $1;
@@ -458,11 +466,10 @@ sub makenode {
         };
       };
 
-      if ( $debug ) { print "Creating node: $xquery ($thisname)"; };
-      $parnode->addChild($newchild);
+      return $newchild
 
     } else {
-      print "Failed to find or create node: $xquery";
+      print "Failed to find or create node: $xquery\n";
     };
   };
 };
@@ -511,12 +518,12 @@ sub create_fslib {
   my $dom = XML::LibXML::Document->new("1.0", "UTF8");
   my $root_node =  XML::LibXML::Element->new("div");
   $dom->setDocumentElement($root_node);
-  $root_node->setNamespace('http://www.tei-c.org/ns/1.0','tei',0);
+  $root_node->setNamespace($teiNS,'',1);
   $root_node->setNamespace($xmlNS,'xml',0);
   $root_node->setAttributeNS($xmlNS,'id','ne');
   $root_node->setAttribute('type','part');
-  my $fLib = $root_node->addNewChild(undef, 'fLib');
-  my $fvLib = $root_node->addNewChild(undef, 'fvLib');
+  my $fLib = $root_node->addNewChild($teiNS, 'fLib');
+  my $fvLib = $root_node->addNewChild($teiNS, 'fvLib');
   fill_lib($fLib, $fvLib, feats => [], category => $ents->{'valuesname'}, values => $ents->{'values'});
   return $dom;
 }
@@ -528,13 +535,13 @@ sub fill_lib {
   return unless exists $opts{'category'};
   return unless exists $opts{'values'};
   for my $key (keys %{$opts{'values'}}){
-    my $f = $fLib->addNewChild(undef, 'f');
+    my $f = $fLib->addNewChild($teiNS, 'f');
     $f->setAttribute('name', $opts{'category'});
     $f->setAttributeNS($xmlNS,'id', "f-$key");
     $f->appendTextChild('string', $opts{'values'}->{$key}->{'symbol'});
 
     my @feats = (@{$opts{'feats'}//[]},"#f-$key");
-    my $fs = $fvLib->addNewChild(undef, 'fs');
+    my $fs = $fvLib->addNewChild($teiNS, 'fs');
     $fs->setAttributeNS($xmlNS,'id', "$key");
     $fs->setAttribute('feats', join(' ',@feats));
 

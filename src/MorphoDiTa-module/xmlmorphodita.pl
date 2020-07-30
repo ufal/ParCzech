@@ -16,6 +16,11 @@ my ($debug, $test, $filename, $filelist, $mdita_model, $elements_names, $sentspl
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
+my $xpc = XML::LibXML::XPathContext->new;
+$xpc->registerNs('xml', $xmlNS);
+$xpc->registerNs('tei', 'http://www.tei-c.org/ns/1.0');
+
+
 $elements_names = "seg,head";
 $sub_elements_names = "ref";
 my $word_element_name = 'w';
@@ -43,7 +48,7 @@ my %run_once_for_every_file = (
   'ana cs::multext'=> sub { # add encoding info tp teiHeader
     # teiHeader/encodingDesc/listPrefixDef/<prefixDef ident="mte" matchPattern="(.+)" replacementPattern="http://nl.ijs.si/ME/V6/msd/tables/msd-fslib-cs.xml#$1" />
     my $xml = shift;
-    my $node = makenode($xml,'//teiHeader/encodingDesc/listPrefixDef/prefixDef[@ident="mte"]');
+    my $node = makenode($xml,'//tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@ident="mte"]');
     $node->setAttribute('ident', 'mte');
     $node->setAttribute('matchPattern', '(.+)');
     $node->setAttribute('replacementPattern', 'http://nl.ijs.si/ME/V6/msd/tables/msd-fslib-cs.xml#$1');
@@ -51,7 +56,7 @@ my %run_once_for_every_file = (
   },
   'ana cs::pdt'=> sub {
     my $xml = shift;
-    my $node = makenode($xml,'//teiHeader/encodingDesc/listPrefixDef/prefixDef[@ident="pdt"]');
+    my $node = makenode($xml,'//tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@ident="pdt"]');
     $node->setAttribute('ident', 'pdt');
     $node->setAttribute('matchPattern', '(.+)');
     $node->setAttribute('replacementPattern', 'pdt-fslib.xml#$1');
@@ -155,7 +160,7 @@ while($filename = shift @input_files) {
   for my $tag (@tags){
     $run_once_for_every_file{$tag}->($doc) if exists $run_once_for_every_file{$tag};
   }
-  my @parents = $doc->findnodes('//text//*[contains(" '.join(' ',split(',',$elements_names)).' ", concat(" ",name()," "))]');
+  my @parents = $xpc->findnodes('//tei:text//tei:*[contains(" '.join(' ',split(',',$elements_names)).' ", concat(" ",name()," "))]',$doc);
   while(my $parent = shift @parents) {
     my $text = '';
     my @childnodes = ();
@@ -279,7 +284,7 @@ while($filename = shift @input_files) {
 
   } # end of file
   # Add a revisionDesc to indicate the file was tagged with NameTag
-  my $revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"xmlmorphodita\"]");
+  my $revnode = makenode($doc, "/tei:TEI/tei:teiHeader/tei:revisionDesc/tei:change[\@who=\"xmlmorphodita\"]");
   my $when = strftime "%Y-%m-%d", localtime;
   $revnode->setAttribute("when", $when);
   $revnode->appendText("tokenized, tagged and lemmatized using xmlmorphodita.pl");
@@ -323,24 +328,30 @@ while($filename = shift @input_files) {
 
 sub makenode {
   my ( $xml, $xquery ) = @_;
-  my @tmp = $xml->findnodes($xquery);
+  my @tmp = $xpc->findnodes($xquery,$xml);
   if ( scalar @tmp ) {
     my $node = shift(@tmp);
-    if ( $debug ) { print "Node exists: $xquery"; };
+    if ( $debug ) { print "Node exists: $xquery\n"; };
     return $node;
   } else {
-    if ( $xquery =~ /^(.*)\/(.*?)$/ ) {
-      my $parxp = $1; my $thisname = $2;
+    if ( $xquery =~ /^(.*)\/(.*?:)?(.*?)$/ ) {
+      my $parxp = $1;
+      my $nsPrefix = $2;
+      my $thisname = $3;
+      $nsPrefix =~ s/:$// if $nsPrefix;
+      my $nsUri = undef;
+      $nsUri = $xpc->lookupNs($nsPrefix) if $nsPrefix;
       my $parnode = makenode($xml, $parxp);
       my $thisatts = "";
       if ( $thisname =~ /^(.*)\[(.*?)\]$/ ) {
         $thisname = $1; $thisatts = $2;
       };
-      my $newchild = XML::LibXML::Element->new( $thisname );
+      if ( $debug ) { print "Creating node: $xquery (",($nsUri ? "$nsUri:":""),"$thisname)\n"; };
+      my $newchild = $parnode->addNewChild($nsUri, $thisname); #XML::LibXML::Element->new( $thisname );
 
       # Set any attributes defined for this node
       if ( $thisatts ne '' ) {
-        if ( $debug ) { print "setting attributes $thisatts"; };
+        if ( $debug ) { print "setting attributes $thisatts\n"; };
         foreach my $ap ( split ( " and ", $thisatts ) ) {
           if ( $ap =~ /\@([^ ]+) *= *"(.*?)"/ ) {
             my $an = $1;
@@ -350,11 +361,10 @@ sub makenode {
         };
       };
 
-      if ( $debug ) { print "Creating node: $xquery ($thisname)"; };
-      $parnode->addChild($newchild);
+      return $newchild
 
     } else {
-      print "Failed to find or create node: $xquery";
+      print "Failed to find or create node: $xquery\n";
     };
   };
 };
