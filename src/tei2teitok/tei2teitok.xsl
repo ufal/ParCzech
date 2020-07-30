@@ -8,7 +8,7 @@
 
   <xsl:variable name="pdt-fslib" select="concat('./',substring-before(//*[local-name(.) = 'prefixDef' and @ident='pdt']/@replacementPattern,'#'))"/>
   <xsl:variable name="pdt-fslib-doc" select="document($pdt-fslib)"/>
-  <xsl:key name="id-pdt-fslib" match="fs" use="@*[local-name(.) = 'id']"/>
+  <xsl:key name="id-pdt-fslib" match="*[local-name(.) = 'fs']" use="@*[local-name(.) = 'id']"/>
 
   <xsl:variable name="ne-fslib" select="concat('./',substring-before(//*[local-name(.) = 'prefixDef' and @ident='ne']/@replacementPattern,'#'))"/>
   <xsl:variable name="ne-fslib-doc" select="document($ne-fslib)"/>
@@ -34,7 +34,7 @@
       <xsl:attribute name="xpos"> <!-- xpos -->
         <xsl:variable name="tag" select="substring-before(substring-after(concat(@ana,' '),'pdt:'), ' ')"/>
         <!-- <xsl:value-of select="$pdt-fslib-doc/div/fvLib/fs[@*[local-name(.) = 'id'] = $tag ]/f[@name = 'pdt']/symbol/@value"/> -->
-        <xsl:value-of select="key('id-pdt-fslib', $tag, $pdt-fslib-doc)/f[@name = 'pdt']/symbol/@value"/>
+        <xsl:value-of select="key('id-pdt-fslib', $tag, $pdt-fslib-doc)/*[local-name(.) = 'f' and @name = 'pdt']/*[local-name(.) = 'symbol']/@value"/>
       </xsl:attribute>
 
       <xsl:apply-templates select="node()"/>

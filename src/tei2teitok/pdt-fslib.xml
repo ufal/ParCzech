@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF8"?>
-<div xmlns:tei="http://www.tei-c.org/ns/1.0" xml:id="pdt" type="part">
+<?xml version="1.0" encoding="utf-8"?>
+<div xmlns="http://www.tei-c.org/ns/1.0" xml:id="pdt" type="part">
   <fLib>
     <f name="POS" xml:id="p01vA"><string>Adjective</string></f>
     <f name="POS" xml:id="p01vC"><string>Numeral</string></f>
