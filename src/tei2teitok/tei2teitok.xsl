@@ -4,13 +4,13 @@
   <xsl:param name="personlist-path" />
 
   <xsl:variable name="personlist-doc" select="document($personlist-path)" />
-  <xsl:key name="id-personlist" match="person" use="@*[local-name(.) = 'id']" />
+  <xsl:key name="id-personlist" match="*[local-name(.) = 'person']" use="@*[local-name(.) = 'id']" />
 
-  <xsl:variable name="pdt-fslib" select="concat('./',substring-before(//prefixDef[@ident='pdt']/@replacementPattern,'#'))"/>
+  <xsl:variable name="pdt-fslib" select="concat('./',substring-before(//*[local-name(.) = 'prefixDef' and @ident='pdt']/@replacementPattern,'#'))"/>
   <xsl:variable name="pdt-fslib-doc" select="document($pdt-fslib)"/>
   <xsl:key name="id-pdt-fslib" match="fs" use="@*[local-name(.) = 'id']"/>
 
-  <xsl:variable name="ne-fslib" select="concat('./',substring-before(//prefixDef[@ident='ne']/@replacementPattern,'#'))"/>
+  <xsl:variable name="ne-fslib" select="concat('./',substring-before(//*[local-name(.) = 'prefixDef' and @ident='ne']/@replacementPattern,'#'))"/>
   <xsl:variable name="ne-fslib-doc" select="document($ne-fslib)"/>
   <xsl:key name="id-ne-fslib-fs" match="fs" use="@*[local-name(.) = 'id']"/>
   <xsl:key name="id-ne-fslib-f" match="f" use="@*[local-name(.) = 'id']"/>
@@ -81,14 +81,14 @@
   </xsl:template>
 
   <!-- person link -->
-  <xsl:template match="*[local-name(.) = 'note' and @type='speaker' and starts-with(./following-sibling::u[1]/@who, '#')]">
+  <xsl:template match="*[local-name(.) = 'note' and @type='speaker' and starts-with(./following-sibling::*[local-name(.) = 'u'][1]/@who, '#')]">
     <xsl:element name="{local-name(.)}">
       <xsl:apply-templates select="@*"/> <!-- copy attributes -->
       <xsl:apply-templates select="node()"/>
-      <xsl:variable name="person" select="substring-after(./following-sibling::u[1]/@who, '#')"/>
+      <xsl:variable name="person" select="substring-after(./following-sibling::*[local-name(.) = 'u'][1]/@who, '#')"/>
 
       <xsl:call-template name="externalLink">
-        <xsl:with-param name="link" select="normalize-space(key('id-personlist',$person,$personlist-doc)/idno[@type='URI'])"/>
+        <xsl:with-param name="link" select="normalize-space(key('id-personlist',$person,$personlist-doc)/*[local-name(.) = 'idno' and @type='URI'])"/>
         <xsl:with-param name="additionalClasses" select='"person-link"' />
       </xsl:call-template>
 
