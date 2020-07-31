@@ -81,11 +81,11 @@
   </xsl:template>
 
   <!-- person link -->
-  <xsl:template match="*[local-name(.) = 'note' and @type='speaker' and starts-with(./following-sibling::*[local-name(.) = 'u'][1]/@who, '#')]">
+  <xsl:template match="*[local-name(.) = 'note' and @type='speaker' and @target]">
     <xsl:element name="{local-name(.)}">
       <xsl:apply-templates select="@*"/> <!-- copy attributes -->
       <xsl:apply-templates select="node()"/>
-      <xsl:variable name="person" select="substring-after(./following-sibling::*[local-name(.) = 'u'][1]/@who, '#')"/>
+      <xsl:variable name="person" select="substring-after(./@target, '#')"/>
 
       <xsl:call-template name="externalLink">
         <xsl:with-param name="link" select="normalize-space(key('id-personlist',$person,$personlist-doc)/*[local-name(.) = 'idno' and @type='URI'])"/>
