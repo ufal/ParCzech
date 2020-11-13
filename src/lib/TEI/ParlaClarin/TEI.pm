@@ -359,7 +359,7 @@ sub addHead {
 sub setUnauthorizedFlag {
   my $self = shift;
   $self->{unauthorized} = 1;
-  $self->addMetadata('authorized','no',1);
+  # $self->addMetadata('authorized','no',1); # subrutine is missing
   return $self;
 }
 
