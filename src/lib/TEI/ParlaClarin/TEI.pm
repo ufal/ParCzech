@@ -117,7 +117,7 @@ sub toFile {
       $suffix = chr(ord($suffix)+1);
     }
     if($suffix || $unauthorized){
-      updateIds({DOM => $self->{DOM}, NS => $self->{NS}},$self->{ID}, $self->{ID}.$suffix.$unauthorized)
+      updateIds({DOM => $self->{DOM}, XPC => $self->{XPC}, NS => $self->{NS}},$self->{ID}, $self->{ID}.$suffix.$unauthorized)
     }
     $filename = "$filename$suffix$unauthorized.xml";
   }
