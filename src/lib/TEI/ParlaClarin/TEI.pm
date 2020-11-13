@@ -266,8 +266,8 @@ sub addToUtterance {
   my $self = shift;
   my $element = shift;
   my $segment = shift;
-
-  if(!defined($segment) && scalar @{$self->{QUEUE}} ) { # print queue if segment is not defined
+  $self->addUtterance() unless $self->{activeUtterance}; # DEFINE NO SPEAKER UTTERANCE
+  if(!defined($segment) && scalar @{$self->{QUEUE}}) { # print queue if segment is not defined
     $self->{activeUtterance}->appendText("\n") if $self->{activeUtterance}->hasChildNodes(); #just formating
     $self->appendQueue(0,$self->{activeUtterance})
   }
