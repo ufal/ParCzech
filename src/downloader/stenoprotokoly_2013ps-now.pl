@@ -202,6 +202,7 @@ while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
     debug_print( "downloading new sitting " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__);
     export_TEI();
     $author = {};
+    debug_print( "NEW TEI, cleaning author", __LINE__, 5);
     init_TEI($term_id, $meeting_id, $sitting_id, $topic_id);
     $post_cntr = 0;
   } elsif (defined($last_sitting_date) && $sitting_date != $last_sitting_date) {
@@ -279,6 +280,7 @@ sub record_exporter {
       add_pagebreak_to_teiCorpus($link);
       add_audio_to_teiCorpus($link); # add audio if possible
       my $id = join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic post/);
+      debug_print( "  UTTERANCE " .($$ref_author->{authorname}), __LINE__, 5);
       $teiCorpus->addUtterance(
         id => sprintf('%s-%s-%03d',$id,$link_id, ++$$ref_post_cntr),
         author => {
@@ -362,6 +364,7 @@ sub record_exporter {
       $$ref_post->{id}->{post} = $post_id;
       $$ref_post->{id}->{post} = 'r0' unless exists $$ref_post->{id}->{post};
       my $id = join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic post/);
+      debug_print( "  UTTERANCE " .($$ref_author->{authorname}), __LINE__, 5);
       $teiCorpus->addUtterance(
         id => sprintf('%s-%s-%03d',$id,$link_id, ++$$ref_post_cntr),
         author => {
