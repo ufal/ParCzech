@@ -103,8 +103,16 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
     $text .= "\n\n";
   }
   my $conll = run_udpipe($text);
-  my $metadata = fill_conllu_data_doc($conll, $text, @nodes);
-  $current_file->add_metadata(%$metadata, who => 'udpipe2');
+  fill_conllu_data_doc($conll, $text, @nodes);
+  $current_file->add_metadata('application',
+        app => 'UDPipe',
+        version=>'2',
+        source=>'http://lindat.mff.cuni.cz/services/udpipe/',
+        ref=>'http://ufal.mff.cuni.cz/udpipe/2',
+        label => "UDPipe 2 with $model model",
+        desc => 'POS tagging, lemmatization and dependency parsing'
+      );
+
   #print STDERR $xpc->findnodes('//tei:text',$doc);
   if($test) {
     $current_file->print();
