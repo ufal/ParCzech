@@ -283,7 +283,7 @@ while($filename = shift @input_files) {
     }
 
   } # end of file
-  # Add a revisionDesc to indicate the file was tagged with NameTag
+  # Add a revisionDesc to indicate the file was tagged with MorphoDiTa
   my $revnode = makenode($doc, "/tei:TEI/tei:teiHeader/tei:revisionDesc/tei:change[\@who=\"xmlmorphodita\"]");
   my $when = strftime "%Y-%m-%d", localtime;
   $revnode->setAttribute("when", $when);
