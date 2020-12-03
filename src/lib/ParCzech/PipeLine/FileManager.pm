@@ -137,17 +137,24 @@ sub get_doc {
 
 sub add_metadata {
   my $self = shift;
+  my $type = shift;
   my %metadata = @_;
-  my $application = ParCzech::PipeLine::FileManager::XML::makenode(
+  if($type eq 'application') {
+    my $application = ParCzech::PipeLine::FileManager::XML::makenode(
       $self->{dom},
       "/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:appInfo/tei:application[\@ident=\"".$metadata{app}."\"]",
       $self->{xpc});
-  $application->setAttribute('version', $metadata{version}) if defined($metadata{version});
-  $application->setAttribute('source', $metadata{source}) if defined($metadata{source});
-  ParCzech::PipeLine::FileManager::XML::makenode(
+    $application->setAttribute('version', $metadata{version}) if defined($metadata{version});
+    $application->setAttribute('source', $metadata{source}) if defined($metadata{source});
+    ParCzech::PipeLine::FileManager::XML::makenode(
       $application,
-      "./label",
-      $self->{xpc})->textContent($metadata{label}) if $metadata{label};
+      "./ref",
+      $self->{xpc})->setAttribute('target', $metadata{ref}) if $metadata{ref};
+    $application->appendTextChild('label', $metadata{label}) if $metadata{label};
+    $application->appendTextChild('desc', $metadata{desc}) if $metadata{desc};
+  } else {
+    print STDERR "Unknown metadata type: $type\n";
+  }
 
 #  my $revnode = ParCzech::PipeLine::FileManager::XML::makenode(
 #  	  $self->{dom},
