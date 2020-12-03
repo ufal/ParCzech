@@ -134,6 +134,12 @@ sub get_doc {
   return $self->{dom};
 }
 
+sub get_doc_id {
+  my $self = shift;
+  return $self->{dom}->documentElement()->getAttributeNS('http://www.w3.org/XML/1998/namespace','id');
+}
+
+
 
 sub add_metadata {
   my $self = shift;
