@@ -11,6 +11,8 @@ use LWP::Simple;
 use LWP::UserAgent;
 use JSON;
 
+use ParCzech::PipeLine::FileManager;
+
 my $scriptname = $0;
 
 my ($debug, $test, $filename, $filelist, $model, $elements_names, $no_backup_file, $sub_elements_names);
@@ -32,77 +34,38 @@ my $full_lemma = undef;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize, tag and lemmatize to string, do not change the database
-#            'full-lemma' => \$full_lemma,
-            'no-backup-file' => \$no_backup_file,
-            'filename=s' => \$filename, # input file
-            'filelist=s' => \$filelist, # file that contains files (it increase speed of script - MorphoDiTa model is inicialized single time)
-            'model=s' => \$model, # morphodita tagger
+            'model=s' => \$model, # udpipe model tagger
             'elements=s' => \$elements_names,
             'sub-elements=s' => \$sub_elements_names, # child elements that are also tokenized
             'word-element=s' => \$word_element_name,
             'punct-element=s' => \$punct_element_name,
             'sent-element=s' => \$sent_element_name,
+            ParCzech::PipeLine::FileManager::opts()
 #            'tags=s' => \@tags, # tag attribute name|format (pos cs::pdt)
             );
 
+usage_exit() unless ParCzech::PipeLine::FileManager::process_opts();
 
-
-usage_exit() unless ( $filename  || $filelist );
 
 usage_exit() unless $model;
 
 my %sub_elements_names_filter = map {$_ => 1} split(',', $sub_elements_names);
 
-my @input_files;
-
-if ( $filename ) {
-  push @input_files, $filename
-}
-
 if ( $elements_names =~ m/[\s"']/ ){
   usage_exit();
 }
 
-if ( $filelist ) {
-  open my $fl, $filelist or die "Could not open $filelist: $!";
-  while(my $fn = <$fl>) {
-    $fn =~ s/\n$//;
-    push @input_files, $fn if $fn ;
-  }
-  close $fl;
-}
-
-for my $f (@input_files) {
-  file_does_not_exist($f) unless -e $f
-}
-
-
 
 my $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
+my $current_file;
 
-while($filename = shift @input_files) {
-  $/ = undef;
-  open FILE, $filename;
-  binmode ( FILE, ":utf8" );
-  my $rawxml = <FILE>;
-  close FILE;
+while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $xpc)) {
+  next unless defined($current_file->{dom});
+
   my $sid = 1;
   my $wid = 1;
-  if ( $rawxml eq '' ) {
-    print " -- empty file $filename\n";
-    next;
-  }
-  #if ( $rawxml =~ /<\/${word_element_name}>/ ) {
-  #  print " -- file is already tokenized - $filename\n";
-  #  next;
-  #}
-  my $parser = XML::LibXML->new();
-  my $doc = "";
-  eval { $doc = $parser->load_xml(string => $rawxml); };
-  if ( !$doc ) {
-    print "Invalid XML in $filename";
-    next;
-  }
+  my $doc = $current_file->get_doc();
+
   my @parents = $xpc->findnodes('//tei:text//tei:*[contains(" '.join(' ',split(',',$elements_names)).' ", concat(" ",name()," "))]',$doc);
   my @nodes = (); # {parent: ..., node: ..., text: ..., tokenize: boolean}
   my $text = '';
@@ -138,8 +101,13 @@ while($filename = shift @input_files) {
     $text .= "\n\n";
   }
   my $conll = run_udpipe($text);
-  fill_conllu_data_doc($conll, $text, @nodes);
-  print STDERR $xpc->findnodes('//tei:text',$doc);
+  my $metadata = fill_conllu_data_doc($conll, $text, @nodes);
+  $current_file->add_metadata(%$metadata, who => 'udpipe2');
+  #print STDERR $xpc->findnodes('//tei:text',$doc);
+  print STDERR $doc;
+  $current_file->save();
+
+  print STDERR "TODO WRITE TO FILE\n";
 }
 
 
@@ -207,13 +175,23 @@ sub fill_conllu_data_doc {
 }
 
 
-sub file_does_not_exist {
-  print "file ". shift . "does not exist";exit;
-}
-
 
 sub usage_exit {
-   print " -- usage: udpipe2.pl --model=[fn] (--filename=[fn] | --filelist=[fn]) --elements=[list]\n\nelements should contain names of elements to be tokenized and tagged separated with comma";
+   my ($fm_args,$fm_desc) =  @{ParCzech::PipeLine::FileManager::usage('tei')};
+   print
+"Usage: udpipe2.pl  $fm_args --model <STRING> [OPTIONAL]
+
+$fm_desc
+
+\t--model=s\tspecific UDPipe model
+
+OPTIONAL:
+\t--elements=s\tcomma separated names of elements to be tokenized and tagged. Default value: seg,head
+\t--sub-elements=s\tcomma separated names of elements to be tokenized and tagged (child nodes of elements). Other sub-elements are skipped. Default value: ref
+\t--word-element=s\tname of word element
+\t--punct-element=s\tname of punctation element
+\t--sent-element=s\tname of sentence element
+";
    exit;
 }
 
