@@ -162,7 +162,12 @@ sub add_metadata {
 
 sub save {
   my $self = shift;
-  print STDERR "TODO";
+  ParCzech::PipeLine::FileManager::XML::save_to_file($self->{dom}, $self->{outpath});
+}
+
+sub print {
+  my $self = shift;
+  ParCzech::PipeLine::FileManager::XML::print($self->{dom});
 }
 
 
@@ -170,8 +175,39 @@ sub save {
 
 
 
-
 package ParCzech::PipeLine::FileManager::XML;
+
+
+sub to_string {
+  my $doc = shift;
+  my $pp = XML::LibXML::PrettyPrint->new(
+    indent_string => "  ",
+    element => {
+        inline   => [qw//], # note
+        #block    => [qw//],
+        #compact  => [qw//],
+        preserves_whitespace => [qw/s/],
+        }
+    );
+  $pp->pretty_print($doc);
+  return $doc->toString();
+}
+
+
+sub print {
+  my $doc = shift;
+  binmode STDOUT;
+  print to_string($doc);
+}
+
+
+sub save_to_file {
+  my ($doc,$filename) = @_;
+  open FILE, ">$filename";
+  binmode FILE;
+  print FILE to_string($doc);
+  close FILE;
+}
 
 
 sub makenode {
