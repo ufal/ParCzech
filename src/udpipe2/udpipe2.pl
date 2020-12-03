@@ -15,7 +15,7 @@ use ParCzech::PipeLine::FileManager;
 
 my $scriptname = $0;
 
-my ($debug, $test, $filename, $filelist, $model, $elements_names, $no_backup_file, $sub_elements_names);
+my ($debug, $test, $no_lemma_tag, $no_parse, $filename, $filelist, $model, $elements_names, $no_backup_file, $sub_elements_names);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -34,6 +34,8 @@ my $full_lemma = undef;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize, tag and lemmatize to string, do not change the database
+            'no-lemma-tag' => \$no_lemma_tag, # no tags and lemmas
+            'no-parse' => \$no_parse, # no dependency parsing
             'model=s' => \$model, # udpipe model tagger
             'elements=s' => \$elements_names,
             'sub-elements=s' => \$sub_elements_names, # child elements that are also tokenized
@@ -116,8 +118,8 @@ sub run_udpipe {
   my ($_text, $_model, $_url) = (@_, $model, $url);
   my %form = (
     "tokenizer" => "ranges",
-    "tagger" => "1",
-    "parser" => "1",
+    $no_lemma_tag ? () : ("tagger" => "1"),
+    $no_parse ? () : ("parser" => "1"),
     "model" => $_model,
     "data" => $_text
   );
@@ -131,6 +133,8 @@ sub run_udpipe {
 sub fill_conllu_data_doc {
   my ($conll_text, $text, @node_list) = @_;
   my $nodeFeeder = NodeFeeder->new($text, @node_list);
+  $nodeFeeder->set_no_parse(1) if $no_parse;
+  $nodeFeeder->set_no_lemma_tag(1) if $no_lemma_tag;
   my @lines = split /\n/, $conll_text;
   while(@lines){
     my %parent_tokens = ();
@@ -179,11 +183,13 @@ sub fill_conllu_data_doc {
 sub usage_exit {
    my ($fm_args,$fm_desc) =  @{ParCzech::PipeLine::FileManager::usage('tei')};
    print
-"Usage: udpipe2.pl  $fm_args --model <STRING> [OPTIONAL]
+"Usage: udpipe2.pl  $fm_args --model <STRING> [--no-parse] [--no-lemma-tag] [OPTIONAL]
 
 $fm_desc
 
 \t--model=s\tspecific UDPipe model
+\t--no-parse\tno dependency parsing
+\t--no-lemma-tag\tno lemmas and tags
 
 OPTIONAL:
 \t--elements=s\tcomma separated names of elements to be tokenized and tagged. Default value: seg,head
@@ -219,8 +225,20 @@ sub new {
   $self->{deprel} = undef;
   $self->{no_token_elem_queue} = [];
   $self->{parent_stack} = []; # contains segments, sentence and tokenized subelements
+  $self->{no_parse} = 0;
+  $self->{no_lemma_tag} = 0;
 
   return $self;
+}
+
+sub set_no_parse {
+  my $self = shift;
+  $self->{no_parse} = !! shift;
+}
+
+sub set_no_lemma_tag {
+  my $self = shift;
+  $self->{no_lemma_tag} = !! shift;
 }
 
 sub new_paragraph {
@@ -276,7 +294,7 @@ sub close_sentence {
   return unless $self->{sentence};
 
   $self->close_subelement_if_any();
-  $self->print_deprel();
+  $self->print_deprel() unless $self->{no_parse};
 
   undef $self->{deprel_id_number};
   undef $self->{deprel};
@@ -386,15 +404,15 @@ sub add_token {
   my $id = "w-".$self->{tokencnt};
   $token->setAttributeNS($xmlNS, 'id', $id);
 
-  if(defined($opts{head})){
+  if(defined($opts{head}) and !$self->{no_parse}){
     $self->{deprel_id_number}->{$opts{i}} = $id;
     push @{$self->{deprel}}, {src => $opts{i}, head => $opts{head}, deprel => $opts{deprel}};
   }
 
-  $token->setAttribute('lemma', $opts{lemma}) if(defined($opts{opts}));
+  $token->setAttribute('lemma', $opts{lemma}) if(defined($opts{lemma}) and !$self->{no_lemma_tag});
   #$token->setAttribute('tag', $opts{xpos}) if(defined($opts{xpos}));
-  $token->setAttribute('pos', $opts{upos}) if(defined($opts{upos}));
-  if(defined($opts{upos}) and defined($opts{feat})) {
+  $token->setAttribute('pos', $opts{upos}) if(defined($opts{upos}) and !$self->{no_lemma_tag});
+  if(defined($opts{upos}) and defined($opts{feat}) and !$self->{no_lemma_tag}) {
     $opts{msd} = "UposTag=$opts{upos}|$opts{feat}";
     $opts{msd} =~ s/\|\_$//;
     $token->setAttribute('msd', $opts{msd});
