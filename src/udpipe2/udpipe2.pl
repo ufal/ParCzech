@@ -33,7 +33,7 @@ my $full_lemma = undef;
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
-            'test' => \$test, # tokenize, tag and lemmatize to string, do not change the database
+            'test' => \$test, # tokenize, tag and lemmatize and parse to stdout, do not change the database
             'no-lemma-tag' => \$no_lemma_tag, # no tags and lemmas
             'no-parse' => \$no_parse, # no dependency parsing
             'model=s' => \$model, # udpipe model tagger
@@ -106,10 +106,11 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
   my $metadata = fill_conllu_data_doc($conll, $text, @nodes);
   $current_file->add_metadata(%$metadata, who => 'udpipe2');
   #print STDERR $xpc->findnodes('//tei:text',$doc);
-  print STDERR $doc;
-  $current_file->save();
-
-  print STDERR "TODO WRITE TO FILE\n";
+  if($test) {
+    $current_file->print();
+  } else {
+    $current_file->save();
+  }
 }
 
 
@@ -183,11 +184,12 @@ sub fill_conllu_data_doc {
 sub usage_exit {
    my ($fm_args,$fm_desc) =  @{ParCzech::PipeLine::FileManager::usage('tei')};
    print
-"Usage: udpipe2.pl  $fm_args --model <STRING> [--no-parse] [--no-lemma-tag] [OPTIONAL]
+"Usage: udpipe2.pl  $fm_args --model <STRING> [--test] [--no-parse] [--no-lemma-tag] [OPTIONAL]
 
 $fm_desc
 
 \t--model=s\tspecific UDPipe model
+\t--test\tprint result to stdout - don't change any file
 \t--no-parse\tno dependency parsing
 \t--no-lemma-tag\tno lemmas and tags
 
