@@ -154,7 +154,7 @@ sub add_metadata {
     $application->setAttribute('source', $metadata{source}) if defined($metadata{source});
     ParCzech::PipeLine::FileManager::XML::makenode(
       $application,
-      "./ref",
+      "./tei:ref",
       $self->{xpc})->setAttribute('target', $metadata{ref}) if $metadata{ref};
     $application->appendTextChild('label', $metadata{label}) if $metadata{label};
     $application->appendTextChild('desc', $metadata{desc}) if $metadata{desc};
