@@ -31,6 +31,9 @@ my $punct_element_name = 'pc';
 my $sent_element_name = 's';
 my $full_lemma = undef;
 
+my $soft_max_text_length = 100000;
+# 100 000 -> udpipe: 30seconds , script: 3seconds
+
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize, tag and lemmatize and parse to stdout, do not change the database
@@ -72,41 +75,48 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
   $sent_id_prefix =~ s/^[a-z]*-?/s-/;
 
   my @parents = $xpc->findnodes('//tei:text//tei:*[contains(" '.join(' ',split(',',$elements_names)).' ", concat(" ",name()," "))]',$doc);
-  my @nodes = (); # {parent: ..., node: ..., text: ..., tokenize: boolean}
-  my $text = '';
-  my $parent_cnt = 0;
-  while(my $parent = shift @parents) {
-    # test if parent contains any text to be tokenized !!!
-    $parent_cnt++;
-    for my $chnode ($parent->childNodes()) {
-      $chnode->unbindNode();
-      my $child = {
-        parent => $parent,
-        parent_cnt => $parent_cnt,
-        node => $chnode,
-        text => '',
-        len => 0,
-        textptr => length($text),
-        tokenize => 0
-      };
-      if ( $chnode->nodeType == XML_TEXT_NODE || exists $sub_elements_names_filter{$chnode->nodeName}) {
-        $child->{text} = $chnode->textContent();
-        $child->{len} = length($child->{text});
-        if($chnode->nodeType != XML_TEXT_NODE) {
-          $child->{tokenize} = 1;
-          }
-        $chnode->removeChildNodes()
-        # TODO test if it does not contain element_node -> warn !!!
+  my $id_counters = [0,0];
+  while(@parents) {
+    my @nodes = (); # {parent: ..., node: ..., text: ..., tokenize: boolean}
+    my $text = '';
+    my $parent_cnt = 0;
+    my $grandpa = undef;
+    while(my $parent = shift @parents) {
+      # test if parent contains any text to be tokenized !!!
+      $parent_cnt++;
+      for my $chnode ($parent->childNodes()) {
+        $chnode->unbindNode();
+        my $child = {
+          parent => $parent,
+          parent_cnt => $parent_cnt,
+          node => $chnode,
+          text => '',
+          len => 0,
+          textptr => length($text),
+          tokenize => 0
+        };
+        if ( $chnode->nodeType == XML_TEXT_NODE || exists $sub_elements_names_filter{$chnode->nodeName}) {
+          $child->{text} = $chnode->textContent();
+          $child->{len} = length($child->{text});
+          if($chnode->nodeType != XML_TEXT_NODE) {
+            $child->{tokenize} = 1;
+            }
+          $chnode->removeChildNodes()
+          # TODO test if it does not contain element_node -> warn !!!
+        }
+        $text .= $child->{text};
+        $child->{textptr_end} = length($text);
+        push @nodes,$child;
       }
-      $text .= $child->{text};
-      $child->{textptr_end} = length($text);
-      push @nodes,$child;
+      # newline between segments !!!
+      $text .= "\n\n";
+      my $grandpa_a = $parent->parentNode();
+      last if length($text) > $soft_max_text_length and not($grandpa == $grandpa_a);
+      $grandpa = $grandpa_a;
     }
-    # newline between segments !!!
-    $text .= "\n\n";
+    my $conll = run_udpipe($text);
+    $id_counters = fill_conllu_data_doc($conll, $text, $id_counters, $token_id_prefix, $sent_id_prefix, @nodes);
   }
-  my $conll = run_udpipe($text);
-  fill_conllu_data_doc($conll, $text, $token_id_prefix, $sent_id_prefix, @nodes);
   $current_file->add_metadata('application',
         app => 'UDPipe',
         version=>'2',
@@ -135,7 +145,6 @@ sub run_udpipe {
     "model" => $_model,
     "data" => $_text
   );
-
   my $res = $ua->post( $_url, \%form );
   my $json = decode_json($res->decoded_content);
   return $json->{'result'};
@@ -143,8 +152,9 @@ sub run_udpipe {
 
 
 sub fill_conllu_data_doc {
-  my ($conll_text, $text,$token_id_prefix, $sent_id_prefix, @node_list) = @_;
+  my ($conll_text, $text, $id_counters, $token_id_prefix, $sent_id_prefix, @node_list) = @_;
   my $nodeFeeder = NodeFeeder->new($text, @node_list);
+  my ($sent_cnt, $token_cnt) = @$id_counters;
   $nodeFeeder->set_token_id_prefix($token_id_prefix);
   $nodeFeeder->set_sent_id_prefix($sent_id_prefix);
   $nodeFeeder->set_no_parse(1) if $no_parse;
@@ -157,12 +167,15 @@ sub fill_conllu_data_doc {
       if($line =~ /^# newpar/) {
         $nodeFeeder->new_paragraph();
       } elsif ($line =~ /^# sent_id = (\d+)/) { # sentence beginning
-        $nodeFeeder->new_sentence($1);
+        $sent_cnt++;
+        $nodeFeeder->new_sentence($sent_cnt);
       } elsif ($line =~ /^# text = (.*)/) {
         $nodeFeeder->add_xml_comment($1); # TEMPORARY !!!
       } elsif ($line =~ /^(\d+)\t([^\t]+)\t/) {
         my ($ti,$tt,$tl,$tp,$tg,$tf,$th,$tr, undef ,$tsp) = split(/\t/, $line);
+        $token_cnt++;
         $nodeFeeder->add_token(
+            tok_i => $token_cnt,
             i=>$ti,
             form => $tt,
             lemma => $tl,
@@ -177,7 +190,9 @@ sub fill_conllu_data_doc {
 
       } elsif ($line =~ /^(\d+)-(\d+)\t/) {
         my ($ti,$tt,undef,undef,undef,undef,undef,undef, undef ,$tsp) = split(/\t/, $line);
+        $token_cnt++;
         my $token = $nodeFeeder->add_token(
+            tok_i => $token_cnt,
             #i=>$ti,
             form => $tt,
             spacing => $tsp,
@@ -190,6 +205,7 @@ sub fill_conllu_data_doc {
     $nodeFeeder->close_sentence();
   }
   $nodeFeeder->close_paragraph();
+  return [$sent_cnt, $token_cnt];
 }
 
 
@@ -232,7 +248,6 @@ sub new {
   $self->{nodes} = [@_];
   $self->{textptr} = 0;
   $self->{nodesptr} = 0;
-  $self->{tokencnt} = 0;
   $self->{paragraph} = undef;
   $self->{paragraph_ptr} = undef;
   $self->{sentence} = undef;
@@ -428,8 +443,7 @@ sub add_token {
 
   my $token = XML::LibXML::Element->new(($opts{upos}//'') eq 'PUNCT' ? $punct_element_name : $word_element_name );
 
-  $self->{tokencnt}++;
-  my $id = $self->{token_id_prefix}.'-'.$self->{tokencnt};
+  my $id = $self->{token_id_prefix}.'-'.$opts{tok_i};
   $token->setAttributeNS($xmlNS, 'id', $id);
 
   if(defined($opts{head}) and !$self->{no_parse}){
