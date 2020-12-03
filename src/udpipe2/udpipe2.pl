@@ -64,9 +64,12 @@ my $current_file;
 while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $xpc)) {
   next unless defined($current_file->{dom});
 
-  my $sid = 1;
-  my $wid = 1;
   my $doc = $current_file->get_doc();
+
+  my $token_id_prefix = $current_file->get_doc_id();
+  $token_id_prefix =~ s/^[a-z]*-?/w-/;
+  my $sent_id_prefix = $current_file->get_doc_id();
+  $sent_id_prefix =~ s/^[a-z]*-?/s-/;
 
   my @parents = $xpc->findnodes('//tei:text//tei:*[contains(" '.join(' ',split(',',$elements_names)).' ", concat(" ",name()," "))]',$doc);
   my @nodes = (); # {parent: ..., node: ..., text: ..., tokenize: boolean}
@@ -103,7 +106,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
     $text .= "\n\n";
   }
   my $conll = run_udpipe($text);
-  fill_conllu_data_doc($conll, $text, @nodes);
+  fill_conllu_data_doc($conll, $text, $token_id_prefix, $sent_id_prefix, @nodes);
   $current_file->add_metadata('application',
         app => 'UDPipe',
         version=>'2',
@@ -140,8 +143,10 @@ sub run_udpipe {
 
 
 sub fill_conllu_data_doc {
-  my ($conll_text, $text, @node_list) = @_;
+  my ($conll_text, $text,$token_id_prefix, $sent_id_prefix, @node_list) = @_;
   my $nodeFeeder = NodeFeeder->new($text, @node_list);
+  $nodeFeeder->set_token_id_prefix($token_id_prefix);
+  $nodeFeeder->set_sent_id_prefix($sent_id_prefix);
   $nodeFeeder->set_no_parse(1) if $no_parse;
   $nodeFeeder->set_no_lemma_tag(1) if $no_lemma_tag;
   my @lines = split /\n/, $conll_text;
@@ -152,7 +157,7 @@ sub fill_conllu_data_doc {
       if($line =~ /^# newpar/) {
         $nodeFeeder->new_paragraph();
       } elsif ($line =~ /^# sent_id = (\d+)/) { # sentence beginning
-        $nodeFeeder->new_sentence("s-$1");
+        $nodeFeeder->new_sentence($1);
       } elsif ($line =~ /^# text = (.*)/) {
         $nodeFeeder->add_xml_comment($1); # TEMPORARY !!!
       } elsif ($line =~ /^(\d+)\t([^\t]+)\t/) {
@@ -237,6 +242,8 @@ sub new {
   $self->{parent_stack} = []; # contains segments, sentence and tokenized subelements
   $self->{no_parse} = 0;
   $self->{no_lemma_tag} = 0;
+  $self->{token_id_prefix} = 'w';
+  $self->{sent_id_prefix} = 's';
 
   return $self;
 }
@@ -249,6 +256,17 @@ sub set_no_parse {
 sub set_no_lemma_tag {
   my $self = shift;
   $self->{no_lemma_tag} = !! shift;
+}
+
+
+sub set_token_id_prefix {
+  my $self = shift;
+  $self->{token_id_prefix} = shift || $self->{token_id_prefix};
+}
+
+sub set_sent_id_prefix {
+  my $self = shift;
+  $self->{sent_id_prefix} = shift || $self->{sent_id_prefix};
 }
 
 sub new_paragraph {
@@ -283,7 +301,7 @@ sub close_paragraph {
 
 sub new_sentence {
   my $self = shift;
-  my $id = shift;
+  my $id = $self->{sent_id_prefix}.'-'.(shift//'');
 
   $self->close_sentence() if $self->{sentence};
 
@@ -411,7 +429,7 @@ sub add_token {
   my $token = XML::LibXML::Element->new(($opts{upos}//'') eq 'PUNCT' ? $punct_element_name : $word_element_name );
 
   $self->{tokencnt}++;
-  my $id = "w-".$self->{tokencnt};
+  my $id = $self->{token_id_prefix}.'-'.$self->{tokencnt};
   $token->setAttributeNS($xmlNS, 'id', $id);
 
   if(defined($opts{head}) and !$self->{no_parse}){
