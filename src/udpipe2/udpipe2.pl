@@ -184,7 +184,7 @@ sub fill_conllu_data_doc {
           );
         $parent_tokens{$_} = $token for ($1..$2);
       } else {
-        print STDERR "SKIPPING: $line\n";
+        # print STDERR "SKIPPING: $line\n";
       }
     }
     $nodeFeeder->close_sentence();
