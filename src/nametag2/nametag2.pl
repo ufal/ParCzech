@@ -26,7 +26,7 @@ my $word_element_name = 'w';
 my $punct_element_name = 'pc';
 my $sent_element_name = 's';
 
-my $soft_max_token_cnt = 10000;
+my $max_sent_cnt = 60;
 
 
 GetOptions ( ## Command line options
@@ -60,17 +60,19 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
   while(@sentences) {
     my @nodes = (); # {parent: ..., node: ..., text: ..., tokenize: boolean}
     my $text = '';
+    my $sent_cnt = 0;
     while(my $sent = shift @sentences) {
+      $sent_cnt++;
       # find tokens in sentence
       for my $token ($xpc->findnodes('.//tei:*[contains(" '.$word_element_name.' '.$punct_element_name.' ",concat(" ",name()," ")) and not(normalize-space(.)="")]',$sent)) {
         $text .= trim($token->textContent());
         $text .= "\n";
         push @nodes,$token;
       }
-      # newlines between sentences causes errors !!!
-      #$text .= "\n";
-      #push @nodes, undef;
-      last if scalar(@nodes) > $soft_max_token_cnt;
+      # newlines between sentences
+      $text .= "\n";
+      push @nodes, undef;
+      last if $sent_cnt >= $max_sent_cnt;
     }
 #    print STDERR "TOKENS: ", scalar(@nodes),"========================================================\n";
     my $vertical = run_nametag($text);
