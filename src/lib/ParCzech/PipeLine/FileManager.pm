@@ -189,7 +189,7 @@ sub print {
 
 
 package ParCzech::PipeLine::FileManager::XML;
-
+use XML::LibXML::PrettyPrint;
 
 sub to_string {
   my $doc = shift;

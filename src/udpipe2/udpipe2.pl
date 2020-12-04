@@ -2,11 +2,8 @@ use warnings;
 use strict;
 use open qw(:std :utf8);
 use utf8;
-use Encode qw(decode encode);
-use XML::LibXML::PrettyPrint;
 use XML::LibXML qw(:libxml);
 use Getopt::Long;
-use POSIX qw(strftime);
 use LWP::Simple;
 use LWP::UserAgent;
 use JSON;
@@ -15,7 +12,7 @@ use ParCzech::PipeLine::FileManager;
 
 my $scriptname = $0;
 
-my ($debug, $test, $no_lemma_tag, $no_parse, $filename, $filelist, $model, $elements_names, $no_backup_file, $sub_elements_names);
+my ($debug, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -29,7 +26,6 @@ $sub_elements_names = "ref";
 my $word_element_name = 'w';
 my $punct_element_name = 'pc';
 my $sent_element_name = 's';
-my $full_lemma = undef;
 
 my $soft_max_text_length = 100000;
 # 100 000 -> udpipe: 30seconds , script: 3seconds
@@ -189,7 +185,7 @@ sub fill_conllu_data_doc {
           );
 
       } elsif ($line =~ /^(\d+)-(\d+)\t/) {
-        my ($ti,$tt,undef,undef,undef,undef,undef,undef, undef ,$tsp) = split(/\t/, $line);
+        my (undef,$tt,undef,undef,undef,undef,undef,undef, undef ,$tsp) = split(/\t/, $line);
         $token_cnt++;
         my $token = $nodeFeeder->add_token(
             tok_i => $token_cnt,
