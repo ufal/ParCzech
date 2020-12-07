@@ -279,6 +279,7 @@ sub record_exporter {
       $$ref_post_cntr = 0;
       add_pagebreak_to_teiCorpus($link);
       add_audio_to_teiCorpus($link); # add audio if possible
+      $teiCorpus->addSittingDate($datetime) if $datetime;
       my $id = join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic post/);
       debug_print( "  UTTERANCE " .($$ref_author->{authorname}), __LINE__, 5);
       $teiCorpus->addUtterance(
