@@ -471,7 +471,7 @@ sub export_text {
   for my $childnode (@child_nodes) {
     if(xpath_node('./self::*[name()="a"]', $childnode)) { # link that should be appended
       print STDERR "TODO ============ APPEND:\n$childnode\n";
-      $teiCorpus->addToUtterance(create_ref_node($childnode),$segm);
+      $segm = $teiCorpus->addToUtterance(create_ref_node($childnode),$segm);
     } else { # text or text in node that is not converted
       my $text = ScrapperUfal::html2text($childnode);
       $text =~ s/\s*:?\s*// if $is_first; # remove initial : and spaces
