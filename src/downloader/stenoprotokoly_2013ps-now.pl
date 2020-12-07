@@ -187,7 +187,7 @@ my $teiCorpus;
 
 
 while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
-  my ($page_link,$term_id, $meeting_id, $sitting_id, $topic_id, $post_cntr) = @$steno_top;
+  my ($page_link,$term_id, $meeting_id, $sitting_id, $topic_id) = @$steno_top;
   make_request($page_link);
   debug_print( " -> LOADING \t$page_link", __LINE__);
   next unless doc_loaded;
@@ -204,7 +204,6 @@ while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
     $author = {};
     debug_print( "NEW TEI, cleaning author", __LINE__, 5);
     init_TEI($term_id, $meeting_id, $sitting_id, $topic_id);
-    $post_cntr = 0;
   } elsif (defined($last_sitting_date) && $sitting_date != $last_sitting_date) {
     next;
   }
@@ -217,21 +216,21 @@ while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
 
 
   # get whole page
-  $topic_id = record_exporter($page_link, \$author,\$post, \$post_cntr) // $topic_id;
+  $topic_id = record_exporter($page_link, \$author,\$post) // $topic_id;
 
   # add next page if exists
   # push @steno_topic_anchor,[$link,'',1,0,$term_id, $meeting_id, $sitting_id, $topic_id];
   my $url_next = xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]//a[@class="next"]/@href');
   if($url_next) {
     debug_print( "\tadding page (link):\t" .join('-', $term_id, $meeting_id, $sitting_id, $topic_id)."\t$page_link", __LINE__);
-    unshift @steno_topic_anchor,[URI->new_abs($url_next,$page_link),$term_id, $meeting_id, $sitting_id, $topic_id, $post_cntr];
+    unshift @steno_topic_anchor,[URI->new_abs($url_next,$page_link),$term_id, $meeting_id, $sitting_id, $topic_id];
   } else { # guessing next page
     my $number;
     ($url_next,$number) = $page_link =~ m/(.*schuz\/s.*)(\d\d\d).htm$/;
     if($url_next) {
       $number = int($number) + 1;
       debug_print( "\tadding page (guess):\t" .join('-', $term_id, $meeting_id, $sitting_id, $topic_id)."\t$number", __LINE__);
-      unshift @steno_topic_anchor,[URI->new_abs($url_next.sprintf("%03d.htm",$number),$page_link), $term_id, $meeting_id, $sitting_id, $topic_id, $post_cntr];
+      unshift @steno_topic_anchor,[URI->new_abs($url_next.sprintf("%03d.htm",$number),$page_link), $term_id, $meeting_id, $sitting_id, $topic_id];
     }
   }
   ScrapperUfal::set_note('unauthorized',JSON::to_json($new_unauthorized));
@@ -241,7 +240,7 @@ ScrapperUfal::set_note('unauthorized',JSON::to_json($new_unauthorized));
 ####################################################################################################
 
 sub record_exporter {
-  my ($link, $ref_author, $ref_post, $ref_post_cntr) = @_;
+  my ($link, $ref_author, $ref_post) = @_;
   my $topic_id;
   my $datetime;
   my $act_date;
@@ -276,14 +275,11 @@ sub record_exporter {
       $topic_id =~ s/^.*b\d\d\d(\d\d\d)\d\d\.htm.*/$1/;
       ${$ref_post}->{id}->{topic} = $topic_id;
       init_TEI( map {${$ref_post}->{id}->{$_} } qw/term meeting sitting topic/ );
-      $$ref_post_cntr = 0;
       add_pagebreak_to_teiCorpus($link);
       add_audio_to_teiCorpus($link); # add audio if possible
       $teiCorpus->addSittingDate($datetime) if $datetime;
-      my $id = join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic post/);
       debug_print( "  UTTERANCE " .($$ref_author->{authorname}), __LINE__, 5);
-      $teiCorpus->addUtterance(
-        id => sprintf('%s-%s-%03d',$id,$link_id, ++$$ref_post_cntr),
+      my $id = $teiCorpus->addUtterance(
         author => {
           author_full => $$ref_author->{author},
           name => $$ref_author->{authorname},
@@ -364,10 +360,8 @@ sub record_exporter {
       ### ($$ref_post->{speechnote}) = grep {m/^###.*|\@\@$/} xpath_string('./comment()',$cnt); # not at this page
       $$ref_post->{id}->{post} = $post_id;
       $$ref_post->{id}->{post} = 'r0' unless exists $$ref_post->{id}->{post};
-      my $id = join("-",map {$$ref_post->{id}->{$_} // ''} qw/term meeting sitting topic post/);
       debug_print( "  UTTERANCE " .($$ref_author->{authorname}), __LINE__, 5);
-      $teiCorpus->addUtterance(
-        id => sprintf('%s-%s-%03d',$id,$link_id, ++$$ref_post_cntr),
+      my $id = $teiCorpus->addUtterance(
         author => {
           author_full => $$ref_author->{author},
           name => $$ref_author->{authorname},

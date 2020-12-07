@@ -19,6 +19,9 @@ sub new {
   my ($class, %params) = @_;
   my $self;
   $self->{PAGECOUNTER} = 0;
+  $self->{UTT_COUNTER} = 0;
+  $self->{UTT_ID} = ''; # current utterance ID
+  $self->{SEG_COUNTER} = 0;
   $self->{STATS}->{u} = 0;
   $self->{output}->{dir} = $params{output_dir} // '.';
   $self->{DOM} = XML::LibXML::Document->new("1.0", "utf-8");
@@ -51,8 +54,8 @@ sub new {
   $self->{TITLESTMT}->parentNode->addNewChild(undef,'sourceDesc')->addNewChild(undef,'p');
   $self->addMeetingData('authorized','yes');
   if(exists $params{id}) {
-  	$self->{ID} = $params{id};
-  	$root_node->setAttributeNS($self->{NS}->{xml}, 'id', 'doc-'.$params{id});
+  	$self->{ID} = 'ps'.$params{id};
+  	$root_node->setAttributeNS($self->{NS}->{xml}, 'id', $self->{ID});
   }
   return $self;
 }
@@ -222,6 +225,8 @@ sub updateIds {
 sub addUtterance { # don't change actTEI
   my $self = shift;
   $self->appendQueue(0); # appending to <text><body><div>
+  $self->{UTT_COUNTER}++;
+  $self->{SEG_COUNTER} = 0;
   my %params = @_;
   my $tei_text = _get_child_node_or_create($self->{XPC},$self->{ROOT},'text', 'body', 'div');
   my $u = XML::LibXML::Element->new("u");
@@ -238,7 +243,8 @@ sub addUtterance { # don't change actTEI
     }
     $u->setAttribute('ana', '#'.$params{author}->{role}) if $params{author}->{role};
   }
-  $u->setAttributeNS($self->{NS}->{xml}, 'id', "utt-".$params{id}) if exists $params{id};
+  $self->{UTT_ID} = sprintf('%s.u%03d',$self->{ID},$self->{UTT_COUNTER});
+  $u->setAttributeNS($self->{NS}->{xml}, 'id', $self->{UTT_ID}); # if exists $params{id};
   if(exists $params{link}) {
     $u->setAttribute('source',$params{link});
   }
@@ -254,7 +260,7 @@ sub addUtterance { # don't change actTEI
   $tei_text->appendChild($u);
   $self->{activeUtterance} = $u;
   $self->{STATS}->{u}++;
-  return $self;
+  return $self->{UTT_ID};
 }
 sub addToElemsQueue {
   my $self = shift;
@@ -274,7 +280,11 @@ sub addToUtterance {
   # adding element to queue and than append whole queue to utterance
   push @{$self->{QUEUE}},[$element,0];
   $self->{activeUtterance}->appendText("\n") if $self->{activeUtterance}->hasChildNodes(); # just formating
-  $segment = $self->{activeUtterance}->addNewChild(undef, 'seg') unless $segment;
+  unless($segment) {
+    $segment = $self->{activeUtterance}->addNewChild(undef, 'seg');
+    $self->{SEG_COUNTER}++;
+    $segment->setAttributeNS($self->{NS}->{xml}, 'id', sprintf('%s.p%03d',$self->{UTT_ID},$self->{SEG_COUNTER}));
+  }
   return $self->appendQueue(0, $segment);
 }
 sub appendQueue {
@@ -301,7 +311,7 @@ sub addPageBreak {
   $pbNode->setAttribute('source', $params{source}) if defined $params{source};
   $self->{PAGECOUNTER}++;
   $pbNode->setAttribute('n', $self->{PAGECOUNTER});
-  $pbNode->setAttributeNS($self->{NS}->{xml}, 'id', sprintf("pb-%03d",$self->{PAGECOUNTER}));
+  $pbNode->setAttributeNS($self->{NS}->{xml}, 'id', sprintf("%s.pb%03d",$self->{ID}, $self->{PAGECOUNTER}));
   $self->addToElemsQueue($pbNode,1);
   return $self;
 }
