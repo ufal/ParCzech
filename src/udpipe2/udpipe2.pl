@@ -457,7 +457,7 @@ sub add_token {
 
   if(defined($opts{parent_token})) { # contracted token parts
     $token->setAttribute('norm', $opts{form});
-    $token->setAttribute('orig', '');
+    # $token->setAttribute('orig', '');
     $opts{parent_token}->appendChild($token);
 
   } else {
