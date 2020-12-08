@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use open qw(:std :utf8);
 use utf8;
-
+use File::Spec;
 
 my ($lock_result,$input_file,$output_file,$filelist);
 my $input_dir = './';
@@ -191,6 +191,9 @@ sub print {
 package ParCzech::PipeLine::FileManager::XML;
 use XML::LibXML::PrettyPrint;
 
+use File::Basename;
+use File::Path;
+
 sub to_string {
   my $doc = shift;
   my $pp = XML::LibXML::PrettyPrint->new(
@@ -216,6 +219,8 @@ sub print {
 
 sub save_to_file {
   my ($doc,$filename) = @_;
+  my $dir = dirname($filename);
+  File::Path::mkpath($dir) unless -d $dir;
   open FILE, ">$filename";
   binmode FILE;
   print FILE to_string($doc);
