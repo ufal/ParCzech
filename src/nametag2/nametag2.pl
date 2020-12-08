@@ -52,8 +52,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
   next unless defined($current_file->{dom});
 
   my $doc = $current_file->get_doc();
-  my $name_id_prefix = $current_file->get_doc_id();
-  $name_id_prefix =~ s/^[a-z]*-?/ne-/;
+  my $name_id_prefix = $current_file->get_doc_id().'.ne';
 
   my @sentences = $xpc->findnodes('//tei:text//tei:'.$sent_element_name,$doc);
   my $id_counter = 0;
@@ -128,7 +127,7 @@ sub fill_vertical_data_doc {
     my ($range, $type, $text) = split(/\t/, $line);
     my @linenumbers = split(",",$range);
     my $nm = $nodeTagger->add_name_entity($type, $linenumbers[0], $linenumbers[$#linenumbers], $name_cnt);
-    $nm->setAttribute('DEBUG',$text) if $nm;
+    $nm->setAttribute('LABEL',$text) if $nm and $debug;
   }
   return $name_cnt;
 }
@@ -174,7 +173,7 @@ sub new {
 
 sub set_id_prefix {
   my $self = shift;
-  $self->{name_id_prefix} = shift || $self->{id_prefix};
+  $self->{id_prefix} = shift || $self->{id_prefix};
 }
 
 
@@ -195,14 +194,13 @@ sub cover_tokens_with_name {
   my $anc = get_common_ancestor($start, $end);
 
   unless($anc){
-    print STDERR "   START:", $start->toString(),"\n";
-    print STDERR "     END:", $end->toString(),"\n";
+    print STDERR "Unable to add Named Entity (possible crossing elements)", $start->toString()," ... ", $end->toString(),"\n";
     return;
   }
 
   my $name_elem = XML::LibXML::Element->new('name');
   $name_elem->setAttribute('ana',"ne:$type");
-  $name_elem->setAttributeNS($xmlNS, 'id', $self->{id_prefix}."-$id");
+  $name_elem->setAttributeNS($xmlNS, 'id', sprintf("%s%03d",$self->{id_prefix},$id));
   # append <name> element to ancestor before first_child
   $anc->{ancestor}->insertBefore($name_elem, $anc->{first_child});
   # unbind all children between first and last child (included) and append them to <name>
