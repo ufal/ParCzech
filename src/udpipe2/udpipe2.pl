@@ -65,13 +65,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
 
   my $doc = $current_file->get_doc();
 
-  my $token_id_prefix = $current_file->get_doc_id();
-  $token_id_prefix =~ s/^[a-z]*-?/w-/;
-  my $sent_id_prefix = $current_file->get_doc_id();
-  $sent_id_prefix =~ s/^[a-z]*-?/s-/;
-
   my @parents = $xpc->findnodes('//tei:text//tei:*[contains(" '.join(' ',split(',',$elements_names)).' ", concat(" ",name()," "))]',$doc);
-  my $id_counters = [0,0];
   while(@parents) {
     my @nodes = (); # {parent: ..., node: ..., text: ..., tokenize: boolean}
     my $text = '';
@@ -79,11 +73,13 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
     my $grandpa = undef;
     while(my $parent = shift @parents) {
       # test if parent contains any text to be tokenized !!!
+      my $parent_id = $parent->getAttributeNS('http://www.w3.org/XML/1998/namespace','id');
       $parent_cnt++;
       for my $chnode ($parent->childNodes()) {
         $chnode->unbindNode();
         my $child = {
           parent => $parent,
+          parent_id => $parent_id,
           parent_cnt => $parent_cnt,
           node => $chnode,
           text => '',
@@ -111,7 +107,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
       $grandpa = $grandpa_a;
     }
     my $conll = run_udpipe($text);
-    $id_counters = fill_conllu_data_doc($conll, $text, $id_counters, $token_id_prefix, $sent_id_prefix, @nodes);
+    fill_conllu_data_doc($conll, $text, @nodes);
   }
   $current_file->add_metadata('application',
         app => 'UDPipe',
@@ -148,11 +144,8 @@ sub run_udpipe {
 
 
 sub fill_conllu_data_doc {
-  my ($conll_text, $text, $id_counters, $token_id_prefix, $sent_id_prefix, @node_list) = @_;
+  my ($conll_text, $text, @node_list) = @_;
   my $nodeFeeder = NodeFeeder->new($text, @node_list);
-  my ($sent_cnt, $token_cnt) = @$id_counters;
-  $nodeFeeder->set_token_id_prefix($token_id_prefix);
-  $nodeFeeder->set_sent_id_prefix($sent_id_prefix);
   $nodeFeeder->set_no_parse(1) if $no_parse;
   $nodeFeeder->set_no_lemma_tag(1) if $no_lemma_tag;
   my @lines = split /\n/, $conll_text;
@@ -163,15 +156,12 @@ sub fill_conllu_data_doc {
       if($line =~ /^# newpar/) {
         $nodeFeeder->new_paragraph();
       } elsif ($line =~ /^# sent_id = (\d+)/) { # sentence beginning
-        $sent_cnt++;
-        $nodeFeeder->new_sentence($sent_cnt);
+        $nodeFeeder->new_sentence();
       } elsif ($line =~ /^# text = (.*)/) {
         $nodeFeeder->add_xml_comment($1); # TEMPORARY !!!
       } elsif ($line =~ /^(\d+)\t([^\t]+)\t/) {
         my ($ti,$tt,$tl,$tp,$tg,$tf,$th,$tr, undef ,$tsp) = split(/\t/, $line);
-        $token_cnt++;
         $nodeFeeder->add_token(
-            tok_i => $token_cnt,
             i=>$ti,
             form => $tt,
             lemma => $tl,
@@ -186,10 +176,7 @@ sub fill_conllu_data_doc {
 
       } elsif ($line =~ /^(\d+)-(\d+)\t/) {
         my (undef,$tt,undef,undef,undef,undef,undef,undef, undef ,$tsp) = split(/\t/, $line);
-        $token_cnt++;
         my $token = $nodeFeeder->add_token(
-            tok_i => $token_cnt,
-            #i=>$ti,
             form => $tt,
             spacing => $tsp,
           );
@@ -201,7 +188,6 @@ sub fill_conllu_data_doc {
     $nodeFeeder->close_sentence();
   }
   $nodeFeeder->close_paragraph();
-  return [$sent_cnt, $token_cnt];
 }
 
 
@@ -255,6 +241,8 @@ sub new {
   $self->{no_lemma_tag} = 0;
   $self->{token_id_prefix} = 'w';
   $self->{sent_id_prefix} = 's';
+  $self->{token_counter} = 0;
+  $self->{sent_counter} = 0;
 
   return $self;
 }
@@ -288,6 +276,8 @@ sub new_paragraph {
   $self->{paragraph} = $self->{nodes}->[$self->{nodesptr}]->{parent};
   $self->{paragraph_ptr} = $self->{nodes}->[$self->{nodesptr}]->{parent_cnt};
   $self->{parent_stack} = [$self->{paragraph}];
+  $self->{sent_counter} = 0;
+  $self->set_sent_id_prefix($self->{nodes}->[$self->{nodesptr}]->{parent_id});
 
   $self->add_notes_and_spaces_to_queue();
   $self->print_queue();
@@ -312,9 +302,12 @@ sub close_paragraph {
 
 sub new_sentence {
   my $self = shift;
-  my $id = $self->{sent_id_prefix}.'-'.(shift//'');
 
   $self->close_sentence() if $self->{sentence};
+  $self->{sent_counter}++;
+  $self->{token_counter} = 0;
+  my $id = sprintf("%s.s%03d",$self->{sent_id_prefix}, $self->{sent_counter});
+  $self->set_token_id_prefix($id);
 
   $self->add_notes_and_spaces_to_queue();
   $self->print_queue();
@@ -442,7 +435,8 @@ sub add_token {
 
   my $token = XML::LibXML::Element->new(($opts{upos}//'') eq 'PUNCT' ? $punct_element_name : $word_element_name );
 
-  my $id = $self->{token_id_prefix}.'-'.$opts{tok_i};
+  $self->{token_counter}++;
+  my $id = sprintf("%s.w%03d",$self->{token_id_prefix}, $self->{token_counter});
   $token->setAttributeNS($xmlNS, 'id', $id);
 
   if(defined($opts{head}) and !$self->{no_parse}){
