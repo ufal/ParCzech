@@ -54,8 +54,8 @@ sub new {
   $self->{TITLESTMT}->parentNode->addNewChild(undef,'sourceDesc')->addNewChild(undef,'p');
   $self->addMeetingData('authorized','yes');
   if(exists $params{id}) {
-  	$self->{ID} = 'ps'.$params{id};
-  	$root_node->setAttributeNS($self->{NS}->{xml}, 'id', $self->{ID});
+    $self->{ID} = $params{id};
+    $root_node->setAttributeNS($self->{NS}->{xml}, 'id', $self->{ID});
   }
   return $self;
 }
@@ -104,26 +104,14 @@ sub toFile {
   my @id_parts = split '-', $self->{ID};
   $self->appendQueue(1); # append queue  to <text><body><div>
 
-  my $filename = $params{outputfile} // File::Spec->catfile($self->{output}->{dir},join("-",@id_parts[0,1]),$self->{ID});
+  my $filename = $params{outputfile} // File::Spec->catfile($self->{output}->{dir},join("-",@id_parts[0,1]),$self->{ID}.'.xml');
   my $dir = dirname($filename);
   File::Path::mkpath($dir) unless -d $dir;
 
   $self->addMeetingData('term',$id_parts[0],1);
   $self->addMeetingData('meeting',join('/',@id_parts[0,1]),1);
-  $self->addMeetingData('agenda',join('/',map {s/[^0-9]*//g;$_} @id_parts[0,1,3]),1);
+  $self->addMeetingData('agenda',join('/',map {s/[^0-9]*//g;$_} @id_parts[0,1,3]),1);print STDERR "UPDATE AGENDA \n";
 
-  unless($params{outputfile}) {
-    my $suffix = '';
-    my $unauthorized = $self->{unauthorized} ? '.u' : '';
-    while(-f "$filename$suffix$unauthorized.xml"){
-      $suffix = 'a' unless $suffix;
-      $suffix = chr(ord($suffix)+1);
-    }
-    if($suffix || $unauthorized){
-      updateIds({DOM => $self->{DOM}, XPC => $self->{XPC}, NS => $self->{NS}},$self->{ID}, $self->{ID}.$suffix.$unauthorized)
-    }
-    $filename = "$filename$suffix$unauthorized.xml";
-  }
   my $listPerson;
   if(%{$self->{THIS_TEI_PERSON_IDS}}){
   	$listPerson = XML::LibXML::Element->new("listPerson");

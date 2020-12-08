@@ -181,6 +181,7 @@ for my $day_audio_page_link (@day_audio_page_links) {
 
 my $author = {};
 my $post = {};
+my $topic_cntr = 0;
 my $last_sitting_date;
 my %seen_topics;
 my $teiCorpus;
@@ -414,8 +415,9 @@ sub add_audio_to_teiCorpus {
 
 sub init_TEI {
   my ($term_id, $meeting_id, $sitting_id, $topic_id) = @_;
-  debug_print( "NEW DOCUMENT " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__);
-  $teiCorpus = TEI::ParlaClarin::TEI->new(id => "$term_id-$meeting_id-$sitting_id-$topic_id", output_dir => $tei_out_dir,
+  my $new_doc_id = sprintf('ps%d-%03d-%02d-%03d-%03d',$term_id, $meeting_id, $sitting_id, $topic_cntr, $topic_id );
+  debug_print( "NEW DOCUMENT $new_doc_id " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__);
+  $teiCorpus = TEI::ParlaClarin::TEI->new(id => $new_doc_id, output_dir => $tei_out_dir,
                                           title => ["Parliament of the Czech Republic, Chamber of Deputies"],
                                           edition => "2.0b" );
 }
@@ -423,6 +425,7 @@ sub init_TEI {
 sub export_TEI {
   if($teiCorpus && !$teiCorpus->isEmpty()) {
     my $filepath = $teiCorpus->toFile();
+    $topic_cntr++;
 
    # print STDERR "otestovat jestli se soubor změnil -> md5\n";
    # print STDERR "vyřešit verzování -> když se změní jen některý soubor z jednání -> problém se suffixem, který se automaticky upravuje\n";
