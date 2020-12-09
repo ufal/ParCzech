@@ -26,7 +26,7 @@ my $word_element_name = 'w';
 my $punct_element_name = 'pc';
 my $sent_element_name = 's';
 
-my $max_sent_cnt = 60;
+my $max_sent_cnt = 500;
 
 
 GetOptions ( ## Command line options
