@@ -2,7 +2,7 @@ use warnings;
 use strict;
 use utf8;
 
-use lib './downloader/lib';
+use lib './../downloader/lib';
 
 use ScrapperUfal;
 use Getopt::Long;
@@ -45,10 +45,10 @@ for my $pos_item (xpath_node('//table/tr[position() > 1 and count(td) = 3]')) {
   }
 }
 
-my $dom = XML::LibXML::Document->new("1.0", "UTF8");
+my $dom = XML::LibXML::Document->new("1.0", "utf-8");
 my $root_node =  XML::LibXML::Element->new("div");
 $dom->setDocumentElement($root_node);
-$root_node->setNamespace('http://www.tei-c.org/ns/1.0','tei',0);
+$root_node->setNamespace('http://www.tei-c.org/ns/1.0','',1);
 $root_node->setNamespace($xmlNS,'xml',0);
 $root_node->setAttributeNS($xmlNS,'id','pdt');
 $root_node->setAttribute('type','part');
