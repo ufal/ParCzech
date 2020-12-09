@@ -85,7 +85,12 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
         label => "NameTag 2 with $model model",
         desc => 'Name entity recognition'
       );
-
+  $current_file->add_metadata('prefix',
+      ident => 'ne',
+      matchPattern => '(.+)',
+      replacementPattern => '../ne-fslib.xml#$1',
+      p => 'Feature-structure elements definition of the Named Entities (cnec2.0)'
+    );
   #print STDERR $xpc->findnodes('//tei:text',$doc);
   if($test) {
     $current_file->print();
@@ -199,7 +204,7 @@ sub cover_tokens_with_name {
   }
 
   my $name_elem = XML::LibXML::Element->new('name');
-  $name_elem->setAttribute('ana',"ne:$type");
+  $name_elem->setAttribute('ana',lc "ne:$type");
   $name_elem->setAttributeNS($xmlNS, 'id', sprintf("%s%03d",$self->{id_prefix},$id));
   # append <name> element to ancestor before first_child
   $anc->{ancestor}->insertBefore($name_elem, $anc->{first_child});
