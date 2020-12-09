@@ -158,6 +158,15 @@ sub add_metadata {
       $self->{xpc})->setAttribute('target', $metadata{ref}) if $metadata{ref};
     $application->appendTextChild('label', $metadata{label}) if $metadata{label};
     $application->appendTextChild('desc', $metadata{desc}) if $metadata{desc};
+  } elsif ($type eq 'prefix') {
+    my $prefix = ParCzech::PipeLine::FileManager::XML::makenode(
+      $self->{dom},
+      "//tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[\@ident=\"$metadata{ident}\"]",
+      $self->{xpc});
+    for my $n (qw/matchPattern replacementPattern/) {
+      $prefix->setAttribute($n, $metadata{$n}) if defined($metadata{$n});
+    }
+    $prefix->appendTextChild('p',$metadata{p}) if defined($metadata{p});
   } else {
     print STDERR "Unknown metadata type: $type\n";
   }

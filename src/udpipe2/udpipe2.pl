@@ -117,6 +117,12 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
         label => "UDPipe 2 with $model model",
         desc => 'POS tagging, lemmatization and dependency parsing'
       );
+  $current_file->add_metadata('prefix',
+      ident => 'pdt',
+      matchPattern => '(.+)',
+      replacementPattern => '../pdt-fslib.xml#$1',
+      p => 'Feature-structure elements definition of the Czech Positional Tags'
+    );
 
   #print STDERR $xpc->findnodes('//tei:text',$doc);
   if($test) {
@@ -451,6 +457,10 @@ sub add_token {
     $opts{msd} = "UposTag=$opts{upos}|$opts{feat}";
     $opts{msd} =~ s/\|\_$//;
     $token->setAttribute('msd', $opts{msd});
+  }
+
+  if(defined($opts{xpos}) and !$self->{no_lemma_tag}) {
+    $token->setAttribute('ana', 'pdt:'.ParCzech::PipeLine::FileManager::XML::encode_id($opts{xpos}));
   }
 
   $token->setAttribute('join', 'right') if ($opts{spacing} // '') =~ /SpaceAfter=No/;
