@@ -2,8 +2,9 @@ use warnings;
 use strict;
 use utf8;
 
-use lib './downloader/lib';
+use lib ('../downloader/lib', '../lib');
 
+use ParCzech::PipeLine::FileManager;
 use ScrapperUfal;
 use Getopt::Long;
 use XML::LibXML::PrettyPrint;
@@ -93,14 +94,5 @@ print  $str;
 
 
 sub encode_id {
-  my $string = shift;
-  while($string =~ m/^(.*)([^-_a-zA-Z0-9])(.*)$/) {
-    $string = $1.replace_char($2).$3;
-  }
-  return $string;
-}
-
-sub replace_char {
-  my $c = shift;
-  return sprintf('_%X_', ord($c));
+  return ParCzech::PipeLine::FileManager::XML::encode_id(shift);
 }

@@ -272,7 +272,18 @@ sub makenode {
 };
 
 
+sub encode_id {
+  my $string = shift;
+  while($string =~ m/^(.*)([^-_a-zA-Z0-9])(.*)$/) {
+    $string = $1.replace_char($2).$3;
+  }
+  return $string;
+}
 
+sub replace_char {
+  my $c = shift;
+  return sprintf('_%X_', ord($c));
+}
 
 
 
