@@ -2,7 +2,7 @@ use warnings;
 use strict;
 use utf8;
 
-use lib './../downloader/lib';
+use lib './downloader/lib';
 
 use ScrapperUfal;
 use Getopt::Long;
