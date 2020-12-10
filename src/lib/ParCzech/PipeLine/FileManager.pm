@@ -105,27 +105,12 @@ sub new {
   $self->{raw} = undef;
   $self->{dom} = undef;
 
-
-  open FILE, $self->{inpath};
-  binmode ( FILE, ":utf8" );
-  my $rawxml = <FILE>;
-  close FILE;
-
-  if ( $rawxml eq '' ) {
-    print " -- empty file ".$self->{inpath}."\n";
-  } else {
-    my $parser = XML::LibXML->new();
-    my $doc = "";
-    eval { $doc = $parser->load_xml(string => $rawxml); };
-    if ( !$doc ) {
-      print " -- invalid XML in ".$self->{inpath}."\n";
-      print STDERR $rawxml;
-
-    } else {
-      $self->{raw} = $rawxml;
-      $self->{dom} = $doc;
-    }
+  my $xml = ParCzech::PipeLine::FileManager::XML::open_xml($self->{inpath});
+  if($xml) {
+    $self->{raw} = $xml->{raw};
+    $self->{dom} = $xml->{dom};
   }
+
   return $self
 }
 
@@ -202,6 +187,31 @@ use XML::LibXML::PrettyPrint;
 
 use File::Basename;
 use File::Path;
+
+sub open_xml {
+  my $file = shift;
+  my $xml;
+  open FILE, $file;
+  binmode ( FILE, ":utf8" );
+  my $rawxml = <FILE>;
+  close FILE;
+
+  if ( $rawxml eq '' ) {
+    print " -- empty file $file\n";
+  } else {
+    my $parser = XML::LibXML->new();
+    my $doc = "";
+    eval { $doc = $parser->load_xml(string => $rawxml); };
+    if ( !$doc ) {
+      print " -- invalid XML in $file\n";
+      print STDERR $rawxml;
+
+    } else {
+      $xml = {raw => $rawxml, dom => $doc}
+    }
+  }
+  return $xml
+}
 
 sub to_string {
   my $doc = shift;
