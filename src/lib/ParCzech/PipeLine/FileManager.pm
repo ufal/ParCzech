@@ -142,12 +142,12 @@ sub add_metadata {
       $self->{xpc});
     $application->setAttribute('version', $metadata{version}) if defined($metadata{version});
     $application->setAttribute('source', $metadata{source}) if defined($metadata{source});
+    $application->appendTextChild('label', $metadata{label}) if $metadata{label};
+    $application->appendTextChild('desc', $metadata{desc}) if $metadata{desc};
     ParCzech::PipeLine::FileManager::XML::makenode(
       $application,
       "./tei:ref",
       $self->{xpc})->setAttribute('target', $metadata{ref}) if $metadata{ref};
-    $application->appendTextChild('label', $metadata{label}) if $metadata{label};
-    $application->appendTextChild('desc', $metadata{desc}) if $metadata{desc};
   } elsif ($type eq 'prefix') {
     my $prefix = ParCzech::PipeLine::FileManager::XML::makenode(
       $self->{dom},
@@ -174,11 +174,8 @@ sub add_metadata {
 sub add_static_data {
   my $self = shift;
   my ($app, $file) = @_;
-  print STDERR "add_static_data\n";
   my $xml = ParCzech::PipeLine::FileManager::XML::open_xml($file);
   if($xml) {
-
-    print STDERR "\txml\n";
     my $dom = $xml->{dom};
     for my $item ($self->{xpc}->findnodes('//pcz:ParCzech/pcz:app[@pcz:name="'.$app.'"]/pcz:item[@pcz:xpath and ./pcz:tei]',$dom)) {
       my $xpath = $item->getAttributeNS($xmlNs{pcz}, 'xpath');
