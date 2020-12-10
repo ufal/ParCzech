@@ -17,9 +17,7 @@ my ($debug, $test, $model);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
-my $xpc = XML::LibXML::XPathContext->new;
-$xpc->registerNs('xml', $xmlNS);
-$xpc->registerNs('tei', 'http://www.tei-c.org/ns/1.0');
+my $xpc = ParCzech::PipeLine::FileManager::TeiFile::new_XPathContext();
 
 my $url = 'http://lindat.mff.cuni.cz/services/nametag/api/recognize';
 my $word_element_name = 'w';

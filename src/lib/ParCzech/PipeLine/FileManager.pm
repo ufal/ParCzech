@@ -177,8 +177,13 @@ sub print {
   ParCzech::PipeLine::FileManager::XML::print($self->{dom});
 }
 
-
-
+sub new_XPathContext {
+  my $xpc = XML::LibXML::XPathContext->new;
+  $xpc->registerNs('xml', 'http://www.w3.org/XML/1998/namespace');
+  $xpc->registerNs('tei', 'http://www.tei-c.org/ns/1.0');
+  $xpc->registerNs('pcz', 'http://ufal.mff.cuni.cz/parczech/ns/1.0');
+  return $xpc;
+}
 
 
 
