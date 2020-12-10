@@ -7,10 +7,16 @@ use Getopt::Long;
 use LWP::Simple;
 use LWP::UserAgent;
 use JSON;
+use File::Basename;
+use File::Spec;
+
 
 use ParCzech::PipeLine::FileManager;
 
 my $scriptname = $0;
+my $dirname = dirname($scriptname);
+
+my $static_file = File::Spec->catfile($dirname,'tei_include.xml');
 
 my ($debug, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names);
 
@@ -121,6 +127,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
       replacementPattern => '../pdt-fslib.xml#$1',
       p => 'Feature-structure elements definition of the Czech Positional Tags'
     );
+  $current_file->add_static_data('udpipe2', $static_file);
 
   #print STDERR $xpc->findnodes('//tei:text',$doc);
   if($test) {
