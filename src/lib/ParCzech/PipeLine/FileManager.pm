@@ -92,6 +92,11 @@ sub next_file {
 package ParCzech::PipeLine::FileManager::TeiFile;
 use POSIX qw(strftime);
 
+my %xmlNs = (
+  'xml' => 'http://www.w3.org/XML/1998/namespace',
+  'tei' => 'http://www.tei-c.org/ns/1.0',
+  'pcz' => 'http://ufal.mff.cuni.cz/parczech/ns/1.0'
+  );
 
 sub new {
   my $this  = shift;
@@ -166,6 +171,27 @@ sub add_metadata {
 }
 
 
+sub add_static_data {
+  my $self = shift;
+  my ($app, $file) = @_;
+  print STDERR "add_static_data\n";
+  my $xml = ParCzech::PipeLine::FileManager::XML::open_xml($file);
+  if($xml) {
+
+    print STDERR "\txml\n";
+    my $dom = $xml->{dom};
+    for my $item ($self->{xpc}->findnodes('//pcz:ParCzech/pcz:app[@pcz:name="'.$app.'"]/pcz:item[@pcz:xpath and ./pcz:tei]',$dom)) {
+      my $xpath = $item->getAttributeNS($xmlNs{pcz}, 'xpath');
+      my $appendPlace = ParCzech::PipeLine::FileManager::XML::makenode( $self->{dom}, $xpath, $self->{xpc});
+      my ($teiNodes) = $self->{xpc}->findnodes('./pcz:tei', $item);
+      if (defined $teiNodes) {
+        for my $content ($teiNodes->childNodes()) {
+          $appendPlace->appendChild($content->cloneNode(1));
+        }
+      }
+    }
+  }
+}
 
 sub save {
   my $self = shift;
@@ -179,9 +205,7 @@ sub print {
 
 sub new_XPathContext {
   my $xpc = XML::LibXML::XPathContext->new;
-  $xpc->registerNs('xml', 'http://www.w3.org/XML/1998/namespace');
-  $xpc->registerNs('tei', 'http://www.tei-c.org/ns/1.0');
-  $xpc->registerNs('pcz', 'http://ufal.mff.cuni.cz/parczech/ns/1.0');
+  $xpc->registerNs($_, $xmlNs{$_}) for keys %xmlNs ;
   return $xpc;
 }
 
@@ -224,8 +248,8 @@ sub to_string {
     indent_string => "  ",
     element => {
         inline   => [qw//], # note
-        #block    => [qw//],
-        #compact  => [qw//],
+        block    => [qw//],
+        compact  => [qw/catDesc term p desc label/],
         preserves_whitespace => [qw/s/],
         }
     );
