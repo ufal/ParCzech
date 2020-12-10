@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <pcz:ParCzech xmlns="http://www.tei-c.org/ns/1.0" xmlns:pcz="http://ufal.mff.cuni.cz/parczech/ns/1.0">
-  <pcz:app pcz:name="udpipe2">
+  <pcz:meta pcz:name="udpipe2">
     <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:tei>
         <taxonomy xml:id="UD-SYN">
@@ -107,5 +107,5 @@
         </taxonomy>
       </pcz:tei>
     </pcz:item>
-  </pcz:app>
+  </pcz:meta>
 </pcz:ParCzech>

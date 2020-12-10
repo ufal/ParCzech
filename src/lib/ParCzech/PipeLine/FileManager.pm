@@ -177,7 +177,7 @@ sub add_static_data {
   my $xml = ParCzech::PipeLine::FileManager::XML::open_xml($file);
   if($xml) {
     my $dom = $xml->{dom};
-    for my $item ($self->{xpc}->findnodes('//pcz:ParCzech/pcz:app[@pcz:name="'.$app.'"]/pcz:item[@pcz:xpath and ./pcz:tei]',$dom)) {
+    for my $item ($self->{xpc}->findnodes('//pcz:ParCzech/pcz:meta[@pcz:name="'.$app.'"]/pcz:item[@pcz:xpath and ./pcz:tei]',$dom)) {
       my $xpath = $item->getAttributeNS($xmlNs{pcz}, 'xpath');
       my $appendPlace = ParCzech::PipeLine::FileManager::XML::makenode( $self->{dom}, $xpath, $self->{xpc});
       my ($teiNodes) = $self->{xpc}->findnodes('./pcz:tei', $item);
