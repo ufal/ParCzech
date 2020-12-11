@@ -84,19 +84,23 @@ export CL_OUTDIR_TEI=$DATA_DIR/downloader-tei
 export CL_OUTDIR_CACHE=$DATA_DIR/downloader-cache
 export CL_OUTDIR_HTML=$DATA_DIR/downloader-html
 export CL_SCRIPT=stenoprotokoly_2013ps-now.pl
+export FILELISTS_DIR=$DATA_DIR/filelists
 mkdir -p $CL_WORKDIR
 mkdir -p $CL_OUTDIR_YAML
 mkdir -p $CL_OUTDIR_TEI
 mkdir -p $CL_OUTDIR_CACHE
 mkdir -p $CL_OUTDIR_HTML
+mkdir -p $FILELISTS_DIR
 
-export PERSON_LIST_PATH="$CL_OUTDIR_TEI/$ID/person.xml"
+export DOWNLOADER_TEI="$CL_OUTDIR_TEI/$ID"
+export PERSON_LIST_PATH="$DOWNLOADER_TEI/person.xml"
+export NEW_TEI_FILELIST="$FILELISTS_DIR/$ID.tei.fl"
 export LAST_ID=`ls $CL_OUTDIR_TEI|grep -v "sha1sum.list"|sort|tail -n 1`
 
 
 if [ -f "$CL_OUTDIR_TEI/$LAST_ID/person.xml" ]; then
   echo "moving $CL_OUTDIR_TEI/$LAST_ID/person.xml"
-  mkdir -p "$CL_OUTDIR_TEI/$ID"
+  mkdir -p "$DOWNLOADER_TEI"
   cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$PERSON_LIST_PATH"
 fi
 
@@ -107,7 +111,7 @@ perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_O
 export DOWNLOADER_TEI_HASHES=$DATA_DIR/downloader-tei/sha1sum.list
 touch $DOWNLOADER_TEI_HASHES
 
-for hf in `find "$CL_OUTDIR_TEI/$ID" -type f ! -name "person.xml" -exec sha1sum {} \;|tr -s ' '|tr ' ' '='`
+for hf in `find "$DOWNLOADER_TEI" -type f ! -name "person.xml" -exec sha1sum {} \;|tr -s ' '|tr ' ' '='`
 do
   hash=${hf%=*}
   file=${hf##*/}
@@ -119,6 +123,8 @@ do
   	echo $hf >> $DOWNLOADER_TEI_HASHES
   fi
 done
+
+find "$DOWNLOADER_TEI" -type f -name '*.xml' ! -name "person.xml" -printf '%P\n' > $NEW_TEI_FILELIST
 
 
 ### cache to html
@@ -243,17 +249,19 @@ export AUDIO_PATH_ORIG=$DATA_DIR/audio-orig
 #    morphodita-tei/$ID
 ###############################################
 
-log_process "tei_morphodita"
-log "morphodita tei $ID"
+# log_process "tei_morphodita"
+# log "morphodita tei $ID"
 
-export MORPHODITA_TEI=$DATA_DIR/morphodita-tei/${ID}
-export MORPHODITA_TEI_INPUT=$CL_OUTDIR_TEI/${ID}
-mkdir -p $MORPHODITA_TEI
+# export MORPHODITA_TEI=$DATA_DIR/morphodita-tei/${ID}
+# export MORPHODITA_TEI_INPUT=$CL_OUTDIR_TEI/${ID}
+# mkdir -p $MORPHODITA_TEI
 
-rsync -a --exclude "person.xml" --prune-empty-dirs $MORPHODITA_TEI_INPUT/ $MORPHODITA_TEI
-find $MORPHODITA_TEI -type f -name '*.xml' > $MORPHODITA_TEI/filelist
+# rsync -a --exclude "person.xml" --prune-empty-dirs $MORPHODITA_TEI_INPUT/ $MORPHODITA_TEI
+# find $MORPHODITA_TEI -type f -name '*.xml' > $MORPHODITA_TEI/filelist
 
-perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models/czech-morfflex-pdt-161115.tagger  --filelist $MORPHODITA_TEI/filelist --tags="msd mul::uposf" --tags="ana cs::multext" --tags="ana cs::pdt" --tags="pos mul::uposf" --no-backup-file
+# perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models/czech-morfflex-pdt-161115.tagger  --filelist $MORPHODITA_TEI/filelist --tags="msd mul::uposf" --tags="ana cs::multext" --tags="ana cs::pdt" --tags="pos mul::uposf" --no-backup-file
+
+
 ### paginate (backuped to *.nopb.xml)
 # perl paginator-module/paginator.pl  --filelist $MORPHODITA_TEI/filelist
 ### convert tags (backuped to *.pdtuposf.xml)
@@ -269,19 +277,49 @@ perl MorphoDiTa-module/xmlmorphodita.pl --model $SHARED/MorphoDiTa-module/models
 #    nametag-tei/$ID
 ###############################
 
-log_process "tei_nametagging"
-log "nametagging tei $ID"
+# log_process "tei_nametagging"
+# log "nametagging tei $ID"
+
+# export NAMETAG_TEI=$DATA_DIR/nametag-tei/${ID}
+# mkdir -p $NAMETAG_TEI
+
+# # copy tokenized+PoSed+Lematized files (ignore backups *.nmorph.xml)
+# rsync -a --prune-empty-dirs --exclude '*.nmorph.xml' --exclude '*.nopb.xml' --exclude '*.pdtuposf.xml' $MORPHODITA_TEI/ $NAMETAG_TEI
+
+# find $NAMETAG_TEI -type f -name '*.xml' > $NAMETAG_TEI/filelist
+# perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304-no_numbers.ner --filelist $NAMETAG_TEI/filelist --token-name="w" --token-name="pc" --no-backup-file
+
+
+
+###############################################
+###     UDPipe tei (using web service)      ###
+###  Tokenize, lemmatize, PoS, parse tei    ###
+#  input:
+#    downloader-tei/$ID
+#  output:
+#    udpipe-tei/$ID
+###############################################
+
+export UDPIPE_TEI=$DATA_DIR/udpipe-tei/${ID}
+mkdir -p $UDPIPE_TEI
+
+perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 --filelist $NEW_TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $UDPIPE_TEI
+
+###############################
+###     NameTag tei         ###
+#  input:
+#    udpipe-tei/$ID
+#  output:
+#    nametag-tei/$ID
+###############################
 
 export NAMETAG_TEI=$DATA_DIR/nametag-tei/${ID}
 mkdir -p $NAMETAG_TEI
 
-# copy tokenized+PoSed+Lematized files (ignore backups *.nmorph.xml)
-rsync -a --prune-empty-dirs --exclude '*.nmorph.xml' --exclude '*.nopb.xml' --exclude '*.pdtuposf.xml' $MORPHODITA_TEI/ $NAMETAG_TEI
-
-find $NAMETAG_TEI -type f -name '*.xml' > $NAMETAG_TEI/filelist
-perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cnec2.0-140304-no_numbers.ner --filelist $NAMETAG_TEI/filelist --token-name="w" --token-name="pc" --no-backup-file
+perl -I lib nametag2/nametag2.pl --model=czech-cnec2.0-200831 --filelist $NEW_TEI_FILELIST --input-dir $UDPIPE_TEI --output-dir $NAMETAG_TEI
 
 
+echo "TODO: fix tei to teitok conversion";exit;
 ###############################
 ###     FINALIZE            ###
 ### converting to teitok    ###
@@ -294,7 +332,7 @@ perl NameTag-module/xmlnametag.pl --model $SHARED/NameTag-module/models/czech-cn
 export TEITOK_TEI=$DATA_DIR/teitok-tei/${ID}
 mkdir -p $TEITOK_TEI
 
-for tei_file in `cat $NAMETAG_TEI/filelist`
+for tei_file in `cat $NEW_TEI_FILELIST`
 do
   out_file=`echo "$tei_file" | sed "s@^$NAMETAG_TEI@$TEITOK_TEI@" `
   ./tei2teitok/tei2teitok.sh  -i $tei_file -o $out_file -c `realpath $CONFIG_FILE`
