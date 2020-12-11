@@ -91,6 +91,7 @@ sub next_file {
 
 package ParCzech::PipeLine::FileManager::TeiFile;
 use POSIX qw(strftime);
+use XML::LibXML qw(:libxml);
 
 my %xmlNs = (
   'xml' => 'http://www.w3.org/XML/1998/namespace',
@@ -202,6 +203,8 @@ sub _add_static_data_items {
     my $xpath = $item->getAttributeNS($xmlNs{pcz}, 'xpath');
     my $dep_name = $item->getAttributeNS($xmlNs{pcz}, 'dep');
 
+    next unless $self->_static_data_items_test($self->{xpc}->findnodes('./pcz:test', $item));
+
     if($xpath) {
       my $appendPlace = ParCzech::PipeLine::FileManager::XML::makenode( $self->{dom}, $xpath, $self->{xpc});
       my ($teiNodes) = $self->{xpc}->findnodes('./pcz:tei', $item);
@@ -214,6 +217,26 @@ sub _add_static_data_items {
       $self->_add_static_data_items($dep_name,$dom);
     }
   }
+}
+
+sub _static_data_items_test {
+  my $self = shift;
+  my $testnode = shift;
+  return 1 unless $testnode; # no test done - item can be added
+  for my $cond ($testnode->childNodes()) {
+    next if $cond->nodeType() == XML_TEXT_NODE;
+    my $xpath = $cond->getAttributeNS($xmlNs{pcz}, 'xpath');
+    next unless $xpath;
+    if($cond->nodeName() =~ /^[^:]*:?true$/) {
+      return undef unless scalar($self->{xpc}->findnodes($xpath, $self->{dom}));
+    } elsif ($cond->nodeName() =~ /^[^:]*:?false$/) {
+      return undef if scalar($self->{xpc}->findnodes($xpath, $self->{dom}));
+    } else {
+      print STDERR "unknown element $cond\n";
+    }
+  }
+
+  return 1
 }
 
 sub get_metadata_dom {
