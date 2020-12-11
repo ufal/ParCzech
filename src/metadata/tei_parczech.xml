@@ -37,8 +37,8 @@
                <orgName xml:lang="en"> LINDAT/CLARIAH-CZ - Digital Research Infrastructure for Language Technologies, Arts and Humanities</orgName>
                <ref target="https://www.lindat.cz">www.lindat.cz</ref>
             </publisher>
-            <idno type="handle"><!--TODO--></idno>
-            <pubPlace><ref target="--TODO--"><!--TODO--></ref>
+            <idno type="handle">http://hdl.handle.net/11234/1-3436</idno>
+            <pubPlace><ref target="http://hdl.handle.net/11234/1-3436">http://hdl.handle.net/11234/1-3436</ref>
             </pubPlace>
             <availability status="free">
                <licence>https://creativecommons.org/publicdomain/zero/1.0/</licence>
