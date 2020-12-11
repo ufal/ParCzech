@@ -282,8 +282,8 @@ sub to_string {
     element => {
         inline   => [qw//], # note
         block    => [qw//],
-        compact  => [qw/catDesc term p desc label/],
-        preserves_whitespace => [qw/s/],
+        compact  => [qw/catDesc term desc label date edition title meeting idno orgName persName resp licence/],
+        preserves_whitespace => [qw/s seg note ref p/],
         }
     );
   $pp->pretty_print($doc);
