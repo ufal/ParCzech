@@ -419,7 +419,7 @@ sub init_TEI {
   debug_print( "NEW DOCUMENT $new_doc_id " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__);
   $teiCorpus = TEI::ParlaClarin::TEI->new(id => $new_doc_id, output_dir => $tei_out_dir,
                                           title => ["Parliament of the Czech Republic, Chamber of Deputies"],
-                                          edition => "2.0b" );
+                                          );
 }
 
 sub export_TEI {

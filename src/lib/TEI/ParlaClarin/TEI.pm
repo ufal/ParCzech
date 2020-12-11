@@ -47,11 +47,6 @@ sub new {
   if($params{'title'}) {
     $self->{TITLESTMT}->appendTextChild('title', $_) for (  ! ref($params{title}) eq 'ARRAY' ? $params{title} : @{$params{title}} );
   }
-  if($params{'edition'}) {
-    $self->{TITLESTMT}->parentNode->addNewChild(undef,'editionStmt')->appendTextChild('edition', $params{'edition'});
-  }
-  $self->{TITLESTMT}->parentNode->addNewChild(undef,'publicationStmt')->addNewChild(undef,'p');
-  $self->{TITLESTMT}->parentNode->addNewChild(undef,'sourceDesc')->addNewChild(undef,'p');
   $self->addMeetingData('authorized','yes');
   if(exists $params{id}) {
     $self->{ID} = $params{id};
