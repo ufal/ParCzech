@@ -97,6 +97,7 @@ my %xmlNs = (
   'tei' => 'http://www.tei-c.org/ns/1.0',
   'pcz' => 'http://ufal.mff.cuni.cz/parczech/ns/1.0'
   );
+my %metadata = ();
 
 sub new {
   my $this  = shift;
@@ -174,9 +175,8 @@ sub add_metadata {
 sub add_static_data {
   my $self = shift;
   my ($app, $file) = @_;
-  my $xml = ParCzech::PipeLine::FileManager::XML::open_xml($file);
-  if($xml) {
-    my $dom = $xml->{dom};
+  my $dom = get_metadata_dom($file);
+  if($dom) {
     for my $item ($self->{xpc}->findnodes('//pcz:ParCzech/pcz:meta[@pcz:name="'.$app.'"]/pcz:item[@pcz:xpath and ./pcz:tei]',$dom)) {
       my $xpath = $item->getAttributeNS($xmlNs{pcz}, 'xpath');
       my $appendPlace = ParCzech::PipeLine::FileManager::XML::makenode( $self->{dom}, $xpath, $self->{xpc});
@@ -187,6 +187,16 @@ sub add_static_data {
         }
       }
     }
+  }
+}
+
+sub get_metadata_dom {
+  my $file = shift;
+  return $metadata{$file} if defined($metadata{$file});
+  my $xml = ParCzech::PipeLine::FileManager::XML::open_xml($file);
+  if($xml) {
+    $metadata{$file} = $xml->{dom};
+    return $metadata{$file};
   }
 }
 
