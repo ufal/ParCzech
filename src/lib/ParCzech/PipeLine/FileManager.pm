@@ -110,7 +110,7 @@ sub new {
   $self->{xpc} = $opts{xpc};
   $self->{raw} = undef;
   $self->{dom} = undef;
-
+  $self->{metadata_visited} = {};
   my $xml = ParCzech::PipeLine::FileManager::XML::open_xml($self->{inpath});
   if($xml) {
     $self->{raw} = $xml->{raw};
@@ -130,7 +130,18 @@ sub get_doc_id {
   return $self->{dom}->documentElement()->getAttributeNS('http://www.w3.org/XML/1998/namespace','id');
 }
 
+sub init_metadata_visited_detector {
+  my $self = shift;
+  $self->{metadata_visited} = {};
+}
 
+sub metadata_visited_detector {
+  my $self = shift;
+  my $name = shift;
+  return 1 if defined($self->{metadata_visited}->{$name});
+  $self->{metadata_visited}->{$name} = 1;
+  return;
+}
 
 sub add_metadata {
   my $self = shift;
@@ -174,11 +185,24 @@ sub add_metadata {
 
 sub add_static_data {
   my $self = shift;
-  my ($app, $file) = @_;
+  my ($name, $file) = @_;
+  $self->init_metadata_visited_detector();
   my $dom = get_metadata_dom($file);
   if($dom) {
-    for my $item ($self->{xpc}->findnodes('//pcz:ParCzech/pcz:meta[@pcz:name="'.$app.'"]/pcz:item[@pcz:xpath and ./pcz:tei]',$dom)) {
-      my $xpath = $item->getAttributeNS($xmlNs{pcz}, 'xpath');
+  	$self->_add_static_data_items($name,$dom);
+  }
+}
+
+sub _add_static_data_items {
+  my $self = shift;
+  my ($name,$dom) = @_;
+  return if $self->metadata_visited_detector($name);
+
+  for my $item ($self->{xpc}->findnodes('//pcz:ParCzech/pcz:meta[@pcz:name="'.$name.'"]/pcz:item',$dom)) {
+    my $xpath = $item->getAttributeNS($xmlNs{pcz}, 'xpath');
+    my $dep_name = $item->getAttributeNS($xmlNs{pcz}, 'dep');
+
+    if($xpath) {
       my $appendPlace = ParCzech::PipeLine::FileManager::XML::makenode( $self->{dom}, $xpath, $self->{xpc});
       my ($teiNodes) = $self->{xpc}->findnodes('./pcz:tei', $item);
       if (defined $teiNodes) {
@@ -186,6 +210,8 @@ sub add_static_data {
           $appendPlace->appendChild($content->cloneNode(1));
         }
       }
+    } elsif ($dep_name) {
+      $self->_add_static_data_items($dep_name,$dom);
     }
   }
 }
