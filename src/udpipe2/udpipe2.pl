@@ -6,6 +6,7 @@ use XML::LibXML qw(:libxml);
 use Getopt::Long;
 use LWP::Simple;
 use LWP::UserAgent;
+use Time::HiRes;
 use JSON;
 use File::Basename;
 use File::Spec;
@@ -149,6 +150,7 @@ sub run_udpipe {
     "data" => $_text
   );
   my $res = $ua->post( $_url, \%form );
+  Time::HiRes::sleep(1);
   my $json = decode_json($res->decoded_content);
   return $json->{'result'};
 };
