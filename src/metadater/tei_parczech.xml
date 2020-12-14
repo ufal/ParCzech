@@ -1,16 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <pcz:ParCzech xmlns="http://www.tei-c.org/ns/1.0" xmlns:pcz="http://ufal.mff.cuni.cz/parczech/ns/1.0">
 
-  <pcz:meta pcz:name="ParCzech2.0">
+
+  <pcz:meta pcz:name="ParCzechPS7-2.0">
+    <pcz:item pcz:dep="ParCzechPS-2.0" />
+    <pcz:item pcz:dep="respKopp" />
+    <pcz:item pcz:dep="publisherLINDAT" />
+    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
+      <pcz:tei>
+        <idno type="handle">http://hdl.handle.net/11234/1-3436</idno>
+        <pubPlace><ref target="http://hdl.handle.net/11234/1-3436">http://hdl.handle.net/11234/1-3436</ref></pubPlace>
+        <availability status="free">
+          <licence>https://creativecommons.org/publicdomain/zero/1.0/</licence>
+          <p xml:lang="en">This work is licensed under the <ref target="https://creativecommons.org/publicdomain/zero/1.0/">CC0 1.0 Universal (CC0 1.0) Public Domain Dedication</ref>.</p>
+        </availability>
+        <date when="2020-12-20">2020-12-20</date>
+      </pcz:tei>
+    </pcz:item>
+    <pcz:item pcz:dep="ParCzechPS7-sourceDesc" /> <!-- last -->
+  </pcz:meta>
+
+  <pcz:meta pcz:name="ParCzechPS7-2.0.ann">
+    <pcz:item pcz:dep="ParCzechPS7-2.0" />
+    <pcz:item pcz:dep="ParCzechPS-2.0.ann" />
+    <!-- -->
+  </pcz:meta>
+
+
+  <pcz:meta pcz:name="ParCzechPS-2.0">
     <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:editionStmt">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:editionStmt" />
+      </pcz:test>
       <pcz:tei>
         <edition>2.0</edition>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
 
-  <pcz:meta pcz:name="ParCzechPS7">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:sourceDesc">
+  <pcz:meta pcz:name="ParCzechPS7-sourceDesc">
+     <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:sourceDesc"><!-- last item in fileDesc -->
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:sourceDesc/bibl" />
+      </pcz:test>
       <pcz:tei>
         <bibl>
           <title type="main" xml:lang="en">Parliament of the Czech Republic, Chamber of Deputies</title>
@@ -21,8 +53,39 @@
     </pcz:item>
   </pcz:meta>
 
+  <pcz:meta pcz:name="ParCzechPS-2.0.ann">
+    <pcz:item pcz:dep="ParCzech.ann" />
+    <!-- -->
+  </pcz:meta>
+
   <pcz:meta pcz:name="ParCzech">
+    <pcz:item pcz:dep="respKopp" />
+
+  </pcz:meta>
+
+
+  <pcz:meta pcz:name="ParCzech.ann">
+    <pcz:item pcz:dep="respKopp.ann" />
+  </pcz:meta>
+
+
+
+  <pcz:meta pcz:name="publisherLINDAT">
+    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
+      <pcz:tei>
+        <publisher>
+          <orgName xml:lang="en"> LINDAT/CLARIAH-CZ - Digital Research Infrastructure for Language Technologies, Arts and Humanities</orgName>
+          <ref target="https://www.lindat.cz">www.lindat.cz</ref>
+        </publisher>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
+
+  <pcz:meta pcz:name="respKopp">
     <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt/tei:persName[contains(@tei:ref,'0000-0001-7953-8783' ) ]" />
+      </pcz:test>
       <pcz:tei>
         <respStmt>
           <persName ref="https://orcid.org/0000-0001-7953-8783">Matyáš Kopp</persName>
@@ -30,34 +93,14 @@
         </respStmt>
       </pcz:tei>
     </pcz:item>
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc">
+  </pcz:meta>
+  <pcz:meta pcz:name="respKopp.ann">
+    <pcz:item pcz:dep="respKopp" />
+    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt[./tei:persName/text() = 'Matyáš Kopp']">
       <pcz:tei>
-         <publicationStmt>
-            <publisher>
-               <orgName xml:lang="en"> LINDAT/CLARIAH-CZ - Digital Research Infrastructure for Language Technologies, Arts and Humanities</orgName>
-               <ref target="https://www.lindat.cz">www.lindat.cz</ref>
-            </publisher>
-            <idno type="handle">http://hdl.handle.net/11234/1-3436</idno>
-            <pubPlace><ref target="http://hdl.handle.net/11234/1-3436">http://hdl.handle.net/11234/1-3436</ref>
-            </pubPlace>
-            <availability status="free">
-               <licence>https://creativecommons.org/publicdomain/zero/1.0/</licence>
-               <p xml:lang="en">This work is licensed under the <ref target="https://creativecommons.org/publicdomain/zero/1.0/">CC0 1.0 Universal (CC0 1.0) Public Domain Dedication</ref>.</p>
-            </availability>
-            <!-- TODO: <date when="2020-12-20">2020-12-20</date> -->
-         </publicationStmt>
+        <resp xml:lang="en">Linguistic annotation</resp>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
 
-  <pcz:meta pcz:name="ParCzech.ann">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt">
-      <pcz:tei>
-        <respStmt>
-          <persName ref="https://orcid.org/0000-0001-7953-8783">Matyáš Kopp</persName>
-          <resp xml:lang="en">Linguistic annotation</resp>
-        </respStmt>
-      </pcz:tei>
-    </pcz:item>
-  </pcz:meta>
 </pcz:ParCzech>
