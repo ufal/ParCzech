@@ -7,6 +7,9 @@
     <pcz:item pcz:dep="respKopp" />
     <pcz:item pcz:dep="publisherLINDAT" />
     <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt/tei:pubPlace" />
+      </pcz:test>
       <pcz:tei>
         <idno type="handle">http://hdl.handle.net/11234/1-3436</idno>
         <pubPlace><ref target="http://hdl.handle.net/11234/1-3436">http://hdl.handle.net/11234/1-3436</ref></pubPlace>
@@ -41,7 +44,7 @@
   <pcz:meta pcz:name="ParCzechPS7-sourceDesc">
      <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:sourceDesc"><!-- last item in fileDesc -->
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:sourceDesc/bibl" />
+        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:sourceDesc/tei:bibl" />
       </pcz:test>
       <pcz:tei>
         <bibl>
@@ -72,6 +75,9 @@
 
   <pcz:meta pcz:name="publisherLINDAT">
     <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt/tei:publisher" />
+      </pcz:test>
       <pcz:tei>
         <publisher>
           <orgName xml:lang="en"> LINDAT/CLARIAH-CZ - Digital Research Infrastructure for Language Technologies, Arts and Humanities</orgName>
@@ -84,7 +90,7 @@
   <pcz:meta pcz:name="respKopp">
     <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt/tei:persName[contains(@tei:ref,'0000-0001-7953-8783' ) ]" />
+        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt/tei:persName[text() = 'Matyáš Kopp']" />
       </pcz:test>
       <pcz:tei>
         <respStmt>
