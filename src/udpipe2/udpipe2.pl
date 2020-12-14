@@ -129,6 +129,12 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
       replacementPattern => '../pdt-fslib.xml#xpath(//fvLib/fs[./f/symbol/@value = \'$1\'])',
       p => 'Feature-structure elements definition of the Czech Positional Tags'
     ) unless $no_lemma_tag;
+  $current_file->add_metadata('prefix',
+      ident => 'ud-syn',
+      matchPattern => '^([^:]+)',
+      replacementPattern => '#$1',
+      p => 'Private URIs with this prefix point to elements giving their name. In this document they are simply local references into the UD-SYN taxonomy categories in the corpus root TEI header.'
+    ) unless $no_parse;
   $current_file->add_static_data('udpipe2', $udsyn_taxonomy) if $include_taxonomy or $no_parse;
 
   #print STDERR $xpc->findnodes('//tei:text',$doc);
