@@ -410,7 +410,13 @@ sub addAudioNote {
   $note->setAttribute('type','media');
   my $media = XML::LibXML::Element->new("media");
   $media->setAttribute('mimeType',$params{mimeType} // 'audio/mp3');
-  $media->setAttribute('url',$params{url}) if exists $params{url};
+  if(exists $params{url}) {
+    my $url = $params{url};
+    $media->setAttribute('source',$url);
+    $url =~ s{^https?://}{};
+    $url =~ s{^.*?eknih/}{};
+    $media->setAttribute('url',$url);
+  }
   $note->appendChild($media);
   # $tei_text->appendChild($note);
   $self->addToElemsQueue($note);
