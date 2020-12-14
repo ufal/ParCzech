@@ -327,7 +327,7 @@ sub new_sentence {
   $self->close_sentence() if $self->{sentence};
   $self->{sent_counter}++;
   $self->{token_counter} = 0;
-  my $id = sprintf("%s.s%03d",$self->{sent_id_prefix}, $self->{sent_counter});
+  my $id = sprintf("%s.s%d",$self->{sent_id_prefix}, $self->{sent_counter});
   $self->set_token_id_prefix($id);
 
   $self->add_notes_and_spaces_to_queue();
@@ -457,7 +457,7 @@ sub add_token {
   my $token = XML::LibXML::Element->new(($opts{upos}//'') eq 'PUNCT' ? $punct_element_name : $word_element_name );
 
   $self->{token_counter}++;
-  my $id = sprintf("%s.w%03d",$self->{token_id_prefix}, $self->{token_counter});
+  my $id = sprintf("%s.w%d",$self->{token_id_prefix}, $self->{token_counter});
   $token->setAttributeNS($xmlNS, 'id', $id);
 
   if(defined($opts{head}) and !$self->{no_parse}){

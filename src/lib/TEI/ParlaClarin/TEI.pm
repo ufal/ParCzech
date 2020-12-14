@@ -226,7 +226,7 @@ sub addUtterance { # don't change actTEI
     }
     $u->setAttribute('ana', '#'.$params{author}->{role}) if $params{author}->{role};
   }
-  $self->{UTT_ID} = sprintf('%s.u%03d',$self->{ID},$self->{UTT_COUNTER});
+  $self->{UTT_ID} = sprintf('%s.u%d',$self->{ID},$self->{UTT_COUNTER});
   $u->setAttributeNS($self->{NS}->{xml}, 'id', $self->{UTT_ID}); # if exists $params{id};
   if(exists $params{link}) {
     $u->setAttribute('source',$params{link});
@@ -266,7 +266,7 @@ sub addToUtterance {
   unless($segment) {
     $segment = $self->{activeUtterance}->addNewChild(undef, 'seg');
     $self->{SEG_COUNTER}++;
-    $segment->setAttributeNS($self->{NS}->{xml}, 'id', sprintf('%s.p%03d',$self->{UTT_ID},$self->{SEG_COUNTER}));
+    $segment->setAttributeNS($self->{NS}->{xml}, 'id', sprintf('%s.p%d',$self->{UTT_ID},$self->{SEG_COUNTER}));
   }
   return $self->appendQueue(0, $segment);
 }
@@ -294,7 +294,7 @@ sub addPageBreak {
   $pbNode->setAttribute('source', $params{source}) if defined $params{source};
   $self->{PAGECOUNTER}++;
   $pbNode->setAttribute('n', $self->{PAGECOUNTER});
-  $pbNode->setAttributeNS($self->{NS}->{xml}, 'id', sprintf("%s.pb%03d",$self->{ID}, $self->{PAGECOUNTER}));
+  $pbNode->setAttributeNS($self->{NS}->{xml}, 'id', sprintf("%s.pb%d",$self->{ID}, $self->{PAGECOUNTER}));
   $self->addToElemsQueue($pbNode,1);
   return $self;
 }

@@ -203,7 +203,7 @@ sub cover_tokens_with_name {
 
   my $name_elem = XML::LibXML::Element->new('name');
   $name_elem->setAttribute('ana',lc "ne:$type");
-  $name_elem->setAttributeNS($xmlNS, 'id', sprintf("%s%03d",$self->{id_prefix},$id));
+  $name_elem->setAttributeNS($xmlNS, 'id', sprintf("%s%d",$self->{id_prefix},$id));
   # append <name> element to ancestor before first_child
   $anc->{ancestor}->insertBefore($name_elem, $anc->{first_child});
   # unbind all children between first and last child (included) and append them to <name>
