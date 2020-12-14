@@ -126,7 +126,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
   $current_file->add_metadata('prefix',
       ident => 'pdt',
       matchPattern => '(.+)',
-      replacementPattern => '../pdt-fslib.xml#$1',
+      replacementPattern => '../pdt-fslib.xml#xpath(//fvLib/fs[./f/symbol/@value = \'$1\'])',
       p => 'Feature-structure elements definition of the Czech Positional Tags'
     ) unless $no_lemma_tag;
   $current_file->add_static_data('udpipe2', $udsyn_taxonomy) if $include_taxonomy or $no_parse;
@@ -469,7 +469,7 @@ sub add_token {
   }
 
   if(defined($opts{xpos}) and !$self->{no_lemma_tag}) {
-    $token->setAttribute('ana', 'pdt:'.ParCzech::PipeLine::FileManager::XML::encode_id($opts{xpos}));
+    $token->setAttribute('ana', 'pdt:'.$opts{xpos});
   }
 
   $token->setAttribute('join', 'right') if ($opts{spacing} // '') =~ /SpaceAfter=No/;
