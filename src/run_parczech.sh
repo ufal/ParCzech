@@ -130,6 +130,21 @@ find "$DOWNLOADER_TEI" -type f -name '*.xml' ! -name "person.xml" -printf '%P\n'
 ### cache to html
 ./cache_to_dir_tree.sh -c $CL_OUTDIR_CACHE/$ID -o $CL_OUTDIR_HTML/$ID
 
+################################
+### Metadata to download-tei ###
+#  input:
+#    downloader-tei/$ID
+#  output:
+#    downloader-tei-meta/$ID
+###############################
+
+export DOWNLOADER_TEI_META=$DATA_DIR/downloader-tei-meta/${ID}
+mkdir -p $DOWNLOADER_TEI_META
+
+export METADATA_NAME=ParCzechPS7-2.0
+echo "WARNING: metadata-name $METADATA_NAME is temporary - in future change to ParCzech-live-2.0"
+perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-file metadater/tei_parczech.xml --filelist $NEW_TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $DOWNLOADER_TEI_META
+
 ###############################
 ###    Download audio       ###
 #  input:
@@ -144,7 +159,7 @@ find "$DOWNLOADER_TEI" -type f -name '*.xml' ! -name "person.xml" -printf '%P\n'
 #log "downloading audio $ID"
 
 # downloading moved to merging part
-export AUDIO_PATH_ORIG=$DATA_DIR/audio-orig
+#export AUDIO_PATH_ORIG=$DATA_DIR/audio-orig
 #mkdir -p $AUDIO_PATH_ORIG
 
 #grep -ro "[^<]*audio/mp3[^>]*" $CL_OUTDIR_TEI/$ID|sed "s/.*url=\"//;s/\".*//" > $AUDIO_PATH_ORIG/${ID}.audio.list
@@ -295,7 +310,7 @@ export AUDIO_PATH_ORIG=$DATA_DIR/audio-orig
 ###     UDPipe tei (using web service)      ###
 ###  Tokenize, lemmatize, PoS, parse tei    ###
 #  input:
-#    downloader-tei/$ID
+#    downloader-tei-meta/$ID
 #  output:
 #    udpipe-tei/$ID
 ###############################################
@@ -303,7 +318,7 @@ export AUDIO_PATH_ORIG=$DATA_DIR/audio-orig
 export UDPIPE_TEI=$DATA_DIR/udpipe-tei/${ID}
 mkdir -p $UDPIPE_TEI
 
-perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 --filelist $NEW_TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $UDPIPE_TEI
+perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 --include-taxonomy --filelist $NEW_TEI_FILELIST --input-dir $DOWNLOADER_TEI_META --output-dir $UDPIPE_TEI
 
 ###############################
 ###     NameTag tei         ###
@@ -319,12 +334,28 @@ mkdir -p $NAMETAG_TEI
 perl -I lib nametag2/nametag2.pl --model=czech-cnec2.0-200831 --filelist $NEW_TEI_FILELIST --input-dir $UDPIPE_TEI --output-dir $NAMETAG_TEI
 
 
+
+################################
+### Metadata to annotated    ###
+#  input:
+#    nametag-tei/$ID
+#  output:
+#    annotated-tei-meta/$ID
+###############################
+
+export ANNOTATED_TEI_META=$DATA_DIR/annotated-tei-meta/${ID}
+mkdir -p $ANNOTATED_TEI_META
+
+echo "WARNING: metadata-name $METADATA_NAME.ann is temporary - in future change to ParCzech-live-2.0.ann"
+perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" --metadata-file metadater/tei_parczech.xml --filelist $NEW_TEI_FILELIST --input-dir $NAMETAG_TEI --output-dir $ANNOTATED_TEI_META
+
+
 echo "TODO: fix tei to teitok conversion";exit;
 ###############################
 ###     FINALIZE            ###
 ### converting to teitok    ###
 #  input:
-#    nametag-tei/$ID
+#    annotated-tei-meta/$ID
 #
 #
 ###############################
@@ -334,7 +365,7 @@ mkdir -p $TEITOK_TEI
 
 for tei_file in `cat $NEW_TEI_FILELIST`
 do
-  out_file=`echo "$tei_file" | sed "s@^$NAMETAG_TEI@$TEITOK_TEI@" `
+  out_file=`echo "$tei_file" | sed "s@^$ANNOTATED_META_TEI@$TEITOK_TEI@" `
   ./tei2teitok/tei2teitok.sh  -i $tei_file -o $out_file -c `realpath $CONFIG_FILE`
 done
 
