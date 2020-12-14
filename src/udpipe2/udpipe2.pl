@@ -17,9 +17,9 @@ use ParCzech::PipeLine::FileManager;
 my $scriptname = $0;
 my $dirname = dirname($scriptname);
 
-my $static_file = File::Spec->catfile($dirname,'tei_include.xml');
+my $udsyn_taxonomy = File::Spec->catfile($dirname,'tei_udsyn_taxonomy.xml');
 
-my ($debug, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names);
+my ($debug, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $include_taxonomy);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -38,6 +38,7 @@ my $soft_max_text_length = 100000;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize, tag and lemmatize and parse to stdout, do not change the database
+            'include-taxonomy' => \$include_taxonomy, # add udsyn taxonomy
             'no-lemma-tag' => \$no_lemma_tag, # no tags and lemmas
             'no-parse' => \$no_parse, # no dependency parsing
             'model=s' => \$model, # udpipe model tagger
@@ -127,8 +128,8 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
       matchPattern => '(.+)',
       replacementPattern => '../pdt-fslib.xml#$1',
       p => 'Feature-structure elements definition of the Czech Positional Tags'
-    );
-  $current_file->add_static_data('udpipe2', $static_file);
+    ) unless $no_lemma_tag;
+  $current_file->add_static_data('udpipe2', $udsyn_taxonomy) if $include_taxonomy or $no_parse;
 
   #print STDERR $xpc->findnodes('//tei:text',$doc);
   if($test) {
@@ -214,6 +215,7 @@ $fm_desc
 
 \t--model=s\tspecific UDPipe model
 \t--test\tprint result to stdout - don't change any file
+\t--test\tadd udsyn taxonomy to header
 \t--no-parse\tno dependency parsing
 \t--no-lemma-tag\tno lemmas and tags
 
