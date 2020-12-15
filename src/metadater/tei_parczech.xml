@@ -59,8 +59,8 @@
 
   <pcz:meta pcz:name="ParCzechPS-2.0.ann">
     <pcz:item pcz:dep="ParCzech.ann" />
-    <!-- -->
-  </pcz:meta>
+    <pcz:item pcz:dep="ParCzechPS-2.0-taxonomy.ann" />
+ </pcz:meta>
 
   <pcz:meta pcz:name="ParCzech">
     <pcz:item pcz:dep="respKopp" />
@@ -161,4 +161,184 @@
     </pcz:item>
   </pcz:meta>
 
+
+
+  <pcz:meta pcz:name="ParCzechPS-2.0-taxonomy.ann">
+    <pcz:item pcz:dep="cnec2.0-taxonomy" />
+  </pcz:meta>
+
+  <pcz:meta pcz:name="cnec2.0-taxonomy">
+    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:classDecl">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='NER.cnec2.0']" />
+      </pcz:test>
+      <pcz:tei>
+        <taxonomy xml:id="NER.cnec2.0">
+          <desc xml:lang="en">Named entities</desc>
+          <category xml:id="t">
+            <catDesc xml:lang="en">time expressions</catDesc>
+            <category xml:id="ty">
+              <catDesc xml:lang="en">years</catDesc>
+            </category>
+            <category xml:id="tf">
+              <catDesc xml:lang="en">feasts</catDesc>
+            </category>
+            <category xml:id="td">
+              <catDesc xml:lang="en">days</catDesc>
+            </category>
+            <category xml:id="th">
+              <catDesc xml:lang="en">hours</catDesc>
+            </category>
+            <category xml:id="tm">
+              <catDesc xml:lang="en">months</catDesc>
+            </category>
+          </category>
+          <category xml:id="m">
+            <catDesc xml:lang="en">media names</catDesc>
+            <category xml:id="me">
+              <catDesc xml:lang="en">email address</catDesc>
+            </category>
+            <category xml:id="ms">
+              <catDesc xml:lang="en">radio and tv stations</catDesc>
+            </category>
+            <category xml:id="mi">
+              <catDesc xml:lang="en">internet links</catDesc>
+            </category>
+            <category xml:id="mn">
+              <catDesc xml:lang="en">periodical</catDesc>
+            </category>
+          </category>
+          <category xml:id="i">
+            <catDesc xml:lang="en">institutions</catDesc>
+            <category xml:id="if">
+              <catDesc xml:lang="en">companies, concerns...</catDesc>
+            </category>
+            <category xml:id="io">
+              <catDesc xml:lang="en">government/political inst.</catDesc>
+            </category>
+            <category xml:id="i_">
+              <catDesc xml:lang="en">underspecified</catDesc>
+            </category>
+            <category xml:id="ia">
+              <catDesc xml:lang="en">conferences/contests</catDesc>
+            </category>
+            <category xml:id="ic">
+              <catDesc xml:lang="en">cult./educ./scient. inst.</catDesc>
+            </category>
+          </category>
+          <category xml:id="a">
+            <catDesc xml:lang="en">numbers in addresses</catDesc>
+            <category xml:id="at">
+              <catDesc xml:lang="en">phone/fax numbers</catDesc>
+            </category>
+            <category xml:id="az">
+              <catDesc xml:lang="en">zip codes</catDesc>
+            </category>
+            <category xml:id="ah">
+              <catDesc xml:lang="en">street numbers</catDesc>
+            </category>
+          </category>
+          <category xml:id="o">
+            <catDesc xml:lang="en">artifact names</catDesc>
+            <category xml:id="or">
+              <catDesc xml:lang="en">directives, norms</catDesc>
+            </category>
+            <category xml:id="op">
+              <catDesc xml:lang="en">products</catDesc>
+            </category>
+            <category xml:id="oa">
+              <catDesc xml:lang="en">cultural artifacts (books, movies)</catDesc>
+            </category>
+            <category xml:id="oe">
+              <catDesc xml:lang="en">measure units</catDesc>
+            </category>
+            <category xml:id="om">
+              <catDesc xml:lang="en">currency units</catDesc>
+            </category>
+            <category xml:id="o_">
+              <catDesc xml:lang="en">underspecified</catDesc>
+            </category>
+          </category>
+          <category xml:id="p">
+            <catDesc xml:lang="en">personal names</catDesc>
+            <category xml:id="pm">
+              <catDesc xml:lang="en">second names</catDesc>
+            </category>
+            <category xml:id="pc">
+              <catDesc xml:lang="en">inhabitant names</catDesc>
+            </category>
+            <category xml:id="p_">
+              <catDesc xml:lang="en">underspecified</catDesc>
+            </category>
+            <category xml:id="ps">
+              <catDesc xml:lang="en">surnames</catDesc>
+            </category>
+            <category xml:id="pf">
+              <catDesc xml:lang="en">first names</catDesc>
+            </category>
+            <category xml:id="pd">
+              <catDesc xml:lang="en">(academic) titles</catDesc>
+            </category>
+            <category xml:id="pp">
+              <catDesc xml:lang="en">relig./myth persons</catDesc>
+            </category>
+          </category>
+          <category xml:id="n">
+            <catDesc xml:lang="en">number expressions</catDesc>
+            <category xml:id="nc">
+              <catDesc xml:lang="en">cardinal numbers</catDesc>
+            </category>
+            <category xml:id="n_">
+              <catDesc xml:lang="en">underspecified</catDesc>
+            </category>
+            <category xml:id="ni">
+              <catDesc xml:lang="en">itemizer</catDesc>
+            </category>
+            <category xml:id="nb">
+              <catDesc xml:lang="en">vol./page/chap./sec./fig. numbers</catDesc>
+            </category>
+            <category xml:id="na">
+              <catDesc xml:lang="en">age</catDesc>
+            </category>
+            <category xml:id="ns">
+              <catDesc xml:lang="en">sport score</catDesc>
+            </category>
+            <category xml:id="no">
+              <catDesc xml:lang="en">ordinal numbers</catDesc>
+            </category>
+          </category>
+          <category xml:id="g">
+            <catDesc xml:lang="en">geographical names</catDesc>
+            <category xml:id="gl">
+              <catDesc xml:lang="en">geographical names - nature areas / objects</catDesc>
+            </category>
+            <category xml:id="gu">
+              <catDesc xml:lang="en">cities/towns</catDesc>
+            </category>
+            <category xml:id="gh">
+              <catDesc xml:lang="en">geographical names - hydronyms</catDesc>
+            </category>
+            <category xml:id="g_">
+              <catDesc xml:lang="en">geographical names - underspecified</catDesc>
+            </category>
+            <category xml:id="gr">
+              <catDesc xml:lang="en">territorial names</catDesc>
+            </category>
+            <category xml:id="gq">
+              <catDesc xml:lang="en">geographical names - urban parts</catDesc>
+            </category>
+            <category xml:id="gs">
+              <catDesc xml:lang="en">streets, squares</catDesc>
+            </category>
+            <category xml:id="gc">
+              <catDesc xml:lang="en">geographical names - states</catDesc>
+            </category>
+            <category xml:id="gt">
+              <catDesc xml:lang="en">continents</catDesc>
+            </category>
+          </category>
+        </taxonomy>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
 </pcz:ParCzech>

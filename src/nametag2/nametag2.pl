@@ -86,8 +86,8 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
   $current_file->add_metadata('prefix',
       ident => 'ne',
       matchPattern => '(.+)',
-      replacementPattern => '../ne-fslib.xml#$1',
-      p => 'Feature-structure elements definition of the Named Entities (cnec2.0)'
+      replacementPattern => '#$1',
+      p => 'Taxonomy for named entities (cnec2.0)'
     );
   #print STDERR $xpc->findnodes('//tei:text',$doc);
   if($test) {
