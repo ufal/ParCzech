@@ -239,7 +239,7 @@
         <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='ud-syn']" />
       </pcz:test>
       <pcz:tei>
-        <prefixDef ident="ud-syn" matchPattern="(.+)" replacementPattern="#$1">
+        <prefixDef ident="ud-syn" matchPattern="(.+)" replacementPattern="#xpath(//*[@xml:id = replace('$1',':','_')])">
           <p>Private URIs with this prefix point to elements giving their name. In this document they are simply local references into the UD-SYN taxonomy categories in the corpus root TEI header.</p>
         </prefixDef>
       </pcz:tei>
