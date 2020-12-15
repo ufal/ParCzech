@@ -265,7 +265,10 @@ sub new_XPathContext {
   return $xpc;
 }
 
-
+sub get_NS_from_prefix {
+  my $pref = shift;
+  return $xmlNs{$pref};
+}
 
 package ParCzech::PipeLine::FileManager::XML;
 use XML::LibXML::PrettyPrint;
