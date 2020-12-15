@@ -455,7 +455,7 @@ sub set_document_date {
 
 sub export_text {
   my $cnt = shift;
-  my $is_first = shift; # remove initial : it true
+  my $is_first = shift; # remove initial : if true
   # my $text = shift;
   # start <seg>
   my @child_nodes;
@@ -473,7 +473,6 @@ sub export_text {
       my $text = ScrapperUfal::html2text($childnode);
       $text =~ s/\s*:?\s*// if $is_first; # remove initial : and spaces
       $text =~ s/\s\s+/ /g ; # squeeze spaces
-      undef $is_first;
       while($text){
         if($text =~ s/^[^\(]+//){ # text
           $segm = $teiCorpus->addToUtterance($&,$segm);
@@ -484,6 +483,7 @@ sub export_text {
         }
       }
     }
+    undef $is_first;
   }
   # end </seg>
 }
