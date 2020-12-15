@@ -178,7 +178,7 @@
       </pcz:test>
       <pcz:tei>
         <application ident="NameTag" version="2" source="http://lindat.mff.cuni.cz/services/nametag/">
-          <label>NameTag 2 with czech-cnec2.0-200831 model</label>
+          <label>NameTag 2 with czech-cnec2.0-200831(<idno type="handle">http://hdl.handle.net/11234/1-3443</idno>) model</label>
           <desc>Name entity recognition</desc>
           <ref target="http://ufal.mff.cuni.cz/nametag/2"/>
         </application>
