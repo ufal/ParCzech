@@ -62,6 +62,8 @@
     <pcz:item pcz:dep="ParCzechPS-2.0-taxonomy.ann" />
     <pcz:item pcz:dep="udpipe2" />
     <pcz:item pcz:dep="udpipe2.app-czech-pdt-ud-2.6-200830" />
+    <pcz:item pcz:dep="nametag2" />
+    <pcz:item pcz:dep="nametag2.app-czech-cnec2.0-200831" />
  </pcz:meta>
 
   <pcz:meta pcz:name="ParCzech">
@@ -164,6 +166,38 @@
   </pcz:meta>
 
 
+  <pcz:meta pcz:name="nametag2">
+    <pcz:item pcz:dep="nametag2.prefix" />
+    <pcz:item pcz:dep="cnec2.0-taxonomy" />
+  </pcz:meta>
+
+  <pcz:meta pcz:name="nametag2.app-czech-cnec2.0-200831">
+    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:appInfo">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:appInfo/tei:application[@tei:ident='NameTag']" />
+      </pcz:test>
+      <pcz:tei>
+        <application ident="NameTag" version="2" source="http://lindat.mff.cuni.cz/services/nametag/">
+          <label>NameTag 2 with czech-cnec2.0-200831 model</label>
+          <desc>Name entity recognition</desc>
+          <ref target="http://ufal.mff.cuni.cz/nametag/2"/>
+        </application>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
+
+  <pcz:meta pcz:name="nametag2.prefix">
+    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='ne']" />
+      </pcz:test>
+      <pcz:tei>
+        <prefixDef ident="ne" matchPattern="(.+)" replacementPattern="#$1">
+          <p>Taxonomy for named entities (cnec2.0)</p>
+        </prefixDef>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
 
 
   <pcz:meta pcz:name="udpipe2.app-czech-pdt-ud-2.6-200830">

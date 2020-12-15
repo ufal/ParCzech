@@ -75,21 +75,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
     my $vertical = run_nametag($text);
     $id_counter = fill_vertical_data_doc($vertical, $id_counter, $name_id_prefix, @nodes);
   }
-  $current_file->add_metadata('application',
-        app => 'NameTag',
-        version=>'2',
-        source=>'http://lindat.mff.cuni.cz/services/nametag/',
-        ref=>'http://ufal.mff.cuni.cz/nametag/2',
-        label => "NameTag 2 with $model model",
-        desc => 'Name entity recognition'
-      );
-  $current_file->add_metadata('prefix',
-      ident => 'ne',
-      matchPattern => '(.+)',
-      replacementPattern => '#$1',
-      p => 'Taxonomy for named entities (cnec2.0)'
-    );
-  #print STDERR $xpc->findnodes('//tei:text',$doc);
+
   if($test) {
     $current_file->print();
   } else {
