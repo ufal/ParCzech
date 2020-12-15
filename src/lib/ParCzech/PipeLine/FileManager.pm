@@ -198,8 +198,14 @@ sub _add_static_data_items {
   my $self = shift;
   my ($name,$dom) = @_;
   return if $self->metadata_visited_detector($name);
-
-  for my $item ($self->{xpc}->findnodes('//pcz:ParCzech/pcz:meta[@pcz:name="'.$name.'"]/pcz:item',$dom)) {
+  my @targets = $self->{xpc}->findnodes('//pcz:ParCzech/pcz:meta[@pcz:name="'.$name.'"]',$dom);
+  if (scalar @targets == 0) {
+    print STDERR "No meta with target name $name found\n";
+    return;
+  } elsif (scalar @targets > 1) {
+    print STDERR "Multiple targets with similar name name $name found. Using first one!!!\n";
+  }
+  for my $item ($self->{xpc}->findnodes('./pcz:item',$targets[0])) {
     my $xpath = $item->getAttributeNS($xmlNs{pcz}, 'xpath');
     my $dep_name = $item->getAttributeNS($xmlNs{pcz}, 'dep');
 
