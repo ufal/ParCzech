@@ -318,7 +318,7 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-f
 export UDPIPE_TEI=$DATA_DIR/udpipe-tei/${ID}
 mkdir -p $UDPIPE_TEI
 
-perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 --include-taxonomy --filelist $NEW_TEI_FILELIST --input-dir $DOWNLOADER_TEI_META --output-dir $UDPIPE_TEI
+perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 --filelist $NEW_TEI_FILELIST --input-dir $DOWNLOADER_TEI_META --output-dir $UDPIPE_TEI
 
 ###############################
 ###     NameTag tei         ###

@@ -19,7 +19,7 @@ my $dirname = dirname($scriptname);
 
 my $udsyn_taxonomy = File::Spec->catfile($dirname,'tei_udsyn_taxonomy.xml');
 
-my ($debug, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $include_taxonomy);
+my ($debug, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $append_metadata);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -38,7 +38,7 @@ my $soft_max_text_length = 100000;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize, tag and lemmatize and parse to stdout, do not change the database
-            'include-taxonomy' => \$include_taxonomy, # add udsyn taxonomy
+            'append-metadata=s' => \$append_metadata, # add metadata from file (prefixes, taxonomy)
             'no-lemma-tag' => \$no_lemma_tag, # no tags and lemmas
             'no-parse' => \$no_parse, # no dependency parsing
             'model=s' => \$model, # udpipe model tagger
@@ -115,27 +115,10 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
     my $conll = run_udpipe($text);
     fill_conllu_data_doc($conll, $text, @nodes);
   }
-  $current_file->add_metadata('application',
-        app => 'UDPipe',
-        version=>'2',
-        source=>'http://lindat.mff.cuni.cz/services/udpipe/',
-        ref=>'http://ufal.mff.cuni.cz/udpipe/2',
-        label => "UDPipe 2 with $model model",
-        desc => 'POS tagging, lemmatization and dependency parsing'
-      );
-  $current_file->add_metadata('prefix',
-      ident => 'pdt',
-      matchPattern => '(.+)',
-      replacementPattern => '../pdt-fslib.xml#xpath(//fvLib/fs[./f/symbol/@value = \'$1\'])',
-      p => 'Feature-structure elements definition of the Czech Positional Tags'
-    ) unless $no_lemma_tag;
-  $current_file->add_metadata('prefix',
-      ident => 'ud-syn',
-      matchPattern => '^([^:]+)',
-      replacementPattern => '#$1',
-      p => 'Private URIs with this prefix point to elements giving their name. In this document they are simply local references into the UD-SYN taxonomy categories in the corpus root TEI header.'
-    ) unless $no_parse;
-  $current_file->add_static_data('udpipe2', $udsyn_taxonomy) if $include_taxonomy or $no_parse;
+
+  $current_file->add_static_data('udpipe2.app-'.$model, $append_metadata) if $append_metadata;
+  $current_file->add_static_data('udpipe2.prefix-pdt', $append_metadata) if $append_metadata and ! $no_lemma_tag;
+  $current_file->add_static_data('udpipe2.ud-syn', $append_metadata) if $append_metadata and ! $no_parse;
 
   #print STDERR $xpc->findnodes('//tei:text',$doc);
   if($test) {
@@ -221,7 +204,7 @@ $fm_desc
 
 \t--model=s\tspecific UDPipe model
 \t--test\tprint result to stdout - don't change any file
-\t--test\tadd udsyn taxonomy to header
+\t--append-metadata\tappend metadata to header from file
 \t--no-parse\tno dependency parsing
 \t--no-lemma-tag\tno lemmas and tags
 
