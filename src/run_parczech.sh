@@ -7,19 +7,24 @@ pid=$$
 
 CONFIG_FILE="config.sh"
 DOWN_PARAMS=()
+EXISTING_FILELIST=
 
 usage() {
-  echo -e "Usage: $0 -c CONFIG_FILE -p PRUNE_TEMPLATE" 1>&2
+  echo -e "Usage: $0 -c CONFIG_FILE (-p PRUNE_TEMPLATE | -l FILELIST)" 1>&2
   exit 1
 }
 
-while getopts  ':c:p:'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
+while getopts  ':c:p:l:'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
   case "$opt" in
     'c')
       CONFIG_FILE=$OPTARG
       ;;
     'p')
-      DOWN_PARAMS+=(--prune $OPTARG )
+      [ -n "$EXISTING_FILELIST" ] && usage || DOWN_PARAMS+=(--prune $OPTARG )
+      ;;
+    'l')
+      [ ${#DOWN_PARAMS[@]} -ne 0 ] && usage || EXISTING_FILELIST=$OPTARG
+     #[ ${#DOWN_PARAMS[@]} -ne 0 ] && echo "nenula"
       ;;
     *)
       usage
@@ -38,8 +43,6 @@ if [ -f "$CONFIG_FILE" ]; then
 fi
 set +o allexport
 
-export ID=`date +"%Y%m%dT%H%M%S"`
-
 function log {
   echo -e `date +"%Y-%m-%d %T"`"\t$@" >> ${SHARED}/parczech.log
 }
@@ -48,10 +51,41 @@ function log_process {
   echo "$pid steno_download" > ${SHARED}/current_process
 }
 
+function skip_process {
+  if [ -f "$3" ]; then
+    log "testing if file exist ($1)"
+    for tested_file in `cat $3`
+    do
+      if [ ! -s  "$2/$tested_file" ]; then
+        log "file does not exists or is empty: $2/$tested_file"
+        return 0;
+      fi
+    done
+    log "SKIPPING $1 ($2)"
+    return  1;
+  fi
+  return 0;
+}
 
-log "STARTED $ID: $pid"
+log "STARTED: $pid ========================"
 log "CONFIG FILE: $CONFIG_FILE"
-log "params: ${DOWN_PARAMS[@]}"
+
+
+if [ -n "$EXISTING_FILELIST" ]; then
+  if [ -f "$EXISTING_FILELIST" ]; then
+    log "USING EXISTING FILELIST: $EXISTING_FILELIST"
+    export ID=`echo "$EXISTING_FILELIST"| sed 's@^.*\/@@;s@\.tei\.fl$@@'`
+  else
+    echo  "file $EXISTING_FILELIST error" 1>&2
+    usage
+  fi
+else
+  export ID=`date +"%Y%m%dT%H%M%S"`
+  log "FRESH RUN: $ID"
+fi
+
+log "PROCESS ID: $ID"
+log "downloader params: ${DOWN_PARAMS[@]}"
 
 if [ -f 'current_process' ]; then
   proc=`cat 'current_process'`
@@ -96,6 +130,9 @@ mkdir -p $FILELISTS_DIR
 export DOWNLOADER_TEI="$CL_OUTDIR_TEI/$ID"
 export PERSON_LIST_PATH="$DOWNLOADER_TEI/person.xml"
 export NEW_TEI_FILELIST="$FILELISTS_DIR/$ID.tei.fl"
+
+if skip_process "downloader" "$CL_OUTDIR_TEI/$ID" "$EXISTING_FILELIST" ; then # BEGIN DOWNLOADER CONDITION
+
 export LAST_ID=`ls $CL_OUTDIR_TEI|grep -v "sha1sum.list"|sort|tail -n 1`
 
 
@@ -134,6 +171,8 @@ find "$DOWNLOADER_TEI" -type f -name '*.xml' ! -name "person.xml" -printf '%P\n'
 log "backup html $CL_OUTDIR_HTML/$ID"
 ./cache_to_dir_tree.sh -c $CL_OUTDIR_CACHE/$ID -o $CL_OUTDIR_HTML/$ID
 
+fi; # END DOWNLOADER CONDITION
+
 ################################
 ### Metadata to download-tei ###
 #  input:
@@ -143,6 +182,9 @@ log "backup html $CL_OUTDIR_HTML/$ID"
 ###############################
 
 export DOWNLOADER_TEI_META=$DATA_DIR/downloader-tei-meta/${ID}
+
+if skip_process "metadater" "$DOWNLOADER_TEI_META" "$EXISTING_FILELIST" ; then # BEGIN METADATER CONDITION
+
 mkdir -p $DOWNLOADER_TEI_META
 
 export METADATA_NAME=ParCzechPS7-2.0
@@ -150,6 +192,9 @@ echo "WARNING: metadata-name $METADATA_NAME is temporary - in future change to P
 
 log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-file metadater/tei_parczech.xml --filelist $NEW_TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $DOWNLOADER_TEI_META
+
+fi; # END METADATER CONDITION
+
 
 ###############################
 ###    Download audio       ###
@@ -322,10 +367,15 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-f
 ###############################################
 
 export UDPIPE_TEI=$DATA_DIR/udpipe-tei/${ID}
+
+if skip_process "udpipe2" "$UDPIPE_TEI" "$EXISTING_FILELIST" ; then # BEGIN UDPIPE2 CONDITION
+
 mkdir -p $UDPIPE_TEI
 log "annotating udpipe2 $UDPIPE_TEI"
 
 perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 --filelist $NEW_TEI_FILELIST --input-dir $DOWNLOADER_TEI_META --output-dir $UDPIPE_TEI
+
+fi; # END UDPIPE CONDITION
 
 ###############################
 ###     NameTag tei         ###
@@ -336,11 +386,15 @@ perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 --filelist $NEW_T
 ###############################
 
 export NAMETAG_TEI=$DATA_DIR/nametag-tei/${ID}
+
+if skip_process "nametag2" "$NAMETAG_TEI" "$EXISTING_FILELIST" ; then # BEGIN NAMETAG CONDITION
+
 mkdir -p $NAMETAG_TEI
 log "annotating nametag2  $NAMETAG_TEI"
 
 perl -I lib nametag2/nametag2.pl --model=czech-cnec2.0-200831 --filelist $NEW_TEI_FILELIST --input-dir $UDPIPE_TEI --output-dir $NAMETAG_TEI
 
+fi; # END NAMETAG CONDITION
 
 
 ################################
@@ -352,12 +406,16 @@ perl -I lib nametag2/nametag2.pl --model=czech-cnec2.0-200831 --filelist $NEW_TE
 ###############################
 
 export ANNOTATED_TEI_META=$DATA_DIR/annotated-tei-meta/${ID}
+
+if skip_process "metadater.ann" "$ANNOTATED_TEI_META" "$EXISTING_FILELIST" ; then # BEGIN METADATER.ann CONDITION
+
 mkdir -p $ANNOTATED_TEI_META
 
 echo "WARNING: metadata-name $METADATA_NAME.ann is temporary - in future change to ParCzech-live-2.0.ann"
 log "adding metadata $METADATA_NAME.ann $ANNOTATED_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" --metadata-file metadater/tei_parczech.xml --filelist $NEW_TEI_FILELIST --input-dir $NAMETAG_TEI --output-dir $ANNOTATED_TEI_META
 
+fi; # END METADATER.ann CONDITION
 
 echo "TODO: fix tei to teitok conversion";exit;
 ###############################
