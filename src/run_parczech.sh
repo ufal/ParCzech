@@ -417,7 +417,6 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" --metada
 
 fi; # END METADATER.ann CONDITION
 
-echo "TODO: fix tei to teitok conversion";exit;
 ###############################
 ###     FINALIZE            ###
 ### converting to teitok    ###
@@ -428,21 +427,24 @@ echo "TODO: fix tei to teitok conversion";exit;
 ###############################
 
 export TEITOK_TEI=$DATA_DIR/teitok-tei/${ID}
+
+if skip_process "tei2teitok" "$TEITOK_TEI" "$EXISTING_FILELIST" ; then # BEGIN tei2teitok CONDITION
+
 mkdir -p $TEITOK_TEI
 log "converting to teitok $TEITOK_TEI"
 
 for tei_file in `cat $NEW_TEI_FILELIST`
 do
-  out_file=`echo "$tei_file" | sed "s@^$ANNOTATED_META_TEI@$TEITOK_TEI@" `
-  ./tei2teitok/tei2teitok.sh  -i $tei_file -o $out_file -c `realpath $CONFIG_FILE`
+  ./tei2teitok/tei2teitok.sh  -i "$ANNOTATED_TEI_META/$tei_file" -o "$TEITOK_TEI/$tei_file" -c `realpath $CONFIG_FILE`
 done
 
+fi; # END tei2teitok CONDITION
 
 
 
 ###############################
 log_process "tei publishing"
-log "publishing tei $ID"
+log "publishing in TEITOK $ID (${TEITOK_CORPUS##*/})"
 
 export FINALIZE_INPUT=$TEITOK_TEI
 

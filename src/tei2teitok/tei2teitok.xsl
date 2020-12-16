@@ -6,6 +6,9 @@
   <xsl:variable name="personlist-doc" select="document($personlist-path)" />
   <xsl:key name="id-personlist" match="*[local-name(.) = 'person']" use="@*[local-name(.) = 'id']" />
 
+
+
+<!--
   <xsl:variable name="pdt-fslib" select="concat('./',substring-before(//*[local-name(.) = 'prefixDef' and @ident='pdt']/@replacementPattern,'#'))"/>
   <xsl:variable name="pdt-fslib-doc" select="document($pdt-fslib)"/>
   <xsl:key name="id-pdt-fslib" match="*[local-name(.) = 'fs']" use="@*[local-name(.) = 'id']"/>
@@ -14,56 +17,93 @@
   <xsl:variable name="ne-fslib-doc" select="document($ne-fslib)"/>
   <xsl:key name="id-ne-fslib-fs" match="*[local-name(.) = 'fs']" use="@*[local-name(.) = 'id']"/>
   <xsl:key name="id-ne-fslib-f" match="*[local-name(.) = 'f']" use="@*[local-name(.) = 'id']"/>
+-->
 
-  <!-- TODO - add annotation to header (NOTE that it is not TEI format !!!) -->
+
 
   <!-- rename w and pc to tok and fix attributes -->
   <xsl:template match="*[local-name(.) = 'w' or local-name(.) = 'pc' ]">
-    <xsl:element name="tok">
+    <xsl:variable name="tokname" select="if ( @norm ) then 'dtok' else 'tok'"/>
+    <xsl:element name="{$tokname}">
+      <xsl:variable name="tokenid" select="./@*[local-name(.) = 'id']"/>
       <xsl:apply-templates select="@*[local-name(.) = 'id']"/> <!-- ID -->
+
+      <xsl:variable name="form" select="@norm"/>
+      <xsl:if test="$form">
+        <xsl:attribute name="form"> <!-- norm -> form -->
+          <xsl:value-of select="$form"/>
+        </xsl:attribute>
+      </xsl:if>
+
       <xsl:copy-of select="@lemma"/> <!-- copy LEMMA -->
 
-      <xsl:attribute name="upos"> <!-- copy POS -->
-        <xsl:value-of select="@pos"/>
-      </xsl:attribute>
+      <xsl:variable name="upos" select="@pos"/>
+      <xsl:if test="$upos">
+        <xsl:attribute name="upos"> <!-- copy POS -->
+          <xsl:value-of select="$upos"/>
+        </xsl:attribute>
+      </xsl:if>
 
-      <xsl:attribute name="feats"> <!-- clean MSD from UposTag-->
-        <xsl:value-of select="substring-after(@msd,'|')"/>
-      </xsl:attribute>
+      <xsl:variable name="feats" select="substring-after(@msd,'|')"/>
+      <xsl:if test="$feats">
+        <xsl:attribute name="feats">  <!-- clean MSD from UposTag-->
+          <xsl:value-of select="$feats"/>
+        </xsl:attribute>
+      </xsl:if>
 
-      <xsl:attribute name="xpos"> <!-- xpos -->
-        <xsl:variable name="tag" select="substring-before(substring-after(concat(@ana,' '),'pdt:'), ' ')"/>
-        <!-- <xsl:value-of select="$pdt-fslib-doc/div/fvLib/fs[@*[local-name(.) = 'id'] = $tag ]/f[@name = 'pdt']/symbol/@value"/> -->
-        <xsl:value-of select="key('id-pdt-fslib', $tag, $pdt-fslib-doc)/*[local-name(.) = 'f' and @name = 'pdt']/*[local-name(.) = 'symbol']/@value"/>
-      </xsl:attribute>
+      <xsl:variable name="xpos" select="substring-before(substring-after(concat(@ana,' '),'pdt:'), ' ')"/>
+      <xsl:if test="$xpos">
+        <xsl:attribute name="xpos"> <!-- xpos -->
+          <xsl:value-of select="$xpos" />
+        </xsl:attribute>
+      </xsl:if>
 
+      <xsl:variable name="relation" select="./ancestor::*[local-name(.) = 's']/*[local-name(.) = 'linkGrp' and @targFunc='head argument' and @type='UD-SYN']/*[local-name(.) = 'link' and ends-with(@target, concat('#',$tokenid))]"/>
+
+      <xsl:variable name="deprel" select="substring-before(substring-after(concat($relation/@ana,' '),'ud-syn:'), ' ')"/>
+
+      <xsl:if test="$deprel">
+        <xsl:attribute name="dep"> <!-- dependency relation-->
+          <xsl:value-of select="$deprel"/>
+        </xsl:attribute>
+        <xsl:if test="$deprel != 'root'">
+          <xsl:attribute name="head"> <!-- dependency head if not root-->
+            <xsl:value-of select="substring-before(substring-after($relation/@target,'#'), ' ')"/>
+          </xsl:attribute>
+        </xsl:if>
+      </xsl:if>
       <xsl:apply-templates select="node()"/>
     </xsl:element>
   </xsl:template>
 
-  <!-- rename name to NamedEntity and decode ana to type -->
+  <!-- remove dependency linkGrp -->
+  <xsl:template match="*[local-name(.) = 's']/*[local-name(.) = 'linkGrp' and @targFunc='head argument' and @type='UD-SYN']" />
+
+<!-- Named Entities -->
   <xsl:template match="*[local-name(.) = 'name' ]">
-    <xsl:element name="NamedEntity">
+    <xsl:element name="namedEntity">
       <xsl:apply-templates select="@*[local-name(.) = 'id']"/> <!-- ID -->
-
-      <xsl:variable name="netag" select="substring-before(substring-after(concat(@ana,' '),'ne:'), ' ')"/>
-
-      <xsl:attribute name="type"> <!-- type -->
-        <xsl:call-template name="expandEntityFeats">
-          <!-- <xsl:with-param name="feats" select="concat($ne-fslib-doc/div/fvLib/fs[@*[local-name(.) = 'id'] = $netag ]/@*[local-name(.) = 'feats'],' ')"/> -->
-          <xsl:with-param name="feats" select="concat(key('id-ne-fslib-fs',$netag, $ne-fslib-doc)/@*[local-name(.) = 'feats'],' ')"/>
-        </xsl:call-template>
-      </xsl:attribute>
-
-      <xsl:apply-templates select="node()"/>
+      <xsl:variable name="ne" select="substring-before(substring-after(concat(@ana,' '),'ne:'), ' ')"/>
+      <xsl:if test="$ne">
+        <xsl:attribute name="category"> <!-- ne shortcut -->
+          <xsl:value-of select="$ne" />
+        </xsl:attribute>
+          <xsl:variable name="cat" select="//*[@*[local-name(.) = 'id'] = 'NER.cnec2.0']//*[@*[local-name(.) = 'id'] = $ne]" />
+          <xsl:variable name="parentcat" select="$cat/parent::*[local-name(.) = 'category']" />
+        <xsl:attribute name="label"> <!-- label for users -->
+          <xsl:if test="$parentcat">
+            <xsl:value-of select="concat($parentcat/*[local-name(.) = 'catDesc']/text(), ' - ')" />
+          </xsl:if>
+          <xsl:value-of select="$cat/*[local-name(.) = 'catDesc']/text()" />
+        </xsl:attribute>
+      </xsl:if>
     </xsl:element>
   </xsl:template>
 
 
 
 
-
-<!-- LINKING -->
+<!-- HYPERTEXT LINKING -->
 
   <!-- rename ref to a -->
   <xsl:template match="*[local-name(.) = 'ref' ]">
@@ -120,7 +160,22 @@
     </xsl:element>
   </xsl:template>
 
-<!-- ================================================ -->
+<!-- ==================== CLEANING ============================ -->
+
+  <!-- removing taxonomy -->
+  <xsl:template match="*[local-name() = 'teiHeader']/*[local-name() = 'encodingDesc']/*[local-name() = 'classDecl']" />
+  <!-- removing prefixes -->
+  <xsl:template match="*[local-name() = 'teiHeader']/*[local-name() = 'encodingDesc']/*[local-name() = 'listPrefixDef']" />
+  <!--  add annotation to header (NOTE that it is not TEI format !!!) -->
+  <xsl:template match="*[local-name() = 'teiHeader']/*[local-name() = 'encodingDesc']">
+    <xsl:element name="encodingDesc">
+      <xsl:element name="p">
+        <xsl:text>This file is designed to use in TEITOK</xsl:text>
+      </xsl:element>
+      <xsl:apply-templates select="node()"/>
+    </xsl:element>
+  </xsl:template>
+
   <!-- remove element namespaces-->
   <xsl:template match="*">
     <xsl:element name="{local-name(.)}">
@@ -135,21 +190,6 @@
   </xsl:template>
 
  <!-- named templates -->
-  <xsl:template name="expandEntityFeats">
-    <xsl:param name="feats" />
-    <xsl:if test="string-length($feats) &gt; 0">
-      <xsl:variable name="v" select="substring-after(substring-before($feats, ' '),'#')"/>
-      <!-- <xsl:value-of select="$ne-fslib-doc/div/fLib/f[@*[local-name(.) = 'id'] = $v ]/string"/> -->
-      <xsl:value-of select="key('id-ne-fslib-f',$v, $ne-fslib-doc)/*[local-name(.) = 'string']"/>
-      <xsl:variable name="nextfeats" select="substring-after($feats, ' ')"/>
-      <xsl:if test="string-length($nextfeats) &gt; 0">
-        <xsl:text> - </xsl:text>
-      </xsl:if>
-      <xsl:call-template name="expandEntityFeats">
-        <xsl:with-param name="feats" select="$nextfeats"/>
-      </xsl:call-template>
-    </xsl:if>
-  </xsl:template>
   <xsl:template name="externalLink">
     <xsl:param name="link" />
     <xsl:param name="additionalClasses" />
