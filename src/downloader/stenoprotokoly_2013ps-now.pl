@@ -303,7 +303,7 @@ sub record_exporter {
     } elsif (my $mp3 = xpath_string('./a[@class = "audio"]/@href',$cnt)) {
       $teiCorpus->addAudioNote(url => URI->new_abs($mp3,$link));
       next;
-    } elsif (xpath_string('./text()',$cnt) eq '***') {
+    } elsif (xpath_string('./text()',$cnt) =~ /\s*\*\*\*\s*/) {
       next;
     } elsif ($cnt_html =~ m/\s*<br\s*\/?>\s*$/) {
       next;
