@@ -182,6 +182,7 @@ for my $day_audio_page_link (@day_audio_page_links) {
 my $author = {};
 my $post = {};
 my $topic_cntr = 0;
+my $akt_sitting = '';
 my $last_sitting_date;
 my %seen_topics;
 my $teiCorpus;
@@ -420,7 +421,12 @@ sub add_audio_to_teiCorpus {
 
 sub init_TEI {
   my ($term_id, $meeting_id, $sitting_id, $topic_id) = @_;
-  my $new_doc_id = sprintf('ps%d-%03d-%02d-%03d-%03d',$term_id, $meeting_id, $sitting_id, $topic_cntr, $topic_id );
+  my $sitting_pref = sprintf('ps%d-%03d-%02d',$term_id, $meeting_id, $sitting_id );
+  unless ($akt_sitting eq $sitting_pref) {
+    $topic_cntr = 0;
+    $akt_sitting = $sitting_pref;
+  }
+  my $new_doc_id = sprintf('%s-%03d-%03d',$sitting_pref, $topic_cntr, $topic_id );
   debug_print( "NEW DOCUMENT $new_doc_id " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__, -1);
   $teiCorpus = TEI::ParlaClarin::TEI->new(id => $new_doc_id, output_dir => $tei_out_dir,
                                           title => ["Parliament of the Czech Republic, Chamber of Deputies"],
