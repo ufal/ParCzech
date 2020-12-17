@@ -482,7 +482,8 @@ sub export_text {
     if(xpath_node('./self::*[name()="a"]', $childnode)) { # link that should be appended
       $segm = $teiCorpus->addToUtterance(create_ref_node($childnode),$segm);
     } else { # text or text in node that is not converted
-      my $text = ScrapperUfal::html2text($childnode);
+      my $text = ScrapperUfal::html2text($childnode); # returns empty string if it contains only spaces !!!
+      $text = ' ' if ($text eq '') and ! ($childnode->toString() eq '');
       $text =~ s/\s*:?\s*// if $is_first; # remove initial : and spaces
       $text =~ s/\s\s+/ /g ; # squeeze spaces
       while($text){
