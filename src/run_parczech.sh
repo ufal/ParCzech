@@ -44,7 +44,9 @@ fi
 set +o allexport
 
 function log {
-  echo -e `date +"%Y-%m-%d %T"`"\t$@" >> ${SHARED}/parczech.log
+  str=`date +"%Y-%m-%d %T"`"\t$@"
+  echo -e "$str"
+  echo -e "$str" >> ${SHARED}/parczech.log
 }
 
 function log_process {
