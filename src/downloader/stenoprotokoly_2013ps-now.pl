@@ -474,7 +474,9 @@ sub export_text {
       $text =~ s/\s*:?\s*// if $is_first; # remove initial : and spaces
       $text =~ s/\s\s+/ /g ; # squeeze spaces
       while($text){
-        if($text =~ s/^[^\(]+//){ # text
+        if($text =~ s/^\s+//) {
+          $teiCorpus->addToElemsQueue($&);
+        } elsif($text =~ s/^[^\(]*[^\(\s]//){ # text without last space
           $segm = $teiCorpus->addToUtterance($&,$segm);
         } elsif ($text =~ s/^\(.*?\)//) {
           $teiCorpus->addToElemsQueue($teiCorpus->createNoteNode(type => 'comment', text => $&));
