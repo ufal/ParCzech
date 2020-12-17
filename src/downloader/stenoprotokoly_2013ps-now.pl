@@ -338,8 +338,9 @@ sub record_exporter {
       $datetime = $strp->parse_datetime("$date $time");
       $teiCorpus->addTimeNote(from=>$datetime, texttime=>$texttime);
       next;
-    } elsif(my $a = xpath_node('./b[not(../@align = "center" or ../@align = "CENTER" ) and (.//a or starts-with(text(),"Poslan"))]',$cnt)) { # new utterance
-
+    } elsif(my $a = xpath_node('./b[not(../@align = "center" or ../@align = "CENTER" ) and (.//a or starts-with(text(),"Poslan"))]',$cnt)
+                   ## patching obscure utterances (https://www.psp.cz/eknih/2013ps/stenprot/036schuz/s036311.htm)
+                   // xpath_node( './a[position() = 1 and not (starts-with(@href,"/") or contains(@href,"psp.cz/") ) and following-sibling::text()[1][starts-with(., ":")]]',$cnt)) { # new utterance
       # fill new utterance
       my $auth;
       my $auth_id;
