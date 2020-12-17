@@ -190,10 +190,9 @@ my $teiCorpus;
 while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
   my ($page_link,$term_id, $meeting_id, $sitting_id, $topic_id) = @$steno_top;
   make_request($page_link);
-  debug_print( " -> LOADING \t$page_link", __LINE__);
+  debug_print( " -> LOADING \t$page_link", __LINE__, -1);
   next unless doc_loaded;
   my $sitting_date = trim xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]/p[@class="date"]');
-
   if($sitting_date){
     $sitting_date =~ s/^[^ ]* //;
     $sitting_date = $strp->parse_datetime("$sitting_date 00:00");
@@ -416,7 +415,7 @@ sub add_audio_to_teiCorpus {
 sub init_TEI {
   my ($term_id, $meeting_id, $sitting_id, $topic_id) = @_;
   my $new_doc_id = sprintf('ps%d-%03d-%02d-%03d-%03d',$term_id, $meeting_id, $sitting_id, $topic_cntr, $topic_id );
-  debug_print( "NEW DOCUMENT $new_doc_id " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__);
+  debug_print( "NEW DOCUMENT $new_doc_id " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__, -1);
   $teiCorpus = TEI::ParlaClarin::TEI->new(id => $new_doc_id, output_dir => $tei_out_dir,
                                           title => ["Parliament of the Czech Republic, Chamber of Deputies"],
                                           );
@@ -425,13 +424,14 @@ sub init_TEI {
 sub export_TEI {
   if($teiCorpus && !$teiCorpus->isEmpty()) {
     my $filepath = $teiCorpus->toFile();
+    debug_print( "SAVING DOCUMENT TO $filepath", __LINE__, -1);
     $topic_cntr++;
 
    # print STDERR "otestovat jestli se soubor změnil -> md5\n";
    # print STDERR "vyřešit verzování -> když se změní jen některý soubor z jednání -> problém se suffixem, který se automaticky upravuje\n";
    # print STDERR "skript, který bude přesouvat aktualizované a oanotované soubory jinam. Vůči nim se bude provádět kontrola na existenci??? Jak zaznamenávat změny - více verzí ";
-
-
+  } else {
+    debug_print( "EMPTY DOCUMENT - NOT SAVING", __LINE__, -1)
   }
 }
 
@@ -467,7 +467,6 @@ sub export_text {
   }
   for my $childnode (@child_nodes) {
     if(xpath_node('./self::*[name()="a"]', $childnode)) { # link that should be appended
-      print STDERR "TODO ============ APPEND:\n$childnode\n";
       $segm = $teiCorpus->addToUtterance(create_ref_node($childnode),$segm);
     } else { # text or text in node that is not converted
       my $text = ScrapperUfal::html2text($childnode);
