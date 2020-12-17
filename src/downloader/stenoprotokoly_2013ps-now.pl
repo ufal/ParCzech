@@ -192,7 +192,10 @@ while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
   make_request($page_link);
   debug_print( " -> LOADING \t$page_link", __LINE__, -1);
   next unless doc_loaded;
+  next if(xpath_node('//*[@id="main-content"]/h3[contains(./text(),"nebyl dosud přepsán.")]'));
+
   my $sitting_date = trim xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]/p[@class="date"]');
+
   if($sitting_date){
     $sitting_date =~ s/^[^ ]* //;
     $sitting_date = $strp->parse_datetime("$sitting_date 00:00");
@@ -398,6 +401,9 @@ sub record_exporter {
   return $topic_id;
 }
 
+export_TEI();
+
+
 sub add_pagebreak_to_teiCorpus {
   my $link = shift;
   $teiCorpus->addPageBreak(source => $link)
@@ -431,8 +437,9 @@ sub export_TEI {
    # print STDERR "vyřešit verzování -> když se změní jen některý soubor z jednání -> problém se suffixem, který se automaticky upravuje\n";
    # print STDERR "skript, který bude přesouvat aktualizované a oanotované soubory jinam. Vůči nim se bude provádět kontrola na existenci??? Jak zaznamenávat změny - více verzí ";
   } else {
-    debug_print( "EMPTY DOCUMENT - NOT SAVING", __LINE__, -1)
+    debug_print( "EMPTY DOCUMENT OR UNDEFINED - NOT SAVING", __LINE__, -1)
   }
+  undef $teiCorpus;
 }
 
 sub set_current_tei_unauthorized {
