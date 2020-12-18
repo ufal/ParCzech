@@ -131,7 +131,11 @@ mkdir -p $FILELISTS_DIR
 
 export DOWNLOADER_TEI="$CL_OUTDIR_TEI/$ID"
 export PERSON_LIST_PATH="$DOWNLOADER_TEI/person.xml"
-export NEW_TEI_FILELIST="$FILELISTS_DIR/$ID.tei.fl"
+export TEI_FILELIST="$FILELISTS_DIR/$ID.tei.fl"
+if [ -n "$EXISTING_FILELIST" ]; then
+  TEI_FILELIST=$EXISTING_FILELIST
+fi
+
 
 if skip_process "downloader" "$CL_OUTDIR_TEI/$ID" "$EXISTING_FILELIST" ; then # BEGIN DOWNLOADER CONDITION
 
@@ -166,7 +170,7 @@ do
   fi
 done
 
-find "$DOWNLOADER_TEI" -type f -name '*.xml' ! -name "person.xml" -printf '%P\n' > $NEW_TEI_FILELIST
+find "$DOWNLOADER_TEI" -type f -name '*.xml' ! -name "person.xml" -printf '%P\n' > $TEI_FILELIST
 
 
 ### cache to html
@@ -193,7 +197,7 @@ export METADATA_NAME=ParCzechPS7-2.0
 echo "WARNING: metadata-name $METADATA_NAME is temporary - in future change to ParCzech-live-2.0"
 
 log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
-perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-file metadater/tei_parczech.xml --filelist $NEW_TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $DOWNLOADER_TEI_META
+perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $DOWNLOADER_TEI_META
 
 fi; # END METADATER CONDITION
 
@@ -375,7 +379,7 @@ if skip_process "udpipe2" "$UDPIPE_TEI" "$EXISTING_FILELIST" ; then # BEGIN UDPI
 mkdir -p $UDPIPE_TEI
 log "annotating udpipe2 $UDPIPE_TEI"
 
-perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 --filelist $NEW_TEI_FILELIST --input-dir $DOWNLOADER_TEI_META --output-dir $UDPIPE_TEI
+perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 --filelist $TEI_FILELIST --input-dir $DOWNLOADER_TEI_META --output-dir $UDPIPE_TEI
 
 fi; # END UDPIPE CONDITION
 
@@ -394,7 +398,7 @@ if skip_process "nametag2" "$NAMETAG_TEI" "$EXISTING_FILELIST" ; then # BEGIN NA
 mkdir -p $NAMETAG_TEI
 log "annotating nametag2  $NAMETAG_TEI"
 
-perl -I lib nametag2/nametag2.pl --model=czech-cnec2.0-200831 --filelist $NEW_TEI_FILELIST --input-dir $UDPIPE_TEI --output-dir $NAMETAG_TEI
+perl -I lib nametag2/nametag2.pl --model=czech-cnec2.0-200831 --filelist $TEI_FILELIST --input-dir $UDPIPE_TEI --output-dir $NAMETAG_TEI
 
 fi; # END NAMETAG CONDITION
 
@@ -415,7 +419,7 @@ mkdir -p $ANNOTATED_TEI_META
 
 echo "WARNING: metadata-name $METADATA_NAME.ann is temporary - in future change to ParCzech-live-2.0.ann"
 log "adding metadata $METADATA_NAME.ann $ANNOTATED_TEI_META"
-perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" --metadata-file metadater/tei_parczech.xml --filelist $NEW_TEI_FILELIST --input-dir $NAMETAG_TEI --output-dir $ANNOTATED_TEI_META
+perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $NAMETAG_TEI --output-dir $ANNOTATED_TEI_META
 
 fi; # END METADATER.ann CONDITION
 
@@ -435,7 +439,7 @@ if skip_process "tei2teitok" "$TEITOK_TEI" "$EXISTING_FILELIST" ; then # BEGIN t
 mkdir -p $TEITOK_TEI
 log "converting to teitok $TEITOK_TEI"
 
-for tei_file in `cat $NEW_TEI_FILELIST`
+for tei_file in `cat $TEI_FILELIST`
 do
   ./tei2teitok/tei2teitok.sh  -i "$ANNOTATED_TEI_META/$tei_file" -o "$TEITOK_TEI/$tei_file" -c `realpath $CONFIG_FILE`
 done
