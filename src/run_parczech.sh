@@ -36,6 +36,8 @@ export DATA_DIR=$PWD/out
 export SHARED=.
 export TEITOK=./TEITOK
 export TEITOK_CORPUS=$TEITOK/projects/CORPUS
+export METADATA_NAME=ParCzechPS7-2.0
+
 
 set -o allexport
 if [ -f "$CONFIG_FILE" ]; then
@@ -193,7 +195,6 @@ if skip_process "metadater" "$DOWNLOADER_TEI_META" "$EXISTING_FILELIST" ; then #
 
 mkdir -p $DOWNLOADER_TEI_META
 
-export METADATA_NAME=ParCzechPS7-2.0
 echo "WARNING: metadata-name $METADATA_NAME is temporary - in future change to ParCzech-live-2.0"
 
 log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
