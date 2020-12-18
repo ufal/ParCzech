@@ -42,6 +42,11 @@ if [ -z "$FILE_IN" ] || [ -z "$FILE_OUT" ] ; then
   usage
 fi
 
+if [ ! -s "$FILE_IN" ] ; then
+  echo "file does not exist or is empty: $FILE_IN $FILE_OUT"
+  exit 1
+fi
+
 if [ -z $XSL_TRANSFORM ] ; then
   XSL_TRANSFORM='local_transformer'
 fi
