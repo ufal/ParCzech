@@ -290,7 +290,7 @@ sub open_xml {
   my $rawxml = <FILE>;
   close FILE;
 
-  if ( $rawxml eq '' ) {
+  if ((! defined($rawxml)) || $rawxml eq '' ) {
     print " -- empty file $file\n";
   } else {
     my $parser = XML::LibXML->new();
