@@ -76,7 +76,7 @@ log "CONFIG FILE: $CONFIG_FILE"
 if [ -n "$EXISTING_FILELIST" ]; then
   if [ -f "$EXISTING_FILELIST" ]; then
     log "USING EXISTING FILELIST: $EXISTING_FILELIST"
-    export ID=`echo "$EXISTING_FILELIST"| sed 's@^.*\/@@;s@\.tei\.fl$@@'`
+    export ID=`echo "$EXISTING_FILELIST"| sed 's@^.*\/@@;s@\..*tei\.fl$@@'` # allow interfix eg  20201218T120411.patch01.tei.fl (you can use sublist for patching some files)
   else
     echo  "file $EXISTING_FILELIST error" 1>&2
     usage
