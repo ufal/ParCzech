@@ -298,7 +298,7 @@ sub open_xml {
     eval { $doc = $parser->load_xml(string => $rawxml); };
     if ( !$doc ) {
       print " -- invalid XML in $file\n";
-      print STDERR $rawxml;
+      print "$@";
 
     } else {
       $xml = {raw => $rawxml, dom => $doc}
