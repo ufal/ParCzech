@@ -341,10 +341,26 @@ sub close_sentence {
 sub close_subelement_if_any {
   my $self = shift;
   if($self->{nodesptr} < scalar(@{$self->{nodes}})
-    && $self->{nodes}->[$self->{nodesptr}]->{textptr_end} == $self->{textptr}
+    && $self->{nodes}->[$self->{nodesptr}]->{textptr_end} <= $self->{textptr}
     && $self->{nodes}->[$self->{nodesptr}]->{tokenize}
     ){
+    if( $self->{nodes}->[$self->{nodesptr}]->{textptr_end} < $self->{textptr}) {
+      print STDERR "moved end of node - token cross element: $self->{nodes}->[$self->{nodesptr}]->{node}\n";
+    }
     shift @{$self->{parent_stack}};
+    $self->{nodesptr}++;
+  }
+  $self->check_and_patch_cross_elements();
+}
+
+sub check_and_patch_cross_elements { # print just empty elements
+  my $self = shift;
+  while($self->{nodesptr} < scalar(@{$self->{nodes}})
+    && $self->{nodes}->[$self->{nodesptr}]->{textptr_end} <= $self->{textptr}
+    && $self->{nodes}->[$self->{nodesptr}]->{tokenize}
+    ){
+    print STDERR "PATCHING - token cross element: $self->{nodes}->[$self->{nodesptr}]->{node}\n";
+    $self->{parent_stack}->[0]->appendChild($self->{nodes}->[$self->{nodesptr}]->{node});
     $self->{nodesptr}++;
   }
 }
