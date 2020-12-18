@@ -71,7 +71,7 @@ sub process_opts {
 }
 
 sub file_does_not_exist {
-  print "file ". shift . "does not exist";exit;
+  print "file ". shift . " does not exist\n";
 }
 
 # returns hash {inpath=>..., outpath=> ..., raw => ..., dom => } path to files
