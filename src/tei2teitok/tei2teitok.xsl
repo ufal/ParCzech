@@ -97,6 +97,7 @@
           <xsl:value-of select="$cat/*[local-name(.) = 'catDesc']/text()" />
         </xsl:attribute>
       </xsl:if>
+      <xsl:apply-templates select="node()"/>
     </xsl:element>
   </xsl:template>
 
