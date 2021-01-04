@@ -185,7 +185,7 @@ my $topic_cntr = 0;
 my $akt_sitting = '';
 my $last_sitting_date;
 my %seen_topics;
-my $teiCorpus;
+my $teiFile;
 
 
 while(my $steno_top = shift @steno_topic_anchor) { # order is important !!!
@@ -258,15 +258,15 @@ sub record_exporter {
   	}
   }
 
-  add_pagebreak_to_teiCorpus($link);
-  add_audio_to_teiCorpus($link); # add audio if possible
+  add_pagebreak_to_teiFile($link);
+  add_audio_to_teiFile($link); # add audio if possible
   my ($link_id) = $link =~ m/s(\d*)\.htm$/;
 
   my $date = trim xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]/p[@class="date"]/a');
   if($date){
     $date =~ s/^[^ ]* //;
     $datetime = $strp->parse_datetime("$date 00:00");
-    $teiCorpus->addSittingDate($datetime);
+    $teiFile->addSittingDate($datetime);
   }
 
   for my $cnt (xpath_node('//*[@id="main-content"]/*[not(has(@class,"document-nav"))] | //*[@id="main-content"]/text()')) {
@@ -279,11 +279,11 @@ sub record_exporter {
       $topic_id =~ s/^.*b\d\d\d(\d\d\d)\d\d\.htm.*/$1/;
       ${$ref_post}->{id}->{topic} = $topic_id;
       init_TEI( map {${$ref_post}->{id}->{$_} } qw/term meeting sitting topic/ );
-      add_pagebreak_to_teiCorpus($link);
-      add_audio_to_teiCorpus($link); # add audio if possible
-      $teiCorpus->addSittingDate($datetime) if $datetime;
+      add_pagebreak_to_teiFile($link);
+      add_audio_to_teiFile($link); # add audio if possible
+      $teiFile->addSittingDate($datetime) if $datetime;
       debug_print( "  UTTERANCE " .($$ref_author->{authorname}), __LINE__, 5);
-      my $id = $teiCorpus->addUtterance(
+      my $id = $teiFile->addUtterance(
         author => {
           author_full => $$ref_author->{author},
           name => $$ref_author->{authorname},
@@ -301,7 +301,7 @@ sub record_exporter {
     } elsif (my $s = xpath_string('./@class',$cnt) eq "status") {
       next;
     } elsif (my $mp3 = xpath_string('./a[@class = "audio"]/@href',$cnt)) {
-      $teiCorpus->addAudioNote(url => URI->new_abs($mp3,$link));
+      $teiFile->addAudioNote(url => URI->new_abs($mp3,$link));
       next;
     } elsif (xpath_string('./text()',$cnt) =~ /\s*\*\*\*\s*/) {
       next;
@@ -313,8 +313,8 @@ sub record_exporter {
       my $texttime = $&;
       my $time = "$1:".($2//'00');
       $datetime = $strp->parse_datetime("$date $time");
-      my $noteNode = $teiCorpus->createTimeNoteNode(from=>$datetime, texttime=>$texttime);
-      $teiCorpus->addToElemsQueue($noteNode);
+      my $noteNode = $teiFile->createTimeNoteNode(from=>$datetime, texttime=>$texttime);
+      $teiFile->addToElemsQueue($noteNode);
       $$ref_post->{date} = $datetime;
       next;
     } elsif ($cnt_html =~ m/${re_schuze}.*${re_prerus}${re_cas}.*\)/) {
@@ -322,7 +322,7 @@ sub record_exporter {
       my $time = "$1:".($2//'00');
 
       $datetime = $strp->parse_datetime("$date $time");
-      $teiCorpus->addTimeNote(to=>$datetime, texttime=>$texttime);
+      $teiFile->addTimeNote(to=>$datetime, texttime=>$texttime);
       next;
     } elsif ($cnt_html =~ m/${re_schuze}.*${re_konec}${re_cas}.*\)/) {
       my $texttime = $&;
@@ -330,13 +330,13 @@ sub record_exporter {
 
 
       $datetime = $strp->parse_datetime("$date $time");
-      $teiCorpus->addTimeNote(to=>$datetime, texttime=>$texttime);
+      $teiFile->addTimeNote(to=>$datetime, texttime=>$texttime);
     } elsif ($cnt_html =~ m/${re_schuze}.*${re_zacatek}${re_cas}.*\)/) {
       my $texttime = $&;
       my $time = "$1:".($2//'00');
 
       $datetime = $strp->parse_datetime("$date $time");
-      $teiCorpus->addTimeNote(from=>$datetime, texttime=>$texttime);
+      $teiFile->addTimeNote(from=>$datetime, texttime=>$texttime);
       next;
     } elsif(my $a = xpath_node('./b[not(../@align = "center" or ../@align = "CENTER" ) and (.//a or starts-with(text(),"Poslan"))]',$cnt)
                    ## patching obscure utterances (https://www.psp.cz/eknih/2013ps/stenprot/036schuz/s036311.htm)
@@ -366,7 +366,7 @@ sub record_exporter {
       $$ref_post->{id}->{post} = $post_id;
       $$ref_post->{id}->{post} = 'r0' unless exists $$ref_post->{id}->{post};
       debug_print( "  UTTERANCE " .($$ref_author->{authorname}), __LINE__, 5);
-      my $id = $teiCorpus->addUtterance(
+      my $id = $teiFile->addUtterance(
         author => {
           author_full => $$ref_author->{author},
           name => $$ref_author->{authorname},
@@ -394,7 +394,7 @@ sub record_exporter {
 
     } elsif($cnt_text) {
       if($cnt->nodeType == XML::LibXML::XML_ELEMENT_NODE && lc($cnt->getAttribute('align')//'') eq 'center'){
-        $teiCorpus->addHead($cnt_text);
+        $teiFile->addHead($cnt_text);
         $cnt = xpath_node('./b', $cnt) // $cnt;
       }
       export_text($cnt, 1);
@@ -406,17 +406,17 @@ sub record_exporter {
 export_TEI();
 
 
-sub add_pagebreak_to_teiCorpus {
+sub add_pagebreak_to_teiFile {
   my $link = shift;
-  $teiCorpus->addPageBreak(source => $link)
+  $teiFile->addPageBreak(source => $link)
 }
 
-sub add_audio_to_teiCorpus {
+sub add_audio_to_teiFile {
   my $link = shift;
   if(my $page_mp3_url = xpath_string('//div[@class="aside"]//ul[@class="link-list"]/li[contains(text(),"MP3")]/a/@href')){
-    $teiCorpus->addAudioNote(url => URI->new_abs($page_mp3_url, $link));
+    $teiFile->addAudioNote(url => URI->new_abs($page_mp3_url, $link));
   } else { # get mp3 link from mp3file list page
-    $teiCorpus->addAudioNote(url => $day_audio_links{$link->as_string}) if $day_audio_links{$link};
+    $teiFile->addAudioNote(url => $day_audio_links{$link->as_string}) if $day_audio_links{$link};
   }
 }
 
@@ -429,14 +429,14 @@ sub init_TEI {
   }
   my $new_doc_id = sprintf('%s-%03d-%03d',$sitting_pref, $topic_cntr, $topic_id );
   debug_print( "NEW DOCUMENT $new_doc_id " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__, -1);
-  $teiCorpus = TEI::ParlaClarin::TEI->new(id => $new_doc_id, output_dir => $tei_out_dir,
+  $teiFile = TEI::ParlaClarin::TEI->new(id => $new_doc_id, output_dir => $tei_out_dir,
                                           title => ["Parliament of the Czech Republic, Chamber of Deputies"],
                                           );
 }
 
 sub export_TEI {
-  if($teiCorpus && !$teiCorpus->isEmpty()) {
-    my $filepath = $teiCorpus->toFile();
+  if($teiFile && !$teiFile->isEmpty()) {
+    my $filepath = $teiFile->toFile();
     debug_print( "SAVING DOCUMENT TO $filepath", __LINE__, -1);
     $topic_cntr++;
 
@@ -446,14 +446,14 @@ sub export_TEI {
   } else {
     debug_print( "EMPTY DOCUMENT OR UNDEFINED - NOT SAVING", __LINE__, -1)
   }
-  undef $teiCorpus;
+  undef $teiFile;
 }
 
 sub set_current_tei_unauthorized {
   my $date = shift;
-  my $id = $teiCorpus->teiID();
-  $teiCorpus->setUnauthorizedFlag();
-  $teiCorpus->setRevisionDate($date,'unauthorized');
+  my $id = $teiFile->teiID();
+  $teiFile->setUnauthorizedFlag();
+  $teiFile->setRevisionDate($date,'unauthorized');
   my $h = $new_unauthorized;
   for my $p (split("-", $id)) {
   	$h = $h->{$p} = {};
@@ -462,9 +462,9 @@ sub set_current_tei_unauthorized {
 
 sub set_document_date {
   my $date = shift;
-  my $id = $teiCorpus->teiID();
+  my $id = $teiFile->teiID();
   return unless is_new($id, $date);
-  $teiCorpus->setActDate($date);
+  $teiFile->setActDate($date);
 }
 
 sub export_text {
@@ -481,7 +481,7 @@ sub export_text {
   }
   for my $childnode (@child_nodes) {
     if(xpath_node('./self::*[name()="a"]', $childnode)) { # link that should be appended
-      $segm = $teiCorpus->addToUtterance(create_ref_node($childnode),$segm);
+      $segm = $teiFile->addToUtterance(create_ref_node($childnode),$segm);
     } else { # text or text in node that is not converted
       my $text = ScrapperUfal::html2text($childnode); # returns empty string if it contains only spaces !!!
       $text = ' ' if ($text eq '') and ! ($childnode->toString() eq '');
@@ -489,18 +489,18 @@ sub export_text {
       $text =~ s/\s\s+/ /g ; # squeeze spaces
       while($text){
         if($text =~ s/^\s+//) {
-          $teiCorpus->addToElemsQueue($&);
+          $teiFile->addToElemsQueue($&);
         } elsif($text =~ s/^[^\(]*[^\(\s]//){ # text without last space
-          $segm = $teiCorpus->addToUtterance($&,$segm);
+          $segm = $teiFile->addToUtterance($&,$segm);
         } elsif ($text =~ s/^\(.*?\)//) {
           my $nt = $&;
           if(length($nt) > 3) {
-            $teiCorpus->addToElemsQueue($teiCorpus->createNoteNode(type => 'comment', text => $nt));
+            $teiFile->addToElemsQueue($teiFile->createNoteNode(type => 'comment', text => $nt));
           } else { # note is too short - appending to regular text
-            $segm = $teiCorpus->addToUtterance($nt,$segm);
+            $segm = $teiFile->addToUtterance($nt,$segm);
           }
         } elsif ($text =~ s/^.*//) {
-        $segm = $teiCorpus->addToUtterance($&, $segm); # this should not  happen but we don't wont loose some text
+        $segm = $teiFile->addToUtterance($&, $segm); # this should not  happen but we don't wont loose some text
         }
       }
     }
