@@ -102,7 +102,8 @@ sub toFile {
 
 
 
-  my $filename = $self->SUPER::toFile(%params,($params{outputfile} ? () : (outputfile => File::Spec->catfile($self->{output}->{dir},join("-",@id_parts[0,1]),$self->{ID}.'.xml'))));
+  my $filename = $params{outputfile} // File::Spec->catfile(join("-",@id_parts[0,1]),$self->{ID}.'.xml');
+  $self->SUPER::toFile(%params,($params{outputfile} ? () : (outputfile => File::Spec->catfile($self->{output}->{dir},$filename))));
   # save personlist
   my $pp = XML::LibXML::PrettyPrint->new(
     indent_string => "  ",
