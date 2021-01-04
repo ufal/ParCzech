@@ -110,6 +110,7 @@ fi
 #         ./YYYY-SSS                     ## each session has its own directory
 #           - teifiles
 #         ./person.xml                   ## copied from previeous run
+#         ./ParCzech-$ID.xml             ## teiCorpus
 #     update:
 #       downloader-tei/sha1sum.list      ## pairs shasum=/path/.../downloader-tei/$ID/YYYY-SSS/teifile.xml
 #
@@ -133,6 +134,7 @@ mkdir -p $FILELISTS_DIR
 
 export DOWNLOADER_TEI="$CL_OUTDIR_TEI/$ID"
 export PERSON_LIST_PATH="$DOWNLOADER_TEI/person.xml"
+export TEICORPUS_FILENAME="ParCzech-$ID.xml"
 export TEI_FILELIST="$FILELISTS_DIR/$ID.tei.fl"
 if [ -n "$EXISTING_FILELIST" ]; then
   TEI_FILELIST=$EXISTING_FILELIST
@@ -172,7 +174,7 @@ do
   fi
 done
 
-find "$DOWNLOADER_TEI" -type f -name '*.xml' ! -name "person.xml" -printf '%P\n' > $TEI_FILELIST
+find "$DOWNLOADER_TEI" -type f -name '*.xml' ! -name "person.xml" ! -name "$TEICORPUS_FILENAME" -printf '%P\n' > $TEI_FILELIST
 
 
 ### cache to html
@@ -199,6 +201,12 @@ echo "WARNING: metadata-name $METADATA_NAME is temporary - in future change to P
 
 log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $DOWNLOADER_TEI_META
+
+
+### Enrich teiCorpus with person.xml data
+
+echo -e "TODO: Enrich teiCorpus with person.xml data \n\t$DOWNLOADER_TEI/$TEICORPUS_FILENAME\n\t\t=> $DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"
+
 
 fi; # END METADATER CONDITION
 
