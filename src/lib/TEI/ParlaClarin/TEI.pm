@@ -106,7 +106,7 @@ sub toFile {
   $self->addMeetingData('term',$id_parts[0],1);
   $self->addMeetingData('meeting',join('/',@id_parts[0,1]),1);
   $self->addMeetingData('sitting',join('/',@id_parts[0,1,2]),1);
-  $self->addMeetingData('agenda',join('/', @id_parts[0,1,3]),1);
+  $self->addMeetingData('agenda',join('/', @id_parts[0,1,4]),1);
 
   my $listPerson;
   if(%{$self->{THIS_TEI_PERSON_IDS}}){
