@@ -21,7 +21,8 @@ sub new {
   my ($class, $rootname, %params) = @_;
   my $self = {};
   bless($self,$class);
-  
+  $self->{output}->{dir} = $params{output_dir} // '.';
+
   $self->{DOM} = XML::LibXML::Document->new("1.0", "utf-8");
   my $root_node =  XML::LibXML::Element->new($rootname);
   $self->{ROOT} = $root_node;
@@ -42,6 +43,31 @@ sub new {
   return $self
 }
 
+sub toString {
+  my $self = shift;
+  return $self->{DOM}->toString();
+}
+
+
+sub toFile {
+  my $self = shift;
+  my %params = @_;
+  my $filename = $params{outputfile};
+  my $dir = dirname($filename);
+  File::Path::mkpath($dir) unless -d $dir;
+  my $pp = XML::LibXML::PrettyPrint->new(
+    indent_string => "  ",
+    element => {
+        inline   => [qw/note/],
+        #block    => [qw//],
+        #compact  => [qw//],
+        preserves_whitespace => [qw/u/],
+        }
+    );
+  $pp->pretty_print($self->{DOM});
+  $self->{DOM}->toFile($filename);
+  return $filename;
+}
 
 
 sub logDate {

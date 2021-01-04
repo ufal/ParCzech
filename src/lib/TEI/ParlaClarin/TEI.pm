@@ -25,7 +25,6 @@ sub new {
   $self->{UTT_ID} = ''; # current utterance ID
   $self->{SEG_COUNTER} = 0;
   $self->{STATS}->{u} = 0;
-  $self->{output}->{dir} = $params{output_dir} // '.';
   
   $self->{PERSON_IDS} = {};
   $self->{THIS_TEI_PERSON_IDS} = {};
@@ -74,10 +73,6 @@ sub load_tei {
   }
 }
 
-sub toString {
-  my $self = shift;
-  return $self->{DOM}->toString();
-}
 
 
 sub toFile {
@@ -86,9 +81,7 @@ sub toFile {
   my @id_parts = split '-', $self->{ID};
   $self->appendQueue(1); # append queue  to <text><body><div>
 
-  my $filename = $params{outputfile} // File::Spec->catfile($self->{output}->{dir},join("-",@id_parts[0,1]),$self->{ID}.'.xml');
-  my $dir = dirname($filename);
-  File::Path::mkpath($dir) unless -d $dir;
+
 
   $self->addMeetingData('term',$id_parts[0],1);
   $self->addMeetingData('meeting',join('/',@id_parts[0,1]),1);
@@ -107,8 +100,12 @@ sub toFile {
     }
   }
 
+
+
+  my $filename = $self->SUPER::toFile(%params,($params{outputfile} ? () : (outputfile => File::Spec->catfile($self->{output}->{dir},join("-",@id_parts[0,1]),$self->{ID}.'.xml'))));
+  # save personlist
   my $pp = XML::LibXML::PrettyPrint->new(
-  	indent_string => "  ",
+    indent_string => "  ",
     element => {
         inline   => [qw/note/],
         #block    => [qw//],
@@ -116,10 +113,7 @@ sub toFile {
         preserves_whitespace => [qw/u/],
         }
     );
-  $pp->pretty_print($self->{DOM});
-  $self->{DOM}->toFile($filename);
-
-  # save personlist
+  
   if($self->{PERSONLIST}) {
     $pp->pretty_print($self->{PERSONLIST});
     $self->{PERSONLIST}->toFile($self->{personlistfile}->{path});
