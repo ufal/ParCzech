@@ -1,5 +1,6 @@
 package TEI::ParlaClarin::TEI;
 
+use base 'TEI::ParlaClarin';
 use strict;
 use warnings;
 
@@ -17,16 +18,14 @@ use open OUT => ':utf8';
 
 sub new {
   my ($class, %params) = @_;
-  my $self;
+  my $self = $class->SUPER::new('TEI',%params);
+  bless($self,$class);
   $self->{PAGECOUNTER} = 0;
   $self->{UTT_COUNTER} = 0;
   $self->{UTT_ID} = ''; # current utterance ID
   $self->{SEG_COUNTER} = 0;
   $self->{STATS}->{u} = 0;
-  $self->{output}->{dir} = $params{output_dir} // '.';
-  $self->{DOM} = XML::LibXML::Document->new("1.0", "utf-8");
-  my $root_node =  XML::LibXML::Element->new("TEI");
-  $self->{ROOT} = $root_node;
+  
   $self->{PERSON_IDS} = {};
   $self->{THIS_TEI_PERSON_IDS} = {};
   $self->{QUEUE} = [];
@@ -34,24 +33,11 @@ sub new {
   my $personlistfilename = 'person.xml';
   my $personlistfilepath = File::Spec->catfile($self->{output}->{dir},$personlistfilename);
   $self->{personlistfile} = {name => $personlistfilename, path=> $personlistfilepath};
-  $self->{DOM}->setDocumentElement($root_node);
-  $self->{HEADER} = XML::LibXML::Element->new("teiHeader");
-  $root_node->appendChild($self->{HEADER});
-
-  bless($self,$class);
-  $self->{XPC} = XML::LibXML::XPathContext->new; # xpath context - easier finding nodes with namespace (including default namespace)
-  $self->addNamespaces($root_node, '' => 'http://www.tei-c.org/ns/1.0', xml => 'http://www.w3.org/XML/1998/namespace');
-
+  
+  
   $self->{PERSONLIST} = $self->getPersonlistDOM($personlistfilepath);
-  $self->{TITLESTMT} = _get_child_node_or_create($self->{XPC},$self->{HEADER},'fileDesc', 'titleStmt');
-  if($params{'title'}) {
-    $self->{TITLESTMT}->appendTextChild('title', $_) for (  ! ref($params{title}) eq 'ARRAY' ? $params{title} : @{$params{title}} );
-  }
   $self->addMeetingData('authorized','yes');
-  if(exists $params{id}) {
-    $self->{ID} = $params{id};
-    $root_node->setAttributeNS($self->{NS}->{xml}, 'id', $self->{ID});
-  }
+
   return $self;
 }
 
@@ -87,10 +73,6 @@ sub load_tei {
   }
 }
 
-sub toString {
-  my $self = shift;
-  return $self->{DOM}->toString();
-}
 
 
 sub toFile {
@@ -99,29 +81,19 @@ sub toFile {
   my @id_parts = split '-', $self->{ID};
   $self->appendQueue(1); # append queue  to <text><body><div>
 
-  my $filename = $params{outputfile} // File::Spec->catfile($self->{output}->{dir},join("-",@id_parts[0,1]),$self->{ID}.'.xml');
-  my $dir = dirname($filename);
-  File::Path::mkpath($dir) unless -d $dir;
+
 
   $self->addMeetingData('term',$id_parts[0],1);
   $self->addMeetingData('meeting',join('/',@id_parts[0,1]),1);
   $self->addMeetingData('sitting',join('/',@id_parts[0,1,2]),1);
   $self->addMeetingData('agenda',join('/', @id_parts[0,1,4]),1);
 
-  my $listPerson;
-  if(%{$self->{THIS_TEI_PERSON_IDS}}){
-  	$listPerson = XML::LibXML::Element->new("listPerson");
-  	_get_child_node_or_create($self->{XPC},$self->{ROOT},'teiHeader', 'profileDesc', 'particDesc')->appendChild($listPerson);
-    for my $pid (sort keys %{$self->{THIS_TEI_PERSON_IDS}}) {
-      my $pers = XML::LibXML::Element->new("person");
-      $pers->setAttributeNS($self->{NS}->{xml}, 'id', $pid);
-      $pers->setAttribute('corresp', $self->{personlistfile}->{name}."#".$pid);
-      $listPerson->appendChild($pers);
-    }
-  }
 
+  my $filename = $params{outputfile} // File::Spec->catfile(join("-",@id_parts[0,1]),$self->{ID}.'.xml');
+  $self->SUPER::toFile(%params,($params{outputfile} ? () : (outputfile => File::Spec->catfile($self->{output}->{dir},$filename))));
+  # save personlist
   my $pp = XML::LibXML::PrettyPrint->new(
-  	indent_string => "  ",
+    indent_string => "  ",
     element => {
         inline   => [qw/note/],
         #block    => [qw//],
@@ -129,15 +101,22 @@ sub toFile {
         preserves_whitespace => [qw/u/],
         }
     );
-  $pp->pretty_print($self->{DOM});
-  $self->{DOM}->toFile($filename);
-
-  # save personlist
+  
   if($self->{PERSONLIST}) {
     $pp->pretty_print($self->{PERSONLIST});
     $self->{PERSONLIST}->toFile($self->{personlistfile}->{path});
   }
   return $filename;
+}
+
+sub getPersonIdsList {
+  my $self = shift;
+  return [keys %{$self->{THIS_TEI_PERSON_IDS}}];
+}
+
+sub getPersonListFileName {
+  my $self = shift;
+  return $self->{personlistfile};
 }
 
 sub getAudioUrls {
@@ -165,29 +144,6 @@ sub addAudioFile {
   $media->setAttribute('url', $file);
 
   return $self;
-}
-
-sub addNamespaces {
-  my $self = shift;
-  my $elem = shift;
-  $self->{NS}={} unless exists $self->{NS};
-  my %ns = @_;
-  while( my ($prefix, $uri) = each %ns) {
-  	$elem->setNamespace($uri,$prefix,$prefix eq '' ? 1 : 0);
-  	$self->{NS}->{$prefix} = $uri;
-  }
-  $self->setXPC($elem, %ns);
-  return $self;
-}
-
-sub setXPC {
-  my $self = shift;
-  my $elem = shift;
-  my %nslist = @_;
-  $self->{XPC} = XML::LibXML::XPathContext->new unless $self->{XPC};
-  while(my ($prefix, $uri) = each %nslist) {
-    $self->{XPC}->registerNs($prefix||'tei', $uri); # use tei if no prefix !!!, it can be used while searched with $self->{XPC}
-  }
 }
 
 
@@ -395,6 +351,7 @@ sub addSittingDate {
   return unless $date;
   my $node = _get_child_node_or_create($self->{XPC},$self->{HEADER},qw/profileDesc settingDesc setting date/);
   unless($node->textContent()) {
+    $self->logDate($date);
     $node->appendText($date->strftime('%Y-%m-%d'));
     $node->setAttribute('when', $date->strftime('%Y-%m-%d'));
     $node->setAttribute('ana', '#parla.sitting');
@@ -507,18 +464,12 @@ sub addMeetingData {
 # ===========================
 
 sub _get_child_node_or_create { # allow create multiple tree ancestors
-  my $XPC = shift;
-  my $node = shift;
-  my $newName = shift;
-  return $node unless $newName;
-  my ($child) = reverse $XPC->findnodes("./$newName", $node); # get last valid child
-  $child = $node->addNewChild(undef,$newName) unless $child;
-  return _get_child_node_or_create($XPC,$child, @_);
+  return TEI::ParlaClarin::_get_child_node_or_create(@_);
 }
 
 
 sub _to_xmlid {
-  return join('',map {my $p = $_; $p =~ s/\s*//g; Unicode::Diacritic::Strip::strip_diacritics($p)} @_);
+  return TEI::ParlaClarin::_to_xmlid(@_);
 }
 
 
