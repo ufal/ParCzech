@@ -493,7 +493,12 @@ sub export_text {
         } elsif($text =~ s/^[^\(]*[^\(\s]//){ # text without last space
           $segm = $teiCorpus->addToUtterance($&,$segm);
         } elsif ($text =~ s/^\(.*?\)//) {
-          $teiCorpus->addToElemsQueue($teiCorpus->createNoteNode(type => 'comment', text => $&));
+          my $nt = $&;
+          if(length($nt) > 3) {
+            $teiCorpus->addToElemsQueue($teiCorpus->createNoteNode(type => 'comment', text => $nt));
+          } else { # note is too short - appending to regular text
+            $segm = $teiCorpus->addToUtterance($nt,$segm);
+          }
         } elsif ($text =~ s/^.*//) {
         $segm = $teiCorpus->addToUtterance($&, $segm); # this should not  happen but we don't wont loose some text
         }
