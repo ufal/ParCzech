@@ -88,19 +88,6 @@ sub toFile {
   $self->addMeetingData('sitting',join('/',@id_parts[0,1,2]),1);
   $self->addMeetingData('agenda',join('/', @id_parts[0,1,4]),1);
 
-  my $listPerson;
-  if(%{$self->{THIS_TEI_PERSON_IDS}}){
-  	$listPerson = XML::LibXML::Element->new("listPerson");
-  	_get_child_node_or_create($self->{XPC},$self->{ROOT},'teiHeader', 'profileDesc', 'particDesc')->appendChild($listPerson);
-    for my $pid (sort keys %{$self->{THIS_TEI_PERSON_IDS}}) {
-      my $pers = XML::LibXML::Element->new("person");
-      $pers->setAttributeNS($self->{NS}->{xml}, 'id', $pid);
-      $pers->setAttribute('corresp', $self->{personlistfile}->{name}."#".$pid);
-      $listPerson->appendChild($pers);
-    }
-  }
-
-
 
   my $filename = $params{outputfile} // File::Spec->catfile(join("-",@id_parts[0,1]),$self->{ID}.'.xml');
   $self->SUPER::toFile(%params,($params{outputfile} ? () : (outputfile => File::Spec->catfile($self->{output}->{dir},$filename))));
@@ -120,6 +107,16 @@ sub toFile {
     $self->{PERSONLIST}->toFile($self->{personlistfile}->{path});
   }
   return $filename;
+}
+
+sub getPersonIdsList {
+  my $self = shift;
+  return [keys %{$self->{THIS_TEI_PERSON_IDS}}];
+}
+
+sub getPersonListFileName {
+  my $self = shift;
+  return $self->{personlistfile};
 }
 
 sub getAudioUrls {
