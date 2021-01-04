@@ -6,6 +6,7 @@ use URI::QueryParam;
 use File::Spec;
 use File::Path;
 use TEI::ParlaClarin::TEI;
+use TEI::ParlaClarin::teiCorpus;
 use Getopt::Long;
 use Data::Dumper;
 
@@ -93,6 +94,13 @@ my %day_audio_links; # stores audio links - page -> audio_link
 
 my $unauthorized = JSON::from_json(ScrapperUfal::get_note('unauthorized')||'{}');
 my $new_unauthorized = {};
+
+
+my $teiCorpus = TEI::ParlaClarin::teiCorpus->new(
+                                                  id => "ParCzech-$run_date",
+                                                  output_dir => $tei_out_dir,
+                                                  title => ["Parliament of the Czech Republic, Chamber of Deputies"]
+                                                );
 
 # loop through terms
 for my $row (xpath_node('//*[@id="main-content"]/table/tr',$URL_start)) {
@@ -404,7 +412,7 @@ sub record_exporter {
 }
 
 export_TEI();
-
+$teiCorpus->toFile();
 
 sub add_pagebreak_to_teiFile {
   my $link = shift;
@@ -438,6 +446,7 @@ sub export_TEI {
   if($teiFile && !$teiFile->isEmpty()) {
     my $filepath = $teiFile->toFile();
     debug_print( "SAVING DOCUMENT TO $filepath", __LINE__, -1);
+    $teiCorpus->addTeiFile($filepath, $topic_cntr,$teiFile);
     $topic_cntr++;
 
    # print STDERR "otestovat jestli se soubor změnil -> md5\n";
@@ -448,6 +457,7 @@ sub export_TEI {
   }
   undef $teiFile;
 }
+
 
 sub set_current_tei_unauthorized {
   my $date = shift;
