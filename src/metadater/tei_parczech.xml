@@ -52,9 +52,9 @@
 
 
   <pcz:meta pcz:name="ParCzech-edition-live">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:editionStmt">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:editionStmt">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:editionStmt" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:editionStmt" />
       </pcz:test>
       <pcz:tei>
         <edition>live</edition>
@@ -64,9 +64,9 @@
 
   <pcz:meta pcz:name="ParCzech-publ-live">
     <pcz:item pcz:dep="publisherLINDAT" />
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt/tei:date" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:publicationStmt/tei:date" />
       </pcz:test>
       <pcz:tei>
         <availability status="free">
@@ -127,9 +127,9 @@
 
 
   <pcz:meta pcz:name="publisherLINDAT">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt/tei:publisher" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:publicationStmt/tei:publisher" />
       </pcz:test>
       <pcz:tei>
         <publisher>
