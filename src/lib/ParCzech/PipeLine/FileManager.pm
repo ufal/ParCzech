@@ -99,6 +99,9 @@ my %xmlNs = (
   'pcz' => 'http://ufal.mff.cuni.cz/parczech/ns/1.0'
   );
 my %metadata = ();
+my %variables = (
+  TODAY => strftime("%Y-%m-%d", localtime),
+  );
 
 sub new {
   my $this  = shift;
@@ -186,9 +189,10 @@ sub add_metadata {
 
 sub add_static_data {
   my $self = shift;
-  my ($name, $file) = @_;
+  my ($name, $file) = (shift,shift);
+  my %opts = @_;
   $self->init_metadata_visited_detector();
-  my $dom = get_metadata_dom($file);
+  my $dom = get_metadata_dom($file,%variables,%opts);
   if($dom) {
   	$self->_add_static_data_items($name,$dom);
   }
@@ -247,8 +251,9 @@ sub _static_data_items_test {
 
 sub get_metadata_dom {
   my $file = shift;
+  my %vars = @_;
   return $metadata{$file} if defined($metadata{$file});
-  my $xml = ParCzech::PipeLine::FileManager::XML::open_xml($file);
+  my $xml = ParCzech::PipeLine::FileManager::XML::open_xml($file,%vars);
   if($xml) {
     $metadata{$file} = $xml->{dom};
     return $metadata{$file};
@@ -284,6 +289,7 @@ use File::Path;
 
 sub open_xml {
   my $file = shift;
+  my %vars = @_;
   my $xml;
   open FILE, $file;
   binmode ( FILE, ":utf8" );
@@ -295,6 +301,7 @@ sub open_xml {
   } else {
     my $parser = XML::LibXML->new();
     my $doc = "";
+    $rawxml =~ s/\[\[$_\]\]/$vars{$_}/g for keys %vars;
     eval { $doc = $parser->load_xml(string => $rawxml); };
     if ( !$doc ) {
       print " -- invalid XML in $file\n";
