@@ -442,7 +442,7 @@ log "adding metadata $METADATA_NAME.ann $ANNOTATED_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $NAMETAG_TEI --output-dir $ANNOTATED_TEI_META
 
 
-## add metadata to teiCorpus (inplace)
+## add metadata to teiCorpus
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus.ann" \
                                    --metadata-file metadater/tei_parczech.xml \
                                    --input-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"  \
@@ -466,10 +466,8 @@ if skip_process "tei2teitok" "$TEITOK_TEI" "$EXISTING_FILELIST" ; then # BEGIN t
 mkdir -p $TEITOK_TEI
 log "converting to teitok $TEITOK_TEI"
 
-for tei_file in `cat $TEI_FILELIST`
-do
-  ./tei2teitok/tei2teitok.sh  -i "$ANNOTATED_TEI_META/$tei_file" -o "$TEITOK_TEI/$tei_file" -c `realpath $CONFIG_FILE`
-done
+echo "./tei2teitok/teiCorpus2teitok.sh  -C \"$ANNOTATED_TEI_META/$TEICORPUS_FILENAME\" -O \"$TEITOK_TEI\" -c " `realpath $CONFIG_FILE`
+./tei2teitok/teiCorpus2teitok.sh  -C "$ANNOTATED_TEI_META/$TEICORPUS_FILENAME" -O "$TEITOK_TEI" -c `realpath $CONFIG_FILE`
 
 fi; # END tei2teitok CONDITION
 

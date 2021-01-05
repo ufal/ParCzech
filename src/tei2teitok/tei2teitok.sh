@@ -13,13 +13,16 @@ usage() {
   exit 1
 }
 
-while getopts  ':i:o:c:'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
+while getopts  ':i:o:c:C:'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
   case "$opt" in
     'i')
       FILE_IN=$OPTARG
       ;;
     'o')
       FILE_OUT=$OPTARG
+      ;;
+    'C')
+      CORPUS_FILE=$OPTARG
       ;;
     'c')
       CONFIG_FILE=$OPTARG
@@ -51,6 +54,10 @@ if [ -z $XSL_TRANSFORM ] ; then
   XSL_TRANSFORM='local_transformer'
 fi
 
+if [ -z $CORPUS_FILE ] ; then
+  CORPUS_FILE=$PERSON_LIST_PATH
+fi
+
 FILE_IN=`realpath --relative-to="$D" "$FILE_IN"`
 
 mkdir -p `dirname "$FILE_OUT"`
@@ -59,4 +66,4 @@ FILE_OUT=`realpath --relative-to="$D" "$FILE_OUT"`
 
 cd $D
 
-$XSL_TRANSFORM tei2teitok.xsl "$FILE_IN" "$FILE_OUT" personlist-path=$PERSON_LIST_PATH
+$XSL_TRANSFORM tei2teitok.xsl "$FILE_IN" "$FILE_OUT" personlist-path=$CORPUS_FILE
