@@ -36,7 +36,7 @@ export DATA_DIR=$PWD/out
 export SHARED=.
 export TEITOK=./TEITOK
 export TEITOK_CORPUS=$TEITOK/projects/CORPUS
-export METADATA_NAME=ParCzechPS7-2.0
+export METADATA_NAME=ParCzech-live
 
 
 set -o allexport
@@ -196,8 +196,6 @@ export DOWNLOADER_TEI_META=$DATA_DIR/downloader-tei-meta/${ID}
 if skip_process "metadater" "$DOWNLOADER_TEI_META" "$EXISTING_FILELIST" ; then # BEGIN METADATER CONDITION
 
 mkdir -p $DOWNLOADER_TEI_META
-
-echo "WARNING: metadata-name $METADATA_NAME is temporary - in future change to ParCzech-live-2.0"
 
 log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $DOWNLOADER_TEI_META
