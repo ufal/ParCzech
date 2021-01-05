@@ -30,7 +30,7 @@
     <pcz:item pcz:dep="nametag2.app-czech-cnec2.0-200831" />
     <!-- -->
 
-    
+
   </pcz:meta>
 
   <pcz:meta pcz:name="ParCzechPS7-2.0">
@@ -245,9 +245,9 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="nametag2.app-czech-cnec2.0-200831">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:appInfo">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:appInfo">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:appInfo/tei:application[@tei:ident='NameTag']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:appInfo/tei:application[@tei:ident='NameTag']" />
       </pcz:test>
       <pcz:tei>
         <application ident="NameTag" version="2" source="http://lindat.mff.cuni.cz/services/nametag/">
@@ -260,9 +260,9 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="nametag2.prefix">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='ne']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='ne']" />
       </pcz:test>
       <pcz:tei>
         <prefixDef ident="ne" matchPattern="(.+)" replacementPattern="#$1">
@@ -274,9 +274,9 @@
 
 
   <pcz:meta pcz:name="udpipe2.app-czech-pdt-ud-2.6-200830">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:appInfo">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:appInfo">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:appInfo/tei:application[@tei:ident='UDPipe']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:appInfo/tei:application[@tei:ident='UDPipe']" />
       </pcz:test>
       <pcz:tei>
         <application ident="UDPipe" version="2" source="http://lindat.mff.cuni.cz/services/udpipe/">
@@ -294,9 +294,9 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="udpipe2.prefix-pdt">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='pdt']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='pdt']" />
       </pcz:test>
       <pcz:tei>
         <prefixDef ident="pdt" matchPattern="(.+)" replacementPattern="../pdt-fslib.xml#xpath(//fvLib/fs[./f/symbol/@value = '$1'])">
@@ -307,9 +307,9 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="udpipe2.prefix-ud-syn">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='ud-syn']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='ud-syn']" />
       </pcz:test>
       <pcz:tei>
         <prefixDef ident="ud-syn" matchPattern="(.+)" replacementPattern="#xpath(//*[@xml:id = replace('$1',':','_')])">
@@ -331,9 +331,9 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="cnec2.0-taxonomy">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:classDecl">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='NER.cnec2.0']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='NER.cnec2.0']" />
       </pcz:test>
       <pcz:tei>
         <taxonomy xml:id="NER.cnec2.0">
@@ -506,7 +506,7 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="ud-syn-taxonomy">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:classDecl">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:tei>
         <taxonomy xml:id="UD-SYN">
            <desc xml:lang="en"><term>UD syntactic relations</term></desc>
