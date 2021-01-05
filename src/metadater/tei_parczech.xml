@@ -16,11 +16,21 @@
     <pcz:item pcz:dep="ParCzech-edition-live" />
     <pcz:item pcz:dep="ParCzech-publ-live" />
     <pcz:item pcz:dep="respKopp" />
+    <pcz:item pcz:dep="profileDesc-corpus" />
   </pcz:meta>
 
   <pcz:meta pcz:name="ParCzech-live-corpus.ann">
     <pcz:item pcz:dep="ParCzech-live-corpus" />
     <pcz:item pcz:dep="respKopp.ann" />
+    <pcz:item pcz:dep="udpipe2" />
+    <pcz:item pcz:dep="udpipe2.app-czech-pdt-ud-2.6-200830" />
+
+    <!-- TEMPORARY -->
+    <pcz:item pcz:dep="nametag2" />
+    <pcz:item pcz:dep="nametag2.app-czech-cnec2.0-200831" />
+    <!-- -->
+
+    
   </pcz:meta>
 
   <pcz:meta pcz:name="ParCzechPS7-2.0">
@@ -162,7 +172,22 @@
     </pcz:item>
   </pcz:meta>
 
-
+  <pcz:meta pcz:name="profileDesc-corpus">
+    <pcz:item pcz:dep="respKopp" />
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:profileDesc">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:profileDesc/tei:langUsage" />
+      </pcz:test>
+      <pcz:tei>
+        <langUsage>
+          <language ident="cs" xml:lang="cs">čeština</language>
+          <language ident="en" xml:lang="cs">angličtina</language>
+          <language ident="cs" xml:lang="en">Czech</language>
+          <language ident="en" xml:lang="en">English</language>
+        </langUsage>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
 
 
 

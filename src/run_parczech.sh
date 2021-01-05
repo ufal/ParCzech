@@ -441,6 +441,13 @@ echo "WARNING: metadata-name $METADATA_NAME.ann is temporary - in future change 
 log "adding metadata $METADATA_NAME.ann $ANNOTATED_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $NAMETAG_TEI --output-dir $ANNOTATED_TEI_META
 
+
+## add metadata to teiCorpus (inplace)
+perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus.ann" \
+                                   --metadata-file metadater/tei_parczech.xml \
+                                   --input-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"  \
+                                   --output-file "$ANNOTATED_TEI_META/$TEICORPUS_FILENAME"
+
 fi; # END METADATER.ann CONDITION
 
 ###############################

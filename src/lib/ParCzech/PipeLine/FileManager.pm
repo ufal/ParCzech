@@ -321,7 +321,7 @@ sub to_string {
     element => {
         inline   => [qw//], # note
         block    => [qw/person/],
-        compact  => [qw/catDesc term desc label date edition title meeting idno orgName persName resp licence/],
+        compact  => [qw/catDesc term desc label date edition title meeting idno orgName persName resp licence language/],
         preserves_whitespace => [qw/s seg note ref p/],
         }
     );
