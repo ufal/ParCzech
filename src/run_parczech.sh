@@ -36,7 +36,7 @@ export DATA_DIR=$PWD/out
 export SHARED=.
 export TEITOK=./TEITOK
 export TEITOK_CORPUS=$TEITOK/projects/CORPUS
-export METADATA_NAME=ParCzechPS7-2.0
+export METADATA_NAME=ParCzech-live
 
 
 set -o allexport
@@ -110,6 +110,7 @@ fi
 #         ./YYYY-SSS                     ## each session has its own directory
 #           - teifiles
 #         ./person.xml                   ## copied from previeous run
+#         ./ParCzech-$ID.xml             ## teiCorpus
 #     update:
 #       downloader-tei/sha1sum.list      ## pairs shasum=/path/.../downloader-tei/$ID/YYYY-SSS/teifile.xml
 #
@@ -133,6 +134,7 @@ mkdir -p $FILELISTS_DIR
 
 export DOWNLOADER_TEI="$CL_OUTDIR_TEI/$ID"
 export PERSON_LIST_PATH="$DOWNLOADER_TEI/person.xml"
+export TEICORPUS_FILENAME="ParCzech-$ID.xml"
 export TEI_FILELIST="$FILELISTS_DIR/$ID.tei.fl"
 if [ -n "$EXISTING_FILELIST" ]; then
   TEI_FILELIST=$EXISTING_FILELIST
@@ -172,7 +174,7 @@ do
   fi
 done
 
-find "$DOWNLOADER_TEI" -type f -name '*.xml' ! -name "person.xml" -printf '%P\n' > $TEI_FILELIST
+find "$DOWNLOADER_TEI" -type f -name '*.xml' ! -name "person.xml" ! -name "$TEICORPUS_FILENAME" -printf '%P\n' > $TEI_FILELIST
 
 
 ### cache to html
@@ -195,10 +197,27 @@ if skip_process "metadater" "$DOWNLOADER_TEI_META" "$EXISTING_FILELIST" ; then #
 
 mkdir -p $DOWNLOADER_TEI_META
 
-echo "WARNING: metadata-name $METADATA_NAME is temporary - in future change to ParCzech-live-2.0"
-
 log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $DOWNLOADER_TEI_META
+
+
+### Enrich teiCorpus with person.xml data
+
+echo -e "TODO: Enrich teiCorpus with person.xml data \n\t$DOWNLOADER_TEI/$TEICORPUS_FILENAME\n\t\t=> $DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"
+
+
+## merge personlist
+
+$XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" personlist-path=$PERSON_LIST_PATH
+
+
+## add metadata to teiCorpus (inplace)
+perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus" \
+                                   --metadata-file metadater/tei_parczech.xml \
+                                   --input-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"  \
+                                   --output-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"
+
+
 
 fi; # END METADATER CONDITION
 
@@ -422,6 +441,13 @@ echo "WARNING: metadata-name $METADATA_NAME.ann is temporary - in future change 
 log "adding metadata $METADATA_NAME.ann $ANNOTATED_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $NAMETAG_TEI --output-dir $ANNOTATED_TEI_META
 
+
+## add metadata to teiCorpus
+perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus.ann" \
+                                   --metadata-file metadater/tei_parczech.xml \
+                                   --input-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"  \
+                                   --output-file "$ANNOTATED_TEI_META/$TEICORPUS_FILENAME"
+
 fi; # END METADATER.ann CONDITION
 
 ###############################
@@ -440,10 +466,8 @@ if skip_process "tei2teitok" "$TEITOK_TEI" "$EXISTING_FILELIST" ; then # BEGIN t
 mkdir -p $TEITOK_TEI
 log "converting to teitok $TEITOK_TEI"
 
-for tei_file in `cat $TEI_FILELIST`
-do
-  ./tei2teitok/tei2teitok.sh  -i "$ANNOTATED_TEI_META/$tei_file" -o "$TEITOK_TEI/$tei_file" -c `realpath $CONFIG_FILE`
-done
+echo "./tei2teitok/teiCorpus2teitok.sh  -C \"$ANNOTATED_TEI_META/$TEICORPUS_FILENAME\" -O \"$TEITOK_TEI\" -c " `realpath $CONFIG_FILE`
+./tei2teitok/teiCorpus2teitok.sh  -C "$ANNOTATED_TEI_META/$TEICORPUS_FILENAME" -O "$TEITOK_TEI" -c `realpath $CONFIG_FILE`
 
 fi; # END tei2teitok CONDITION
 

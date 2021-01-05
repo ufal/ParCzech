@@ -1,6 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <pcz:ParCzech xmlns="http://www.tei-c.org/ns/1.0" xmlns:pcz="http://ufal.mff.cuni.cz/parczech/ns/1.0">
 
+  <pcz:meta pcz:name="ParCzech-live">
+    <pcz:item pcz:dep="ParCzech-edition-live" />
+    <pcz:item pcz:dep="ParCzech-publ-live" />
+    <pcz:item pcz:dep="respKopp" />
+  </pcz:meta>
+
+  <pcz:meta pcz:name="ParCzech-live.ann">
+    <pcz:item pcz:dep="ParCzech-live" />
+    <pcz:item pcz:dep="respKopp.ann" />
+  </pcz:meta>
+
+  <pcz:meta pcz:name="ParCzech-live-corpus">
+    <pcz:item pcz:dep="ParCzech-edition-live" />
+    <pcz:item pcz:dep="ParCzech-publ-live" />
+    <pcz:item pcz:dep="respKopp" />
+    <pcz:item pcz:dep="profileDesc-corpus" />
+  </pcz:meta>
+
+  <pcz:meta pcz:name="ParCzech-live-corpus.ann">
+    <pcz:item pcz:dep="ParCzech-live-corpus" />
+    <pcz:item pcz:dep="respKopp.ann" />
+    <pcz:item pcz:dep="udpipe2" />
+    <pcz:item pcz:dep="udpipe2.app-czech-pdt-ud-2.6-200830" />
+
+    <!-- TEMPORARY -->
+    <pcz:item pcz:dep="nametag2" />
+    <pcz:item pcz:dep="nametag2.app-czech-cnec2.0-200831" />
+    <!-- -->
+
+
+  </pcz:meta>
 
   <pcz:meta pcz:name="ParCzechPS7-2.0">
     <pcz:item pcz:dep="ParCzechPS-2.0" />
@@ -8,7 +39,7 @@
     <pcz:item pcz:dep="publisherLINDAT" />
     <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt/tei:pubPlace" />
+        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt/tei:date" />
       </pcz:test>
       <pcz:tei>
         <idno type="handle">http://hdl.handle.net/11234/1-3436</idno>
@@ -29,6 +60,33 @@
     <!-- -->
   </pcz:meta>
 
+
+  <pcz:meta pcz:name="ParCzech-edition-live">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:editionStmt">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:editionStmt" />
+      </pcz:test>
+      <pcz:tei>
+        <edition>live</edition>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
+
+  <pcz:meta pcz:name="ParCzech-publ-live">
+    <pcz:item pcz:dep="publisherLINDAT" />
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:publicationStmt/tei:date" />
+      </pcz:test>
+      <pcz:tei>
+        <availability status="free">
+          <licence>https://creativecommons.org/publicdomain/zero/1.0/</licence>
+          <p xml:lang="en">This work is licensed under the <ref target="https://creativecommons.org/publicdomain/zero/1.0/">CC0 1.0 Universal (CC0 1.0) Public Domain Dedication</ref>.</p>
+        </availability>
+        <date when="[[TODAY]]">[[TODAY]]</date>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
 
   <pcz:meta pcz:name="ParCzechPS-2.0">
     <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:editionStmt">
@@ -79,9 +137,9 @@
 
 
   <pcz:meta pcz:name="publisherLINDAT">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:publicationStmt/tei:publisher" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:publicationStmt/tei:publisher" />
       </pcz:test>
       <pcz:tei>
         <publisher>
@@ -93,9 +151,9 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="respKopp">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:titleStmt">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt/tei:persName[text() = 'Matyáš Kopp']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt/tei:persName[text() = 'Matyáš Kopp']" />
       </pcz:test>
       <pcz:tei>
         <respStmt>
@@ -107,14 +165,29 @@
   </pcz:meta>
   <pcz:meta pcz:name="respKopp.ann">
     <pcz:item pcz:dep="respKopp" />
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt[./tei:persName/text() = 'Matyáš Kopp']">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt[./tei:persName/text() = 'Matyáš Kopp']">
       <pcz:tei>
         <resp xml:lang="en">Linguistic annotation</resp>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
 
-
+  <pcz:meta pcz:name="profileDesc-corpus">
+    <pcz:item pcz:dep="respKopp" />
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:profileDesc">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:profileDesc/tei:langUsage" />
+      </pcz:test>
+      <pcz:tei>
+        <langUsage>
+          <language ident="cs" xml:lang="cs">čeština</language>
+          <language ident="en" xml:lang="cs">angličtina</language>
+          <language ident="cs" xml:lang="en">Czech</language>
+          <language ident="en" xml:lang="en">English</language>
+        </langUsage>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
 
 
 
@@ -172,9 +245,9 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="nametag2.app-czech-cnec2.0-200831">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:appInfo">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:appInfo">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:appInfo/tei:application[@tei:ident='NameTag']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:appInfo/tei:application[@tei:ident='NameTag']" />
       </pcz:test>
       <pcz:tei>
         <application ident="NameTag" version="2" source="http://lindat.mff.cuni.cz/services/nametag/">
@@ -187,9 +260,9 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="nametag2.prefix">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='ne']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='ne']" />
       </pcz:test>
       <pcz:tei>
         <prefixDef ident="ne" matchPattern="(.+)" replacementPattern="#$1">
@@ -201,9 +274,9 @@
 
 
   <pcz:meta pcz:name="udpipe2.app-czech-pdt-ud-2.6-200830">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:appInfo">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:appInfo">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:appInfo/tei:application[@tei:ident='UDPipe']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:appInfo/tei:application[@tei:ident='UDPipe']" />
       </pcz:test>
       <pcz:tei>
         <application ident="UDPipe" version="2" source="http://lindat.mff.cuni.cz/services/udpipe/">
@@ -221,9 +294,9 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="udpipe2.prefix-pdt">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='pdt']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='pdt']" />
       </pcz:test>
       <pcz:tei>
         <prefixDef ident="pdt" matchPattern="(.+)" replacementPattern="../pdt-fslib.xml#xpath(//fvLib/fs[./f/symbol/@value = '$1'])">
@@ -234,9 +307,9 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="udpipe2.prefix-ud-syn">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='ud-syn']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='ud-syn']" />
       </pcz:test>
       <pcz:tei>
         <prefixDef ident="ud-syn" matchPattern="(.+)" replacementPattern="#xpath(//*[@xml:id = replace('$1',':','_')])">
@@ -258,9 +331,9 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="cnec2.0-taxonomy">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:classDecl">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='NER.cnec2.0']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='NER.cnec2.0']" />
       </pcz:test>
       <pcz:tei>
         <taxonomy xml:id="NER.cnec2.0">
@@ -433,7 +506,7 @@
   </pcz:meta>
 
   <pcz:meta pcz:name="ud-syn-taxonomy">
-    <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:classDecl">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:tei>
         <taxonomy xml:id="UD-SYN">
            <desc xml:lang="en"><term>UD syntactic relations</term></desc>
