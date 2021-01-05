@@ -206,6 +206,19 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-f
 echo -e "TODO: Enrich teiCorpus with person.xml data \n\t$DOWNLOADER_TEI/$TEICORPUS_FILENAME\n\t\t=> $DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"
 
 
+## merge personlist
+
+$XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" personlist-path=$PERSON_LIST_PATH
+
+
+## add metadata to teiCorpus (inplace)
+perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus" \
+                                   --metadata-file metadater/tei_parczech.xml \
+                                   --input-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"  \
+                                   --output-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"
+
+
+
 fi; # END METADATER CONDITION
 
 
