@@ -36,8 +36,19 @@ sub new {
     $root_node->setAttributeNS($self->{NS}->{xml}, 'id', $self->{ID});
   }
   $self->{TITLESTMT} = _get_child_node_or_create($self->{XPC},$self->{HEADER},'fileDesc', 'titleStmt');
+  $self->{sourceDesc_bib} = XML::LibXML::Element->new('bib');
   if($params{'title'}) {
-    $self->{TITLESTMT}->appendTextChild('title', $_) for (  ! ref($params{title}) eq 'ARRAY' ? $params{title} : @{$params{title}} );
+    for my $tit (  ! ref($params{title}) eq 'ARRAY' ? $params{title} : @{$params{title}} ){
+      for my $lng (keys %{$tit->{text}}) {
+        my $n = XML::LibXML::Element->new('title');
+        $self->{TITLESTMT}->appendChild($n);
+        $n->appendText($tit->{text}->{$lng});
+        $n->setAttribute('type', $tit->{type}) if exists $tit->{type};
+        $n->setAttributeNS($self->{NS}->{xml}, 'lang', $lng);
+
+        $self->{sourceDesc_bib}->appendChild($n->cloneNode(1));
+      }
+    }
   }
   $self->{DATE}={FROM => undef, TO => undef};
   return $self
@@ -60,13 +71,25 @@ sub toFile {
     element => {
         inline   => [qw/note/],
         #block    => [qw//],
-        #compact  => [qw//],
+        compact  => [qw/title idno date/],
         preserves_whitespace => [qw/u/],
         }
     );
   $pp->pretty_print($self->{DOM});
   $self->{DOM}->toFile($filename);
   return $filename;
+}
+
+sub addSourceDesc {
+  my $self = shift;
+  my $idno = XML::LibXML::Element->new('idno');
+  $idno->setAttribute('type','URI');
+  $idno->appendText($self->getSourceURI());
+  $self->{sourceDesc_bib}->appendChild($idno);
+  my $dt = $self->getPeriodDateNode(attr => '%Y-%m-%d',text => '%d.%m.%Y');
+  $self->{sourceDesc_bib}->appendChild($dt) if $dt;
+
+  _get_child_node_or_create($self->{XPC},$self->{HEADER},'fileDesc', 'sourceDesc')->appendChild($self->{sourceDesc_bib});
 }
 
 
@@ -90,6 +113,32 @@ sub getToDate {
   return shift->{DATE}->{TO};
 }
 
+sub getPeriodDateNode {
+  my $self = shift;
+  my %opts = @_;
+  return unless defined $self->{DATE}->{FROM};
+  my $dt = XML::LibXML::Element->new('date');
+  my $from = $self->{DATE}->{FROM}->strftime($opts{attr} // '%Y-%m-%d');
+  my $to = $self->{DATE}->{TO}->strftime($opts{attr} // '%Y-%m-%d');
+  if($from eq $to) {
+    $dt->setAttribute('when', $from);
+    $dt->appendText($self->{DATE}->{FROM}->strftime($opts{text} // '%Y-%m-%d'));
+  } else {
+    $dt->setAttribute('from', $from);
+    $dt->setAttribute('to', $to);
+    $dt->appendText($self->{DATE}->{FROM}->strftime($opts{text} // '%Y-%m-%d') 
+                    . ' - '
+                    . $self->{DATE}->{TO}->strftime($opts{text} // '%Y-%m-%d'));
+
+  }
+  return $dt;
+}
+
+sub getPeriodDate {
+  my $self = shift;
+  return [] unless defined $self->{DATE}->{FROM};
+  return [map {$self->{DATE}->{$_}} qw/FROM TO/];
+}
 
 sub addNamespaces {
   my $self = shift;

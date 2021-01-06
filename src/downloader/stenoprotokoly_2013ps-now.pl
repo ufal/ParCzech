@@ -28,6 +28,19 @@ my $run_date = ScrapperUfal::get_timestamp('%Y%m%dT%H%M%S');
 my $prune_regex = undef;
 my $debug_level = 0;
 
+my $config = {
+  title => [
+    {
+      type => 'main',
+      text => {
+        cs => 'Parlament České republiky, Poslanecká sněmovna',
+        en => 'Parliament of the Czech Republic, Chamber of Deputies'
+      }
+    }
+  ]
+};
+
+
 Getopt::Long::GetOptions(
   'tei=s' => \$tei_dir,
   'yaml=s' => \$yaml_dir,
@@ -99,7 +112,7 @@ my $new_unauthorized = {};
 my $teiCorpus = TEI::ParlaClarin::teiCorpus->new(
                                                   id => "ParCzech-$run_date",
                                                   output_dir => $tei_out_dir,
-                                                  title => ["Parliament of the Czech Republic, Chamber of Deputies"]
+                                                  title => $config->{title}
                                                 );
 
 # loop through terms
@@ -412,6 +425,7 @@ sub record_exporter {
 }
 
 export_TEI();
+$teiCorpus->addSourceDesc();
 $teiCorpus->toFile();
 
 sub add_pagebreak_to_teiFile {
@@ -438,12 +452,13 @@ sub init_TEI {
   my $new_doc_id = sprintf('%s-%03d-%03d',$sitting_pref, $topic_cntr, $topic_id );
   debug_print( "NEW DOCUMENT $new_doc_id " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__, -1);
   $teiFile = TEI::ParlaClarin::TEI->new(id => $new_doc_id, output_dir => $tei_out_dir,
-                                          title => ["Parliament of the Czech Republic, Chamber of Deputies"],
+                                          title => $config->{title},
                                           );
 }
 
 sub export_TEI {
   if($teiFile && !$teiFile->isEmpty()) {
+    $teiFile->addSourceDesc();
     my $filepath = $teiFile->toFile();
     debug_print( "SAVING DOCUMENT TO $filepath", __LINE__, -1);
     $teiCorpus->addTeiFile($filepath, $topic_cntr,$teiFile);

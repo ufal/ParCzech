@@ -102,6 +102,12 @@ my %metadata = ();
 my %variables = (
   TODAY => strftime("%Y-%m-%d", localtime),
   );
+my %appendConditions = (
+  # parent => [[childname regex, xpathCondition for searching node before it should be added],...]
+  fileDesc => [
+      [qr/^.*$/, './*[local-name() = "sourceDesc"]'], # all nodes should be before sourceDesc
+    ]
+  );
 
 sub new {
   my $this  = shift;
@@ -216,7 +222,7 @@ sub _add_static_data_items {
     next unless $self->_static_data_items_test($self->{xpc}->findnodes('./pcz:test', $item));
 
     if($xpath) {
-      my $appendPlace = ParCzech::PipeLine::FileManager::XML::makenode( $self->{dom}, $xpath, $self->{xpc});
+      my $appendPlace = ParCzech::PipeLine::FileManager::XML::makenode( $self->{dom}, $xpath, $self->{xpc}, \&nodeConditionalAppender);
       my ($teiNodes) = $self->{xpc}->findnodes('./pcz:tei', $item);
       if (defined $teiNodes) {
         for my $content ($teiNodes->childNodes()) {
@@ -279,6 +285,29 @@ sub new_XPathContext {
 sub get_NS_from_prefix {
   my $pref = shift;
   return $xmlNs{$pref};
+}
+
+
+sub nodeConditionalAppender {
+  my ($xpc, $parent, $ns, $childname) = @_;
+  my $node = XML::LibXML::Element->new($childname);
+  my $firstSibling = undef;
+  if(defined $appendConditions{$parent->nodeName}) {
+    my @cond = @{$appendConditions{$parent->nodeName}};
+    my %candidates = ();
+    for my $c (@cond) {
+      next unless $childname =~ $c->[0];
+      my ($n) = reverse $parent->findnodes($c->[1]);
+      $candidates{$n->unique_key} = 1 if $n;
+    }
+    for my $ch ($parent->childNodes()){ # find first matching node
+      if(defined $candidates{$ch->unique_key}) {
+        $firstSibling = $ch;
+        last;
+      }
+    }
+  }
+  return $parent->insertBefore($node,$firstSibling // undef); # if first child does not exist, node is appended to the end (// undef avoids warning)
 }
 
 package ParCzech::PipeLine::FileManager::XML;
@@ -349,7 +378,7 @@ sub save_to_file {
 
 
 sub makenode {
-  my ( $xml, $xquery, $xpc ) = @_;
+  my ( $xml, $xquery, $xpc, $nodeAppender ) = @_;
   my @tmp = $xpc->findnodes($xquery,$xml);
   if ( scalar @tmp ) {
     my $node = shift(@tmp);
@@ -363,13 +392,13 @@ sub makenode {
       $nsPrefix =~ s/:$// if $nsPrefix;
       my $nsUri = undef;
       $nsUri = $xpc->lookupNs($nsPrefix) if $nsPrefix;
-      my $parnode = makenode($xml, $parxp, $xpc);
+      my $parnode = makenode($xml, $parxp, $xpc, $nodeAppender);
       my $thisatts = "";
       if ( $thisname =~ /^(.*)\[(.*?)\]$/ ) {
         $thisname = $1; $thisatts = $2;
       };
 #      if ( $debug ) { print "Creating node: $xquery (",($nsUri ? "$nsUri:":""),"$thisname)\n"; };
-      my $newchild = $parnode->addNewChild($nsUri, $thisname); #XML::LibXML::Element->new( $thisname );
+      my $newchild = $nodeAppender ? $nodeAppender->($xpc, $parnode, $nsUri, $thisname) : $parnode->addNewChild($nsUri, $thisname); #XML::LibXML::Element->new( $thisname );
 
       # Set any attributes defined for this node
       if ( $thisatts ne '' ) {
