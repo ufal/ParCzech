@@ -360,6 +360,12 @@ sub addSittingDate {
   #$self->addMeetingData('sittingdate',$date->strftime('%Y-%m-%d')) if $date;
 }
 
+sub getSourceURI {
+  my $self = shift;
+  my $link = $self->{DOM}->findvalue('(//pb/@source)[1]');
+  return $link;
+}
+
 sub addAudioNote {
   my $self = shift;
   my %params = @_;

@@ -35,6 +35,23 @@ sub addTeiFile {
   my $persfile = $tei->getPersonListFileName();
   $self->{seen_person_id}->{$_}=$persfile for (@{$tei->getPersonIdsList()});
 
+  $self->logDate($_) for @{$tei->getPeriodDate()};
+  my $srcURI = $tei->getSourceURI();
+  if(defined $self->{sourceURI}) {
+    my $i=0;
+    while(    $i < length($srcURI)
+           && $i < length($self->{sourceURI})
+           && substr($srcURI, $i, 1) eq substr($self->{sourceURI}, $i, 1)){
+      $i++;
+    }
+    if ($i < length($srcURI) || $i < $self->{sourceURI}) {
+      $self->{sourceURI} = substr($srcURI, 0, $i);
+      $self->{sourceURI} =~ s/[^\/]*$//;
+    }
+  } else {
+    $self->{sourceURI} = $srcURI
+  }
+
   push @{$self->{tei_file_list}}, {file => $teiFileName, ord => {date => $tei->getFromDate(), epoch => $tei->getFromDate()->epoch, topic_cnt => $topic_cnt }};
 }
 
@@ -63,6 +80,9 @@ sub toFile {
   return $self->SUPER::toFile(%params, outputfile => File::Spec->catfile($self->{output}->{dir},$self->{ID}.'.xml'));
 }
 
+sub getSourceURI {
+  return shift->{sourceURI};
+}
 
 # ===========================
 
