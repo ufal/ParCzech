@@ -201,9 +201,13 @@ log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $DOWNLOADER_TEI_META
 
 
-### Enrich teiCorpus with person.xml data
 
-echo -e "TODO: Enrich teiCorpus with person.xml data \n\t$DOWNLOADER_TEI/$TEICORPUS_FILENAME\n\t\t=> $DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"
+
+echo "TODO: enrich personlist and generate organization list"
+
+
+echo "TODO: knit organization list"
+
 
 
 ## merge personlist
