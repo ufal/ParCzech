@@ -37,7 +37,15 @@ sub new {
   }
   $self->{TITLESTMT} = _get_child_node_or_create($self->{XPC},$self->{HEADER},'fileDesc', 'titleStmt');
   if($params{'title'}) {
-    $self->{TITLESTMT}->appendTextChild('title', $_) for (  ! ref($params{title}) eq 'ARRAY' ? $params{title} : @{$params{title}} );
+    for my $tit (  ! ref($params{title}) eq 'ARRAY' ? $params{title} : @{$params{title}} ){
+      for my $lng (keys %{$tit->{text}}) {
+        my $n = XML::LibXML::Element->new('title');
+        $self->{TITLESTMT}->appendChild($n);
+        $n->appendText($tit->{text}->{$lng});
+        $n->setAttribute('type', $tit->{type}) if exists $tit->{type};
+        $n->setAttributeNS($self->{NS}->{xml}, 'lang', $lng);
+      }
+    }
   }
   $self->{DATE}={FROM => undef, TO => undef};
   return $self
@@ -67,6 +75,10 @@ sub toFile {
   $pp->pretty_print($self->{DOM});
   $self->{DOM}->toFile($filename);
   return $filename;
+}
+
+sub addSourceDesc {
+  print STDERR "NOT IMPLEMENTED: addSourceDesc"
 }
 
 
