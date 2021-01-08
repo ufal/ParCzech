@@ -320,6 +320,7 @@ sub open_xml {
   my $file = shift;
   my %vars = @_;
   my $xml;
+  local $/;
   open FILE, $file;
   binmode ( FILE, ":utf8" );
   my $rawxml = <FILE>;
