@@ -8,13 +8,14 @@ pid=$$
 CONFIG_FILE="config.sh"
 DOWN_PARAMS=()
 EXISTING_FILELIST=
+EXIT_CONDITION=
 
 usage() {
-  echo -e "Usage: $0 -c CONFIG_FILE (-p PRUNE_TEMPLATE | -l FILELIST)" 1>&2
+  echo -e "Usage: $0 -c CONFIG_FILE (-p PRUNE_TEMPLATE | -l FILELIST) -E EXIT_CONDITION" 1>&2
   exit 1
 }
 
-while getopts  ':c:p:l:'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
+while getopts  ':c:p:l:E:'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
   case "$opt" in
     'c')
       CONFIG_FILE=$OPTARG
@@ -25,6 +26,9 @@ while getopts  ':c:p:l:'  opt; do # -l "identificator:,file-pattern:,export-audi
     'l')
       [ ${#DOWN_PARAMS[@]} -ne 0 ] && usage || EXISTING_FILELIST=$OPTARG
      #[ ${#DOWN_PARAMS[@]} -ne 0 ] && echo "nenula"
+      ;;
+    'E')
+      EXIT_CONDITION=$OPTARG
       ;;
     *)
       usage
@@ -80,7 +84,7 @@ function skip_process_single_file {
   return  1;
 }
 
-log "STARTED: $pid ========================"
+log "STARTED: $pid ========================$EXIT_CONDITION"
 log "CONFIG FILE: $CONFIG_FILE"
 
 
@@ -192,7 +196,10 @@ log "backup html $CL_OUTDIR_HTML/$ID"
 
 fi; # END DOWNLOADER CONDITION
 
-
+if [ "$EXIT_CONDITION" == "steno" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
 
 ################################
 ### vlada.cz database file   ###
@@ -216,6 +223,11 @@ mkdir -p $GOV_OUTDIR_CACHE
 perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$GOV_SCRIPT --db $GOV_OUTDIR_DB --id $ID --debug 10
 
 fi # END GOV-DB download CONDITION
+
+if [ "$EXIT_CONDITION" == "gov" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
 
 ################################
 ### psp database to psp-db   ###
@@ -241,11 +253,15 @@ echo ./psp-db/pspdb.sh -p "$PERSON_LIST_PATH" -o "$PSP_DB_DIR" -g "$GOV_OUTDIR_D
 
 fi # END PSP-DB download CONDITION
 
-echo TMP EXIT;exit;
+if [ "$EXIT_CONDITION" == "psp-db" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
 ################################
 ### Metadata to download-tei ###
 #  input:
 #    downloader-tei/$ID
+#    psp-db/$ID/person.xml
 #  output:
 #    downloader-tei-meta/$ID
 ###############################
@@ -263,7 +279,7 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-f
 
 ## merge personlist
 
-$XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" personlist-path=$PERSON_LIST_PATH
+$XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" personlist-path="$PSP_DB_DIR/person.xml"
 
 
 ## add metadata to teiCorpus (inplace)
@@ -276,6 +292,10 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus" \
 
 fi; # END METADATER CONDITION
 
+if [ "$EXIT_CONDITION" == "tei-meta" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
 
 ###############################
 ###    Download audio       ###
@@ -458,6 +478,11 @@ perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 --filelist $TEI_F
 
 fi; # END UDPIPE CONDITION
 
+if [ "$EXIT_CONDITION" == "udpipe" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+
 ###############################
 ###     NameTag tei         ###
 #  input:
@@ -477,6 +502,10 @@ perl -I lib nametag2/nametag2.pl --model=czech-cnec2.0-200831 --filelist $TEI_FI
 
 fi; # END NAMETAG CONDITION
 
+if [ "$EXIT_CONDITION" == "nametag" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
 
 ################################
 ### Metadata to annotated    ###
@@ -505,6 +534,11 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus.ann" \
 
 fi; # END METADATER.ann CONDITION
 
+if [ "$EXIT_CONDITION" == "ann-meta" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+
 ###############################
 ###     FINALIZE            ###
 ### converting to teitok    ###
@@ -526,7 +560,10 @@ echo "./tei2teitok/teiCorpus2teitok.sh  -C \"$ANNOTATED_TEI_META/$TEICORPUS_FILE
 
 fi; # END tei2teitok CONDITION
 
-
+if [ "$EXIT_CONDITION" == "teitok" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
 
 ###############################
 log_process "tei publishing"
