@@ -74,13 +74,13 @@ usage_exit() unless $personlist_in;
 usage_exit() unless $outdir;
 
 my %dbfile_structure = (
-  map {($_ => File::Spec->catfile($indbdir,'poslanci',"$_.unl"))} keys %{$tabledef{poslanci}}
+  (map {($_ => File::Spec->catfile($indbdir,'poslanci',"$_.unl"))} keys %{$tabledef{poslanci}}),
+  $govdir ? (map {("gov_$_" => File::Spec->catfile($govdir,"gov_$_.unl"))} qw/osoby/) : ()
 );
 
 
-
 for my $k (keys %dbfile_structure) {
-  usage_exit("file $dbfile_structure{$k} is expected in $indbdir") unless -s $dbfile_structure{$k};
+  usage_exit("file $dbfile_structure{$k} is expected") unless -s $dbfile_structure{$k};
 }
 
 my $db_file = File::Spec->catfile($outdir,'psp.db');
@@ -96,6 +96,10 @@ if($use_existing_db) {
   # loading database from dumps
   create_table($tabledef{poslanci}->{osoby},'osoby');
   fill_table($tabledef{poslanci}->{osoby},'osoby');
+
+  create_table($tabledef{poslanci}->{osoby},'osoby','gov_');
+  fill_table($tabledef{poslanci}->{osoby},'osoby','utf-8','gov_');
+
 }
 
 
@@ -107,11 +111,10 @@ my $xpc = ParCzech::PipeLine::FileManager::TeiFile::new_XPathContext();
 
 for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
   my $id = $person->getAttributeNS($xpc->lookupNs('xml'),'id');
-  if($id =~ m/-[0-9]+$/) {
-    print STDERR "skipping enriching $id:\n$person\n";
-  } elsif($id =~ m/([0-9]+)$/) {
-    my $id_osoba = $1;
-    my $sth = $pspdb->prepare(sprintf('SELECT * FROM osoby WHERE id_osoba=%s',$id_osoba));
+  if($id =~ m/(-?)([0-9]+)$/) {
+    my $prefix = $1 ? 'gov_' : '';
+    my $id_osoba = $2;
+    my $sth = $pspdb->prepare(sprintf('SELECT * FROM %sosoby WHERE id_osoba=%s', $prefix,$id_osoba));
     $sth->execute;
     if(my $row = $sth->fetchrow_hashref){
       my ($pname) = $person->getChildrenByTagName('persName');
@@ -143,14 +146,16 @@ ParCzech::PipeLine::FileManager::XML::save_to_file($personlist->{dom}, File::Spe
 sub create_table {
   my $tabledef = shift;
   my $tablename = shift;
+  my $prefix = shift // '';
+  return unless exists $dbfile_structure{"$prefix$tablename"};
   my $dbstring = sprintf('CREATE TABLE %s (%s)',
-                         $tablename,
+                         "$prefix$tablename",
                          join(", ", map {sprintf("%s %s", $_->{name}, $_->{type})} @{$tabledef->{def}} ));
   print STDERR "$dbstring\n" if $debug;
   $pspdb->do($dbstring);
   for my $idx (@{$tabledef->{index}//[]}) {
     my ($f,$un) = split('\|',"$idx|");
-    $dbstring =sprintf("CREATE %s INDEX i_%s_%s ON %s (%s)",$un,$tablename,$f,$tablename,$f);
+    $dbstring =sprintf("CREATE %s INDEX i_%s_%s ON %s (%s)",$un,"$prefix$tablename",$f,"$prefix$tablename",$f);
     print STDERR "$dbstring\n" if $debug;
     $pspdb->do($dbstring);
   }
@@ -159,7 +164,10 @@ sub create_table {
 sub fill_table {
   my $tabledef = shift;
   my $tablename = shift;
-  open(my $fh,'<:encoding(Windows-1250)',  $dbfile_structure{$tablename}) or die "Cannot open:$!\n";
+  my $encoding = shift // 'Windows-1250';
+  my $prefix = shift // '';
+  return unless exists $dbfile_structure{"$prefix$tablename"};
+  open(my $fh,"<:encoding($encoding)",  $dbfile_structure{"$prefix$tablename"}) or die "Cannot open:$!\n";
   while(my $line = <$fh>) {
     my @fields = map {s/^\s*$//;$_} split('\|',$line);
     my @dbname;
@@ -177,7 +185,7 @@ sub fill_table {
         push @dbval,($tabledef->{def}->[$i]->{type} eq 'INTEGER') ? $fields[$i] : "'$fields[$i]'";
       }
     }
-    my $dbstring = sprintf("INSERT INTO %s (%s) VALUES (%s)", $tablename, join(',',@dbname),join(',',@dbval));
+    my $dbstring = sprintf("INSERT INTO %s (%s) VALUES (%s)", "$prefix$tablename", join(',',@dbname),join(',',@dbval));
     print STDERR "$dbstring\n" if $debug;
     $pspdb->do($dbstring);
   }
