@@ -350,8 +350,8 @@ sub to_string {
     indent_string => "  ",
     element => {
         inline   => [qw//], # note
-        block    => [qw/person/],
-        compact  => [qw/catDesc term desc label date edition title meeting idno orgName persName resp licence language/],
+        block    => [qw/person persName/],
+        compact  => [qw/catDesc term desc label date edition title meeting idno orgName persName resp licence language sex forename surname/],
         preserves_whitespace => [qw/s seg note ref p/],
         }
     );

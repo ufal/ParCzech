@@ -71,6 +71,15 @@ function skip_process {
   return 0;
 }
 
+function skip_process_single_file {
+  if [ ! -s  "$3" ]; then
+    log "file does not exists or is empty: $2/$tested_file"
+    return 0;
+  fi
+  log "SKIPPING $1 ($2)"
+  return  1;
+}
+
 log "STARTED: $pid ========================"
 log "CONFIG FILE: $CONFIG_FILE"
 
@@ -182,6 +191,29 @@ log "backup html $CL_OUTDIR_HTML/$ID"
 ./cache_to_dir_tree.sh -c $CL_OUTDIR_CACHE/$ID -o $CL_OUTDIR_HTML/$ID
 
 fi; # END DOWNLOADER CONDITION
+
+
+################################
+### psp database to psp-db   ###
+#  input:
+#
+#  output:
+#    psp-db/$ID/psp.db
+#    psp-db/$ID/person.xml (enriched)
+#    psp-db/$ID/org.xml (enriched)
+###############################
+
+export PSP_DB_DIR=$DATA_DIR/psp-db/${ID}
+export PSP_DB_FILE=$PSP_DB_DIR/psp.db
+
+if skip_process_single_file "psp-db" "$DOWNLOADER_TEI_META" "$EXISTING_FILELIST" ; then # BEGIN PSP-DB download CONDITION
+mkdir -p $PSP_DB_DIR
+
+log "getting person and org info $PSP_DB_DIR"
+./psp-db/pspdb.sh -p "$PERSON_LIST_PATH"-o "$PSP_DB_DIR" -c `realpath $CONFIG_FILE`
+
+fi # END PSP-DB download CONDITION
+
 
 ################################
 ### Metadata to download-tei ###
