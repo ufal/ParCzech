@@ -12,7 +12,7 @@ use Data::Dumper;
 
 
 
-my ($debug, $personlist_in, $outdir, $indbdir);
+my ($debug, $personlist_in, $outdir, $indbdir, $govdir);
 
 =note
 
@@ -59,11 +59,11 @@ my %tabledef = (
   }
 );
 
-
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'person-list=s' => \$personlist_in,
             'output-dir=s' => \$outdir,
+            'gov-input-dir=s' => \$govdir,
             'input-db-dir=s' => \$indbdir
             );
 

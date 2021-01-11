@@ -72,8 +72,8 @@ function skip_process {
 }
 
 function skip_process_single_file {
-  if [ ! -s  "$3" ]; then
-    log "file does not exists or is empty: $2/$tested_file"
+  if [ ! -s  "$2" ]; then
+    log "file does not exists or is empty: $2"
     return 0;
   fi
   log "SKIPPING $1 ($2)"
@@ -193,9 +193,34 @@ log "backup html $CL_OUTDIR_HTML/$ID"
 fi; # END DOWNLOADER CONDITION
 
 
+
+################################
+### vlada.cz database file   ###
+#  input:
+#
+#  output:
+#    downloader-vlada-db/$ID/gov_osoby.unl
+###############################
+
+export GOV_WORKDIR=$DATA_DIR/downloader-vlada
+export GOV_OUTDIR_DB=$DATA_DIR/downloader-vlada-db
+export GOV_OUTDIR_CACHE=$DATA_DIR/downloader-vlada-cache
+export GOV_SCRIPT=gov_person.pl
+
+
+if skip_process_single_file "gov-db" "$GOV_OUTDIR_DB/$ID/gov_osoby.unl" ; then # BEGIN GOV-DB download CONDITION
+
+mkdir -p $GOV_WORKDIR
+mkdir -p $GOV_OUTDIR_DB
+mkdir -p $GOV_OUTDIR_CACHE
+perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$GOV_SCRIPT --db $GOV_OUTDIR_DB --id $ID --debug 10
+
+fi # END GOV-DB download CONDITION
+
 ################################
 ### psp database to psp-db   ###
 #  input:
+#    downloader-vlada-db/$ID/gov_osoby.unl
 #
 #  output:
 #    psp-db/$ID/psp.db
@@ -206,15 +231,17 @@ fi; # END DOWNLOADER CONDITION
 export PSP_DB_DIR=$DATA_DIR/psp-db/${ID}
 export PSP_DB_FILE=$PSP_DB_DIR/psp.db
 
-if skip_process_single_file "psp-db" "$DOWNLOADER_TEI_META" "$EXISTING_FILELIST" ; then # BEGIN PSP-DB download CONDITION
+if skip_process_single_file "psp-db" "$PSP_DB_DIR/person.xml" ; then # BEGIN PSP-DB download CONDITION
 mkdir -p $PSP_DB_DIR
 
 log "getting person and org info $PSP_DB_DIR"
-./psp-db/pspdb.sh -p "$PERSON_LIST_PATH"-o "$PSP_DB_DIR" -c `realpath $CONFIG_FILE`
+
+echo ./psp-db/pspdb.sh -p "$PERSON_LIST_PATH" -o "$PSP_DB_DIR" -g "$GOV_OUTDIR_DB/$ID" -c `realpath $CONFIG_FILE`
+./psp-db/pspdb.sh -p "$PERSON_LIST_PATH" -o "$PSP_DB_DIR" -g "$GOV_OUTDIR_DB/$ID" -c `realpath $CONFIG_FILE`
 
 fi # END PSP-DB download CONDITION
 
-
+echo TMP EXIT;exit;
 ################################
 ### Metadata to download-tei ###
 #  input:
@@ -231,14 +258,6 @@ mkdir -p $DOWNLOADER_TEI_META
 
 log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $DOWNLOADER_TEI_META
-
-
-
-
-echo "TODO: enrich personlist and generate organization list"
-
-
-echo "TODO: knit organization list"
 
 
 
