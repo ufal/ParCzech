@@ -178,6 +178,7 @@ if($use_existing_db) {
 
 
 my $personlist = ParCzech::PipeLine::FileManager::XML::open_xml($personlist_in);
+my $orglist = listOrg->new(db => $pspdb);
 
 usage_exit() unless $personlist;
 
@@ -296,7 +297,9 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
   }
 }
 
+
 ParCzech::PipeLine::FileManager::XML::save_to_file($personlist->{dom}, File::Spec->catfile($outdir,'person.xml'));
+ParCzech::PipeLine::FileManager::XML::save_to_file($orglist->getXML_DOM(), File::Spec->catfile($outdir,'org.xml'));
 
 
 
@@ -381,6 +384,7 @@ sub addAffiliation {
   $aff->setAttribute('from',$from) if $from;
   $aff->setAttribute('to',$to) if $to;
   $org_seen{$id} = $ref;
+  $orglist->addOrg($id);
   return $aff;
 }
 
@@ -404,4 +408,168 @@ Usage: pspdb-generate-xml.pl  --person-list <STRING> --output-dir <STRING> --inp
 \t--input-db-dir=s\tdirectory with downloaded and unpacked database dump files
 ";
    exit;
+}
+
+package listOrg;
+
+
+sub new {
+  my $this  = shift;
+  my $class = ref($this) || $this;
+  my %opts = @_;
+  my $self  = {};
+  bless $self, $class;
+  $self->{db} = $opts{db};
+  $self->{hidden} = ! defined $opts{visible};
+  $self->{child} = {}; # list of child orgs
+  $self->{list_org} = {}; # list of all descendant orgs
+  $self->{org} = {}; # list of all orgs
+  $self->{roles} = {};
+
+  return $self;
+}
+
+
+sub getXML_DOM {
+  my $self = shift;
+  my $dom = XML::LibXML::Document->new("1.0", "utf-8");
+  my $root_node =  XML::LibXML::Element->new('orgList');
+  $root_node->setNamespace('http://www.tei-c.org/ns/1.0');
+  $root_node->setNamespace('http://www.w3.org/XML/1998/namespace', 'xml', 0);
+  $dom->setDocumentElement($root_node);
+  $self->addToXML($root_node);
+  return $dom
+}
+
+sub addToXML {
+  my $self = shift;
+  my $parent = shift;
+  return unless $parent;
+  for my $ch_id (keys %{$self->{child}}){
+    $self->{child}->{$ch_id}->addToXML($parent);
+  }
+}
+
+
+
+sub addChild {
+  my $self = shift;
+  my $child = shift;
+  return unless defined $child;
+  $self->{child}->{$child->id} = $child;
+}
+
+sub getRole {
+  my $self = shift;
+  my $rid = shift;
+  unless(defined $self->{roles}->{$rid}) {
+    # create role from database
+    $self->{roles}->{rid} = {
+      parent => "PARENT",
+      id => "ROLE_$rid"
+    };
+  }
+  return $self->{roles}->{$rid}->{id};
+}
+
+
+sub addOrg {
+  my $self = shift;
+  my $dbid = shift;
+  return unless defined $dbid;
+  unless(defined $self->{org}->{$dbid}) {
+    my $sth = $pspdb->prepare(sprintf(
+         'SELECT
+            org.id_organ AS id_organ,
+            org.zkratka AS abbr,
+            org.nazev_organu_cz AS name_cz,
+            org.nazev_organu_en AS name_en,
+            org.od_organ AS `from`,
+            org.do_organ AS `to`,
+            org.organ_id_organ AS parent,
+            org.id_typ_org AS type
+          FROM organy AS org
+          WHERE org.id_organ=%s',$dbid));
+    $sth->execute;
+    if(my $orgrow = $sth->fetchrow_hashref ) {
+      my $role = $self->getRole($orgrow->{type});
+      my $parent = $self->addOrg($orgrow->{parent});
+      my $org = listOrg::org->new(%$orgrow, role => $role,  $parent ? (parent_org_id => $parent->id()):() );
+      $self->{org}->{$dbid} = $org;
+      ($parent//$self)->addChild($org);
+    } else {
+      return undef;
+    }
+  }
+  return $self->{org}->{$dbid}
+}
+
+
+package listOrg::org;
+
+sub new {
+  my $this  = shift;
+  my $class = ref($this) || $this;
+  my %opts = @_;
+  my $self  = { map { $_ => $opts{$_} } qw/abbr name_cz name_en from to/ };
+  bless $self, $class;
+  $self->{iddb} = {
+    id => $opts{id_organ},
+    parent => $opts{parent},
+    type => $opts{type}
+  };
+  $self->{id} = "$opts{abbr}-$opts{id_organ}";
+  $self->{child} = {};
+
+  return $self;
+}
+
+sub id {
+  return shift->{id}
+}
+
+sub addChild {
+  my $self = shift;
+  my $child = shift;
+  return unless defined $child;
+  $self->{child}->{$child->id} = $child;
+}
+
+
+sub addToXML {
+  my $self = shift;
+  my $parent = shift;
+  return unless $parent;
+  my $XMLNS='http://www.w3.org/XML/1998/namespace';
+  my $org = $parent->addNewChild( undef, 'org');
+  $org->setAttributeNS($XMLNS, 'id', $self->id);
+  for my $n ([qw/name_cz cs/],[qw/name_en en/])  {
+    if(defined $self->{$n->[0]}) {
+      my $name = $org->addNewChild(undef,'orgName');
+      $name->appendText($self->{$n->[0]});
+      $name->setAttribute('full', 'yes');
+      $name->setAttributeNS($XMLNS, 'lang', $n->[1]);
+    }
+  }
+  my $name = $org->addNewChild(undef,'orgName');
+  $name->appendText($self->{abbr});
+  $name->setAttribute('full', 'abb');
+  my $existence;
+  for my $dt (qw/from to/) {
+    if(defined $self->{$dt}){
+      unless($existence){
+        $existence =$org->addNewChild(undef,'event');
+        my $lab = $existence->addNewChild(undef,'label');
+        $lab->setAttributeNS($XMLNS, 'lang', 'en');
+        $lab->appendText('existence');
+      }
+      $existence->setAttribute($dt,$self->{$dt});
+    }
+  }
+  if(%{$self->{child}}) {
+    my $list = $org->addNewChild( undef, 'orgList');
+    for my $ch_id (keys %{$self->{child}}){
+      $self->{child}->{$ch_id}->addToXML($list);
+    }
+  }
 }
