@@ -263,15 +263,17 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
             org.zkratka AS zkratka,
             zaraz.od_o AS od_o,
             zaraz.do_o AS do_o,
-            funk.nazev_funkce_cz AS nazev_funkce
+            funk.nazev_funkce_cz AS nazev_funkce,
+            typf.typ_funkce_en AS typ_funkce_en
           FROM zarazeni AS zaraz
             JOIN funkce AS funk ON funk.id_funkce = zaraz.id_of
             JOIN organy as org ON org.id_organ = funk.id_organ
+            JOIN typ_funkce AS typf ON funk.id_typ_funkce = typf.id_typ_funkce
           WHERE zaraz.id_osoba=%s
                 AND zaraz.cl_funkce = 1',$pers->{id_osoba}));
         $sth->execute;
         while(my $func = $sth->fetchrow_hashref ) {
-          addAffiliation($person,$func->{id_organ},  $func->{nazev_funkce}, $func->{od_o}, $func->{do_o});#->appendText($func->{nazev_funkce});
+          addAffiliation($person,$func->{id_organ},  $func->{typ_funkce_en}, $func->{od_o}, $func->{do_o});#->appendText($func->{nazev_funkce});
         }
 
         $sth = $pspdb->prepare(sprintf(
@@ -383,7 +385,7 @@ sub addAffiliation {
   my $aff = $elem->addNewChild( undef, 'affiliation');
   my $ref = $orglist->addOrg($id)->id();
   $aff->setAttribute('ref',"#$ref");
-  $aff->setAttribute('role',$role) if $role;
+  $aff->setAttribute('role',lc listOrg::create_ID($role)) if $role;
   $aff->setAttribute('from',$from) if $from;
   $aff->setAttribute('to',$to) if $to;
   return $aff;
@@ -544,7 +546,7 @@ sub new {
     parent => $opts{parent},
     type => $opts{type}
   };
-  $self->{id} = "$opts{abbr_sd}.$opts{id_organ}";
+  $self->{id} = ($self->{role} ? "$self->{role}." : '') . "$opts{abbr_sd}.$opts{id_organ}";
   $self->{child} = {};
 
   return $self;
