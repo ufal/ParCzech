@@ -14,7 +14,7 @@ use Data::Dumper;
 
 
 
-my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations);
+my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations,$patches);
 
 =note
 
@@ -136,7 +136,8 @@ GetOptions ( ## Command line options
             'output-dir=s' => \$outdir,
             'gov-input-dir=s' => \$govdir,
             'input-db-dir=s' => \$indbdir,
-            'translations=s' => \$translations
+            'translations=s' => \$translations,
+            'patches=s' => \$patches,
             );
 
 
@@ -180,7 +181,9 @@ if($use_existing_db) {
 
 
 my $personlist = ParCzech::PipeLine::FileManager::XML::open_xml($personlist_in);
-my $orglist = listOrg->new(db => $pspdb, translator => ParCzech::Translation->new($translations ? (tran_files => $translations) : ()));
+my $patcher = ParCzech::Translation->new(single_direction => 1,$patches ? (tran_files => $patches) : ());
+my $orglist = listOrg->new(db => $pspdb, translator => ParCzech::Translation->new($translations ? (tran_files => $translations) : ()),
+                                         patcher => $patcher);
 
 usage_exit() unless $personlist;
 
@@ -252,7 +255,6 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
 
         print STDERR "MATCHING (REG-$pers->{id_osoba}) '$pers->{jmeno} $pers->{prijmeni} nar. ",($pers->{narozeni}//'???'),"'\n";
         while(my $pm = $sth->fetchrow_hashref ) {
-          print STDERR Dumper($pm);
           addAffiliation($person,$pm->{obd_id_organ}, 'PM', $pm->{od_obd}, $pm->{do_obd});
           addAffiliation($person,$pm->{kand_id_organ}, 'candidate', $pm->{od_obd}, $pm->{do_obd});
         }
@@ -273,7 +275,7 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
                 AND zaraz.cl_funkce = 1',$pers->{id_osoba}));
         $sth->execute;
         while(my $func = $sth->fetchrow_hashref ) {
-          addAffiliation($person,$func->{id_organ},  $func->{typ_funkce_en}, $func->{od_o}, $func->{do_o});#->appendText($func->{nazev_funkce});
+          addAffiliation($person,$func->{id_organ}, $func->{typ_funkce_en}, $func->{od_o}, $func->{do_o});#->appendText($func->{nazev_funkce});
         }
 
         $sth = $pspdb->prepare(sprintf(
@@ -385,7 +387,7 @@ sub addAffiliation {
   my $aff = $elem->addNewChild( undef, 'affiliation');
   my $ref = $orglist->addOrg($id)->id();
   $aff->setAttribute('ref',"#$ref");
-  $aff->setAttribute('role',lc listOrg::create_ID($role)) if $role;
+  $aff->setAttribute('role',listOrg::create_ID($patcher->translate_static($role))) if $role;
   $aff->setAttribute('from',$from) if $from;
   $aff->setAttribute('to',$to) if $to;
   return $aff;
@@ -429,6 +431,7 @@ sub new {
   $self->{org} = {}; # list of all orgs
   $self->{roles} = {};
   $self->{translator} = $opts{translator};
+  $self->{patcher} = $opts{patcher};
 
   return $self;
 }
@@ -453,6 +456,7 @@ sub addToXML {
     $self->{child}->{$ch_id}->addToXML($parent);
   }
 }
+
 
 
 
@@ -483,7 +487,7 @@ sub getRole {
         parent => "PARENT",
         name_cz => $r->{name_cz},
         name_en => $r->{name_en},
-        id => lc create_ID($r->{name_en} // $self->{translator}->translate_static($r->{name_cz})) #.".$rid"
+        id => create_ID($self->{patcher}->translate_static($r->{name_en} // $self->{translator}->translate_static($r->{name_cz})))
       };
     } else {
       print STDERR "ERROR: unknown role id_typ_org=$rid\n";
@@ -528,9 +532,11 @@ sub addOrg {
 sub create_ID {
   my $str = shift // '';
   $str =~s/^\s+|\s+$//g;
-  $str =~ s/\s+/_/g;
-
-  return Unicode::Diacritic::Strip::strip_diacritics($str);
+  $str =~ s/\s+/ /g;
+  $str =~ s/-/ /g;
+  $str = lc Unicode::Diacritic::Strip::strip_diacritics($str);
+  $str =~ s/ (\w)/\U$1/g;
+  return $str;
 }
 
 package listOrg::org;

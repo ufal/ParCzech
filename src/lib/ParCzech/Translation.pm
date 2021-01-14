@@ -15,7 +15,7 @@ sub new {
   bless $self, $class;
 
   $self->{static_dict} = {};
-  $self->load_files(1, ref($opts{tran_files}) eq 'ARRAY' ? (@{$opts{tran_files}}) : ($opts{tran_files})) if $opts{tran_files};
+  $self->load_files(! defined $opts{single_direction}, ref($opts{tran_files}) eq 'ARRAY' ? (@{$opts{tran_files}}) : ($opts{tran_files})) if $opts{tran_files};
 
   return $self
 }
@@ -40,8 +40,8 @@ sub translate_static {
   my $str = shift;
   return unless $str;
   return $self->{static_dict}->{$str} if defined $self->{static_dict}->{$str};
-  return $self->{static_dict}->{$str} if defined $self->{static_dict}->{lc $str};
-  return;
+  return $self->{static_dict}->{lc $str} if defined $self->{static_dict}->{lc $str};
+  return $str; # return same string if no translation
 }
 
 sub add_translation {
