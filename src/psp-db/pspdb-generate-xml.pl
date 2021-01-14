@@ -7,6 +7,7 @@ use File::Spec;
 use DateTime::Format::Strptime;
 use ParCzech::PipeLine::FileManager;
 use DBI;
+use Unicode::Diacritic::Strip;
 use Data::Dumper;
 
 
@@ -41,7 +42,6 @@ my %cast = (
 );
 
 my %data_links = ();
-my %org_seen = ();
 
 my %tabledef = (
   poslanci => {
@@ -251,8 +251,8 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
         print STDERR "MATCHING (REG-$pers->{id_osoba}) '$pers->{jmeno} $pers->{prijmeni} nar. ",($pers->{narozeni}//'???'),"'\n";
         while(my $pm = $sth->fetchrow_hashref ) {
           print STDERR Dumper($pm);
-          addAffiliation($person,$pm->{obd_id_organ}, "term.$pm->{obd_zkratka}-$pm->{obd_id_organ}", 'PM', $pm->{od_obd}, $pm->{do_obd});
-          addAffiliation($person,$pm->{kand_id_organ},"party.$pm->{kand_zkratka}-$pm->{kand_id_organ}", 'candidate', $pm->{od_obd}, $pm->{do_obd});
+          addAffiliation($person,$pm->{obd_id_organ}, 'PM', $pm->{od_obd}, $pm->{do_obd});
+          addAffiliation($person,$pm->{kand_id_organ}, 'candidate', $pm->{od_obd}, $pm->{do_obd});
         }
 
         $sth = $pspdb->prepare(sprintf(
@@ -269,7 +269,7 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
                 AND zaraz.cl_funkce = 1',$pers->{id_osoba}));
         $sth->execute;
         while(my $func = $sth->fetchrow_hashref ) {
-          addAffiliation($person,$func->{id_organ}, "org.$func->{zkratka}-$func->{id_organ}", $func->{nazev_funkce}, $func->{od_o}, $func->{do_o});#->appendText($func->{nazev_funkce});
+          addAffiliation($person,$func->{id_organ},  $func->{nazev_funkce}, $func->{od_o}, $func->{do_o});#->appendText($func->{nazev_funkce});
         }
 
         $sth = $pspdb->prepare(sprintf(
@@ -284,7 +284,7 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
                 AND zaraz.cl_funkce = 0',$pers->{id_osoba}));
         $sth->execute;
         while(my $incl = $sth->fetchrow_hashref ) {
-          addAffiliation($person,$incl->{id_organ}, "org.$incl->{zkratka}-$incl->{id_organ}", 'member', $incl->{od_o}, $incl->{do_o});
+          addAffiliation($person,$incl->{id_organ}, 'member', $incl->{od_o}, $incl->{do_o});
         }
 
 
@@ -377,14 +377,13 @@ sub fill_table {
 }
 
 sub addAffiliation {
-  my ($elem,$id,$ref,$role,$from,$to) = @_;
+  my ($elem,$id,$role,$from,$to) = @_;
   my $aff = $elem->addNewChild( undef, 'affiliation');
+  my $ref = $orglist->addOrg($id)->id();
   $aff->setAttribute('ref',"#$ref");
   $aff->setAttribute('role',$role) if $role;
   $aff->setAttribute('from',$from) if $from;
   $aff->setAttribute('to',$to) if $to;
-  $org_seen{$id} = $ref;
-  $orglist->addOrg($id);
   return $aff;
 }
 
@@ -464,10 +463,28 @@ sub getRole {
   my $rid = shift;
   unless(defined $self->{roles}->{$rid}) {
     # create role from database
-    $self->{roles}->{rid} = {
-      parent => "PARENT",
-      id => "ROLE_$rid"
-    };
+    my $sth = $pspdb->prepare(sprintf(
+         'SELECT
+            type.id_typ_org AS id_typ,
+            type.nazev_typ_org_cz AS name_cz,
+            type.nazev_typ_org_en AS name_en,
+            type.typ_org_obecny AS gen,
+            type.typ_id_typ_org AS parent
+          FROM typ_organu AS type
+          WHERE type.id_typ_org=%s',$rid));
+    $sth->execute;
+    if(my $r = $sth->fetchrow_hashref){
+      print STDERR "TODO: $rid\n";
+      $self->{roles}->{$rid} = {
+        parent => "PARENT",
+        name_cz => $r->{name_cz},
+        name_en => $r->{name_en},
+        id => lc create_ID($r->{name_en} // $r->{name_cz}) #.".$rid"
+      };
+    } else {
+      print STDERR "ERROR: unknown role id_typ_org=$rid\n";
+      return '';
+    }
   }
   return $self->{roles}->{$rid}->{id};
 }
@@ -494,7 +511,7 @@ sub addOrg {
     if(my $orgrow = $sth->fetchrow_hashref ) {
       my $role = $self->getRole($orgrow->{type});
       my $parent = $self->addOrg($orgrow->{parent});
-      my $org = listOrg::org->new(%$orgrow, role => $role,  $parent ? (parent_org_id => $parent->id()):() );
+      my $org = listOrg::org->new(%$orgrow, abbr_sd => create_ID($orgrow->{abbr}), role => $role,  $parent ? (parent_org_id => $parent->id()):() );
       $self->{org}->{$dbid} = $org;
       ($parent//$self)->addChild($org);
     } else {
@@ -504,6 +521,13 @@ sub addOrg {
   return $self->{org}->{$dbid}
 }
 
+sub create_ID {
+  my $str = shift // 'id';
+  $str =~s/^\s+|\s+$//g;
+  $str =~ s/\s+/_/g;
+
+  return Unicode::Diacritic::Strip::strip_diacritics($str);
+}
 
 package listOrg::org;
 
@@ -511,14 +535,14 @@ sub new {
   my $this  = shift;
   my $class = ref($this) || $this;
   my %opts = @_;
-  my $self  = { map { $_ => $opts{$_} } qw/abbr name_cz name_en from to/ };
+  my $self  = { map { $_ => $opts{$_} } qw/abbr name_cz name_en from to role abbr_sd/ };
   bless $self, $class;
   $self->{iddb} = {
     id => $opts{id_organ},
     parent => $opts{parent},
     type => $opts{type}
   };
-  $self->{id} = "$opts{abbr}-$opts{id_organ}";
+  $self->{id} = "$opts{abbr_sd}.$opts{id_organ}";
   $self->{child} = {};
 
   return $self;
@@ -543,6 +567,7 @@ sub addToXML {
   my $XMLNS='http://www.w3.org/XML/1998/namespace';
   my $org = $parent->addNewChild( undef, 'org');
   $org->setAttributeNS($XMLNS, 'id', $self->id);
+  $org->setAttribute('role',$self->{role}) if defined $self->{role};
   for my $n ([qw/name_cz cs/],[qw/name_en en/])  {
     if(defined $self->{$n->[0]}) {
       my $name = $org->addNewChild(undef,'orgName');
