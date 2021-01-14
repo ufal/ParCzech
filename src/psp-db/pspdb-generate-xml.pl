@@ -6,6 +6,7 @@ use Getopt::Long;
 use File::Spec;
 use DateTime::Format::Strptime;
 use ParCzech::PipeLine::FileManager;
+use ParCzech::Translation;
 use DBI;
 use Unicode::Diacritic::Strip;
 use Data::Dumper;
@@ -13,7 +14,7 @@ use Data::Dumper;
 
 
 
-my ($debug, $personlist_in, $outdir, $indbdir, $govdir);
+my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations);
 
 =note
 
@@ -134,7 +135,8 @@ GetOptions ( ## Command line options
             'person-list=s' => \$personlist_in,
             'output-dir=s' => \$outdir,
             'gov-input-dir=s' => \$govdir,
-            'input-db-dir=s' => \$indbdir
+            'input-db-dir=s' => \$indbdir,
+            'translations=s' => \$translations
             );
 
 
@@ -178,7 +180,7 @@ if($use_existing_db) {
 
 
 my $personlist = ParCzech::PipeLine::FileManager::XML::open_xml($personlist_in);
-my $orglist = listOrg->new(db => $pspdb);
+my $orglist = listOrg->new(db => $pspdb, translator => ParCzech::Translation->new($translations ? (tran_files => $translations) : ()));
 
 usage_exit() unless $personlist;
 
@@ -424,6 +426,7 @@ sub new {
   $self->{list_org} = {}; # list of all descendant orgs
   $self->{org} = {}; # list of all orgs
   $self->{roles} = {};
+  $self->{translator} = $opts{translator};
 
   return $self;
 }
@@ -474,12 +477,11 @@ sub getRole {
           WHERE type.id_typ_org=%s',$rid));
     $sth->execute;
     if(my $r = $sth->fetchrow_hashref){
-      print STDERR "TODO: $rid\n";
       $self->{roles}->{$rid} = {
         parent => "PARENT",
         name_cz => $r->{name_cz},
         name_en => $r->{name_en},
-        id => lc create_ID($r->{name_en} // $r->{name_cz}) #.".$rid"
+        id => lc create_ID($r->{name_en} // $self->{translator}->translate_static($r->{name_cz})) #.".$rid"
       };
     } else {
       print STDERR "ERROR: unknown role id_typ_org=$rid\n";
@@ -522,7 +524,7 @@ sub addOrg {
 }
 
 sub create_ID {
-  my $str = shift // 'id';
+  my $str = shift // '';
   $str =~s/^\s+|\s+$//g;
   $str =~ s/\s+/_/g;
 
@@ -567,7 +569,7 @@ sub addToXML {
   my $XMLNS='http://www.w3.org/XML/1998/namespace';
   my $org = $parent->addNewChild( undef, 'org');
   $org->setAttributeNS($XMLNS, 'id', $self->id);
-  $org->setAttribute('role',$self->{role}) if defined $self->{role};
+  $org->setAttribute('role',$self->{role}) if $self->{role};
   for my $n ([qw/name_cz cs/],[qw/name_en en/])  {
     if(defined $self->{$n->[0]}) {
       my $name = $org->addNewChild(undef,'orgName');
