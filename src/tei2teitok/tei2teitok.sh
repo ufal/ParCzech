@@ -66,4 +66,4 @@ FILE_OUT=`realpath --relative-to="$D" "$FILE_OUT"`
 
 cd $D
 
-$XSL_TRANSFORM tei2teitok.xsl "$FILE_IN" "$FILE_OUT" personlist-path=$CORPUS_FILE
+$XSL_TRANSFORM tei2teitok.xsl "$FILE_IN" "$FILE_OUT" corpus-path=$CORPUS_FILE
