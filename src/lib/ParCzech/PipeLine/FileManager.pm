@@ -291,6 +291,7 @@ sub get_NS_from_prefix {
 sub nodeConditionalAppender {
   my ($xpc, $parent, $ns, $childname) = @_;
   my $node = XML::LibXML::Element->new($childname);
+  $node->setNamespace($ns) if $ns;
   my $firstSibling = undef;
   if(defined $appendConditions{$parent->nodeName}) {
     my @cond = @{$appendConditions{$parent->nodeName}};
@@ -320,6 +321,7 @@ sub open_xml {
   my $file = shift;
   my %vars = @_;
   my $xml;
+  local $/;
   open FILE, $file;
   binmode ( FILE, ":utf8" );
   my $rawxml = <FILE>;
@@ -349,8 +351,8 @@ sub to_string {
     indent_string => "  ",
     element => {
         inline   => [qw//], # note
-        block    => [qw/person/],
-        compact  => [qw/catDesc term desc label date edition title meeting idno orgName persName resp licence language/],
+        block    => [qw/person persName/],
+        compact  => [qw/catDesc term desc label date edition title meeting idno orgName persName resp licence language sex forename surname/],
         preserves_whitespace => [qw/s seg note ref p/],
         }
     );

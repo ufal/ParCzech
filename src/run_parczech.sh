@@ -8,13 +8,14 @@ pid=$$
 CONFIG_FILE="config.sh"
 DOWN_PARAMS=()
 EXISTING_FILELIST=
+EXIT_CONDITION=
 
 usage() {
-  echo -e "Usage: $0 -c CONFIG_FILE (-p PRUNE_TEMPLATE | -l FILELIST)" 1>&2
+  echo -e "Usage: $0 -c CONFIG_FILE (-p PRUNE_TEMPLATE | -l FILELIST) -E EXIT_CONDITION" 1>&2
   exit 1
 }
 
-while getopts  ':c:p:l:'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
+while getopts  ':c:p:l:E:'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
   case "$opt" in
     'c')
       CONFIG_FILE=$OPTARG
@@ -25,6 +26,9 @@ while getopts  ':c:p:l:'  opt; do # -l "identificator:,file-pattern:,export-audi
     'l')
       [ ${#DOWN_PARAMS[@]} -ne 0 ] && usage || EXISTING_FILELIST=$OPTARG
      #[ ${#DOWN_PARAMS[@]} -ne 0 ] && echo "nenula"
+      ;;
+    'E')
+      EXIT_CONDITION=$OPTARG
       ;;
     *)
       usage
@@ -71,7 +75,16 @@ function skip_process {
   return 0;
 }
 
-log "STARTED: $pid ========================"
+function skip_process_single_file {
+  if [ ! -s  "$2" ]; then
+    log "file does not exists or is empty: $2"
+    return 0;
+  fi
+  log "SKIPPING $1 ($2)"
+  return  1;
+}
+
+log "STARTED: $pid ========================$EXIT_CONDITION"
 log "CONFIG FILE: $CONFIG_FILE"
 
 
@@ -143,15 +156,6 @@ fi
 
 if skip_process "downloader" "$CL_OUTDIR_TEI/$ID" "$EXISTING_FILELIST" ; then # BEGIN DOWNLOADER CONDITION
 
-export LAST_ID=`ls $CL_OUTDIR_TEI|grep -v "sha1sum.list"|sort|tail -n 1`
-
-
-if [ -f "$CL_OUTDIR_TEI/$LAST_ID/person.xml" ]; then
-  echo "moving $CL_OUTDIR_TEI/$LAST_ID/person.xml"
-  mkdir -p "$DOWNLOADER_TEI"
-  cp "$CL_OUTDIR_TEI/$LAST_ID/person.xml" "$PERSON_LIST_PATH"
-fi
-
 log "downloading $CL_OUTDIR_TEI"
 
 perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML  --cache $CL_OUTDIR_CACHE --id $ID  "${DOWN_PARAMS[@]}"
@@ -183,10 +187,72 @@ log "backup html $CL_OUTDIR_HTML/$ID"
 
 fi; # END DOWNLOADER CONDITION
 
+if [ "$EXIT_CONDITION" == "steno" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+
+################################
+### vlada.cz database file   ###
+#  input:
+#
+#  output:
+#    downloader-vlada-db/$ID/gov_osoby.unl
+###############################
+
+export GOV_WORKDIR=$DATA_DIR/downloader-vlada
+export GOV_OUTDIR_DB=$DATA_DIR/downloader-vlada-db
+export GOV_OUTDIR_CACHE=$DATA_DIR/downloader-vlada-cache
+export GOV_SCRIPT=gov_person.pl
+
+
+if skip_process_single_file "gov-db" "$GOV_OUTDIR_DB/$ID/gov_osoby.unl" ; then # BEGIN GOV-DB download CONDITION
+
+mkdir -p $GOV_WORKDIR
+mkdir -p $GOV_OUTDIR_DB
+mkdir -p $GOV_OUTDIR_CACHE
+perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$GOV_SCRIPT --db $GOV_OUTDIR_DB --id $ID --debug 10
+
+fi # END GOV-DB download CONDITION
+
+if [ "$EXIT_CONDITION" == "gov" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+
+################################
+### psp database to psp-db   ###
+#  input:
+#    downloader-vlada-db/$ID/gov_osoby.unl
+#
+#  output:
+#    psp-db/$ID/psp.db
+#    psp-db/$ID/person.xml (enriched)
+#    psp-db/$ID/org.xml (enriched)
+###############################
+
+export PSP_DB_DIR=$DATA_DIR/psp-db/${ID}
+export PSP_DB_FILE=$PSP_DB_DIR/psp.db
+
+if skip_process_single_file "psp-db" "$PSP_DB_DIR/person.xml" ; then # BEGIN PSP-DB download CONDITION
+mkdir -p $PSP_DB_DIR
+
+log "getting person and org info $PSP_DB_DIR"
+
+echo ./psp-db/pspdb.sh -p "$PERSON_LIST_PATH" -o "$PSP_DB_DIR" -g "$GOV_OUTDIR_DB/$ID" -c `realpath $CONFIG_FILE`
+./psp-db/pspdb.sh -p "$PERSON_LIST_PATH" -o "$PSP_DB_DIR" -g "$GOV_OUTDIR_DB/$ID" -c `realpath $CONFIG_FILE`
+
+fi # END PSP-DB download CONDITION
+
+if [ "$EXIT_CONDITION" == "psp-db" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
 ################################
 ### Metadata to download-tei ###
 #  input:
 #    downloader-tei/$ID
+#    psp-db/$ID/person.xml
 #  output:
 #    downloader-tei-meta/$ID
 ###############################
@@ -201,26 +267,29 @@ log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $DOWNLOADER_TEI_META
 
 
-### Enrich teiCorpus with person.xml data
-
-echo -e "TODO: Enrich teiCorpus with person.xml data \n\t$DOWNLOADER_TEI/$TEICORPUS_FILENAME\n\t\t=> $DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"
-
 
 ## merge personlist
 
-$XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" personlist-path=$PERSON_LIST_PATH
+$XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" personlist-path="$PSP_DB_DIR/person.xml"
+
+## add org
+$XSL_TRANSFORM metadater/add_org.xsl "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" org-path="$PSP_DB_DIR/org.xml"
 
 
-## add metadata to teiCorpus (inplace)
+## add metadata to teiCorpus
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus" \
                                    --metadata-file metadater/tei_parczech.xml \
-                                   --input-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"  \
+                                   --input-file "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME"  \
                                    --output-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"
 
 
 
 fi; # END METADATER CONDITION
 
+if [ "$EXIT_CONDITION" == "tei-meta" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
 
 ###############################
 ###    Download audio       ###
@@ -403,6 +472,11 @@ perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 --filelist $TEI_F
 
 fi; # END UDPIPE CONDITION
 
+if [ "$EXIT_CONDITION" == "udpipe" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+
 ###############################
 ###     NameTag tei         ###
 #  input:
@@ -422,6 +496,10 @@ perl -I lib nametag2/nametag2.pl --model=czech-cnec2.0-200831 --filelist $TEI_FI
 
 fi; # END NAMETAG CONDITION
 
+if [ "$EXIT_CONDITION" == "nametag" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
 
 ################################
 ### Metadata to annotated    ###
@@ -450,6 +528,11 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus.ann" \
 
 fi; # END METADATER.ann CONDITION
 
+if [ "$EXIT_CONDITION" == "ann-meta" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+
 ###############################
 ###     FINALIZE            ###
 ### converting to teitok    ###
@@ -471,7 +554,10 @@ echo "./tei2teitok/teiCorpus2teitok.sh  -C \"$ANNOTATED_TEI_META/$TEICORPUS_FILE
 
 fi; # END tei2teitok CONDITION
 
-
+if [ "$EXIT_CONDITION" == "teitok" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
 
 ###############################
 log_process "tei publishing"

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns="teitok:parczech">
   <xsl:output method="xml" indent="no" encoding="UTF-8" />
-  <xsl:param name="personlist-path" />
+  <xsl:param name="corpus-path" />
 
-  <xsl:variable name="personlist-doc" select="document($personlist-path)" />
+  <xsl:variable name="corpus-doc" select="document($corpus-path)" />
   <xsl:key name="id-personlist" match="*[local-name(.) = 'person']" use="@*[local-name(.) = 'id']" />
 
 
@@ -129,7 +129,7 @@
       <xsl:variable name="person" select="substring-after(./@target, '#')"/>
 
       <xsl:call-template name="externalLink">
-        <xsl:with-param name="link" select="normalize-space(key('id-personlist',$person,$personlist-doc)/*[local-name(.) = 'idno' and @type='URI'])"/>
+        <xsl:with-param name="link" select="normalize-space(key('id-personlist',$person,$corpus-doc)/*[local-name(.) = 'idno' and @type='URI'])"/>
         <xsl:with-param name="additionalClasses" select='"person-link"' />
       </xsl:call-template>
 
