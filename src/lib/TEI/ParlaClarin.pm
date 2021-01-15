@@ -36,7 +36,7 @@ sub new {
     $root_node->setAttributeNS($self->{NS}->{xml}, 'id', $self->{ID});
   }
   $self->{TITLESTMT} = _get_child_node_or_create($self->{XPC},$self->{HEADER},'fileDesc', 'titleStmt');
-  $self->{sourceDesc_bib} = XML::LibXML::Element->new('bib');
+  $self->{sourceDesc_bib} = XML::LibXML::Element->new('bibl');
   if($params{'title'}) {
     for my $tit (  ! ref($params{title}) eq 'ARRAY' ? $params{title} : @{$params{title}} ){
       for my $lng (keys %{$tit->{text}}) {
@@ -126,7 +126,7 @@ sub getPeriodDateNode {
   } else {
     $dt->setAttribute('from', $from);
     $dt->setAttribute('to', $to);
-    $dt->appendText($self->{DATE}->{FROM}->strftime($opts{text} // '%Y-%m-%d') 
+    $dt->appendText($self->{DATE}->{FROM}->strftime($opts{text} // '%Y-%m-%d')
                     . ' - '
                     . $self->{DATE}->{TO}->strftime($opts{text} // '%Y-%m-%d'));
 
