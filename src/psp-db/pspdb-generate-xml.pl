@@ -521,7 +521,7 @@ sub addOrg {
     if(my $orgrow = $sth->fetchrow_hashref ) {
       my $role = $self->getRole($orgrow->{type});
       my $parent = $self->addOrg($orgrow->{parent});
-      my $org = listOrg::org->new(%$orgrow, abbr_sd => create_ID($orgrow->{abbr}), role => $role,  $parent ? (parent_org_id => $parent->id()):() );
+      my $org = listOrg::org->new(%$orgrow, abbr_sd => create_ID($orgrow->{abbr},keep_case => 1, keep_dash => 1), role => $role,  $parent ? (parent_org_id => $parent->id()):() );
       $self->{org}->{$dbid} = $org;
       ($parent//$self)->addChild($org);
     } else {
@@ -533,11 +533,18 @@ sub addOrg {
 
 sub create_ID {
   my $str = shift // '';
+  my %opts = @_;
   $str =~s/^\s+|\s+$//g;
+  $str =~ s/-/ /g unless $opts{keep_dash};
+  $str =~ s/,/ /g;
   $str =~ s/\s+/ /g;
-  $str =~ s/-/ /g;
-  $str = lc Unicode::Diacritic::Strip::strip_diacritics($str);
-  $str =~ s/ (\w)/\U$1/g;
+  $str = Unicode::Diacritic::Strip::strip_diacritics($str);
+  if($opts{keep_case}){ # keep case in abbrevitations
+    $str =~ s/ //g;
+  } else {
+    $str = lc $str;
+    $str =~ s/ (\w)/\U$1/g;
+  }
   return $str;
 }
 
