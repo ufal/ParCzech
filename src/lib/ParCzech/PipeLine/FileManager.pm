@@ -291,6 +291,7 @@ sub get_NS_from_prefix {
 sub nodeConditionalAppender {
   my ($xpc, $parent, $ns, $childname) = @_;
   my $node = XML::LibXML::Element->new($childname);
+  $node->setNamespace($ns) if $ns;
   my $firstSibling = undef;
   if(defined $appendConditions{$parent->nodeName}) {
     my @cond = @{$appendConditions{$parent->nodeName}};
