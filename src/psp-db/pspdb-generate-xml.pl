@@ -358,6 +358,7 @@ sub fill_table {
   my $prefix = shift // '';
   return unless exists $dbfile_structure{"$prefix$tablename"};
   open(my $fh,"<:encoding($encoding)",  $dbfile_structure{"$prefix$tablename"}) or die "Cannot open:$!\n";
+  $pspdb->begin_work;
   while(my $line = <$fh>) {
     my @fields = map {s/^\s*$//;$_} split('\|',$line);
     my @dbname;
@@ -380,6 +381,7 @@ sub fill_table {
     print STDERR "$dbstring\n" if $debug;
     $pspdb->do($dbstring);
   }
+  $pspdb->commit;
 }
 
 sub addAffiliation {
