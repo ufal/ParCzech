@@ -84,7 +84,7 @@ create_parlaMint() {
   for TEIFILE in `grep -o '[^<>]*include [^<>]*' "$CORPFILE"|sed 's/^.*href="//;s/".*$//'`
   do
     echo "$TEIFILE $DATA_PREFIX"
-    $XSL_TRANSFORM parlaMint/parczechTEI2parlamintTEI.xsl "$IN_DIR/$TEIFILE" "$OUT_DIR/${TEIFILE##*/}" id-prefix="$DATA_PREFIX"
+    $XSL_TRANSFORM parlaMint/parczech2parlamint.xsl "$IN_DIR/$TEIFILE" "$OUT_DIR/${TEIFILE##*/}" id-prefix="$DATA_PREFIX"
   done
 }
 
