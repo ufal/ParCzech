@@ -63,6 +63,13 @@ if [ -z "$OUTPUT_DIR" ]; then
   OUTPUT_DIR="$PWD/out/ParlaMint/$ID"
 fi
 
+
+
+if [ -z $XPATH_QUERY ] ; then
+  XPATH_QUERY='local_lint'
+fi
+
+
 export OUTPUT_ANA_DIR="$OUTPUT_DIR/$DATA_PREFIX.ana/$DATA_PREFIX.TEI.ana"
 export OUTPUT_RAW_DIR="$OUTPUT_DIR/$DATA_PREFIX/$DATA_PREFIX.TEI"
 
@@ -88,7 +95,15 @@ create_parlaMint() {
   done
   echo
   echo $CORPFILE $OUT_DIR/${CORPFILE##*/}
-    $XSL_TRANSFORM parlaMint/transform-teiCorpus.xsl "$CORPFILE" "$OUT_DIR/${CORPFILE##*/}" id-prefix="$DATA_PREFIX" outdir="$OUT_DIR"
+  $XSL_TRANSFORM parlaMint/transform-teiCorpus.xsl "$CORPFILE" "$OUT_DIR/${CORPFILE##*/}" id-prefix="$DATA_PREFIX" outdir="$OUT_DIR"
+
+  for TEIFILE in `ls "$OUT_DIR"`
+  do
+    TEIFILE_REN=`$XPATH_QUERY "$OUT_DIR/$TEIFILE" "declare option saxon:output 'omit-xml-declaration=yes'; concat(/*/@*[local-name()='id'],'.xml')"`
+    echo "$TEIFILE -> $TEIFILE_REN"
+    mv "$OUT_DIR/$TEIFILE" "$OUT_DIR/${TEIFILE_REN}"
+  done
+
 }
 
 create_parlaMint $INPUT_RAW_DIR $OUTPUT_RAW_DIR
