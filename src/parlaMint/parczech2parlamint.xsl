@@ -11,10 +11,12 @@
   <xsl:variable name="date" select="translate($set-date, '-','')"/>
 
 
+
   <xsl:template match="@xml:id">
-    <xsl:attribute name="xml:id">
-      <xsl:value-of select="concat($id-prefix,'_',$set-date,'_', .)" />
-    </xsl:attribute>
+    <xsl:call-template name="patch-id">
+      <xsl:with-param name="id" select="."/>
+    </xsl:call-template>
+
   </xsl:template>
 
   <xsl:template match="/tei:TEI">
