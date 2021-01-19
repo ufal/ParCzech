@@ -7,8 +7,10 @@
   <xsl:key name="id-personlist" match="*[local-name(.) = 'person']" use="@*[local-name(.) = 'id']" />
 
   <xsl:template match="/*/*[local-name(.) = 'teiHeader']//*[local-name(.) = 'particDesc']">
-    <xsl:copy-of select="$org-doc" />
-    <xsl:apply-templates select="@*|node()"/>
+    <xsl:copy>
+      <xsl:copy-of select="$org-doc" />
+      <xsl:apply-templates select="@*|node()"/>
+    </xsl:copy>
   </xsl:template>
 
   <xsl:template match="@*|node()">
