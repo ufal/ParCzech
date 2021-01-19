@@ -14,7 +14,7 @@ use Data::Dumper;
 
 
 
-my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations,$patches);
+my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations,$patches, $flat);
 
 =note
 
@@ -132,6 +132,7 @@ my %tabledef = (
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
+            'flat' => \$flat,
             'person-list=s' => \$personlist_in,
             'output-dir=s' => \$outdir,
             'gov-input-dir=s' => \$govdir,
@@ -408,11 +409,12 @@ sub usage_exit {
   print
 "$pref
 
-Usage: pspdb-generate-xml.pl  --person-list <STRING> --output-dir <STRING> --input-db-dir <STRING> [--debug]
+Usage: pspdb-generate-xml.pl  --person-list <STRING> --output-dir <STRING> --input-db-dir <STRING> [--debug] [--flat]
 
 \t--person-list=s\tfile containing list of persons that should be enriched and linked
 \t--output-dir=s\tfolder where will be result stored (person.xml, org.xml) and database file psp.db
 \t--input-db-dir=s\tdirectory with downloaded and unpacked database dump files
+\t--flat\tprint flat organization structure (no sub organization)
 ";
    exit;
 }
@@ -520,7 +522,8 @@ sub addOrg {
     $sth->execute;
     if(my $orgrow = $sth->fetchrow_hashref ) {
       my $role = $self->getRole($orgrow->{type});
-      my $parent = $self->addOrg($orgrow->{parent});
+      my $parent;
+      $parent = $self->addOrg($orgrow->{parent}) unless $flat;
       my $org = listOrg::org->new(%$orgrow, abbr_sd => create_ID($orgrow->{abbr},keep_case => 1, keep_dash => 1), role => $role,  $parent ? (parent_org_id => $parent->id()):() );
       $self->{org}->{$dbid} = $org;
       ($parent//$self)->addChild($org);
