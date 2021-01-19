@@ -35,6 +35,28 @@
     </xsl:attribute>
   </xsl:template>
 
-
+  <xsl:template match="//tei:encodingDesc">
+    <xsl:copy>
+      <xsl:apply-templates select="./tei:projectDesc"/>
+      <editorialDecl>
+            <correction>
+               <p xml:lang="en">No correction of source texts was performed.</p>
+            </correction>
+            <normalization>
+               <p xml:lang="en">Text has not been normalised, except for spacing.</p>
+            </normalization>
+            <hyphenation>
+               <p xml:lang="en">No end-of-line hyphens were present in the source.</p>
+            </hyphenation>
+            <quotation>
+               <p xml:lang="en">Quotation marks have been left in the text and are not explicitly marked up.</p>
+            </quotation>
+            <segmentation>
+               <p xml:lang="en">The texts are segmented into utterances (speeches) and segments (corresponding to paragraphs in the source transcription).</p>
+            </segmentation>
+         </editorialDecl>
+      <xsl:apply-templates select="./*[not(local-name() = 'projectDesc')]"/>
+    </xsl:copy>
+  </xsl:template>
 
 </xsl:stylesheet>
