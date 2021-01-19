@@ -38,6 +38,13 @@
   </xsl:template>
 
 
+  <xsl:template match="//tei:fileDesc/tei:titleStmt/funder">
+    <xsl:copy>
+      <orgName xml:lang="en">CLARIN research infrastructure</orgName>
+      <orgName xml:lang="cs">Výzkumná infrastruktura CLARIN</orgName>
+    </xsl:copy>
+  </xsl:template>
+
   <xsl:template match="//tei:fileDesc/tei:editionStmt/tei:edition">
     <xsl:element name="edition">2.0</xsl:element>
   </xsl:template>

@@ -5,6 +5,7 @@
     <pcz:item pcz:dep="ParCzech-edition-live" />
     <pcz:item pcz:dep="ParCzech-publ-live" />
     <pcz:item pcz:dep="respKopp" />
+    <pcz:item pcz:dep="funderLINDAT" />
   </pcz:meta>
 
   <pcz:meta pcz:name="ParCzech-live.ann">
@@ -16,6 +17,7 @@
     <pcz:item pcz:dep="ParCzech-edition-live" />
     <pcz:item pcz:dep="ParCzech-publ-live" />
     <pcz:item pcz:dep="respKopp" />
+    <pcz:item pcz:dep="funderLINDAT" />
     <pcz:item pcz:dep="profileDesc-corpus" />
   </pcz:meta>
 
@@ -146,6 +148,19 @@
           <orgName xml:lang="en"> LINDAT/CLARIAH-CZ - Digital Research Infrastructure for Language Technologies, Arts and Humanities</orgName>
           <ref target="https://www.lindat.cz">www.lindat.cz</ref>
         </publisher>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
+
+  <pcz:meta pcz:name="funderLINDAT">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:titleStmt">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:funder" />
+      </pcz:test>
+      <pcz:tei>
+        <funder>
+          <orgName xml:lang="en"> LINDAT/CLARIAH-CZ - Digital Research Infrastructure for Language Technologies, Arts and Humanities</orgName>
+        </funder>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
