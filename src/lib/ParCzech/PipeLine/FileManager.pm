@@ -298,7 +298,7 @@ sub nodeConditionalAppender {
     my %candidates = ();
     for my $c (@cond) {
       next unless $childname =~ $c->[0];
-      my ($n) = reverse $parent->findnodes($c->[1]);
+      my ($n) = $parent->findnodes($c->[1]);
       $candidates{$n->unique_key} = 1 if $n;
     }
     for my $ch ($parent->childNodes()){ # find first matching node
