@@ -35,6 +35,7 @@ sub new {
     $self->{ID} = $params{id};
     $root_node->setAttributeNS($self->{NS}->{xml}, 'id', $self->{ID});
   }
+  $root_node->setAttributeNS($self->{NS}->{xml}, 'lang', 'cs');
   $self->{TITLESTMT} = _get_child_node_or_create($self->{XPC},$self->{HEADER},'fileDesc', 'titleStmt');
   $self->{sourceDesc_bib} = XML::LibXML::Element->new('bibl');
   if($params{'title'}) {

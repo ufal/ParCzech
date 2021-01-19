@@ -25,7 +25,7 @@ sub new {
   $self->{UTT_ID} = ''; # current utterance ID
   $self->{SEG_COUNTER} = 0;
   $self->{STATS}->{u} = 0;
-  
+
   $self->{PERSON_IDS} = {};
   $self->{THIS_TEI_PERSON_IDS} = {};
   $self->{QUEUE} = [];
@@ -33,8 +33,8 @@ sub new {
   my $personlistfilename = 'person.xml';
   my $personlistfilepath = File::Spec->catfile($self->{output}->{dir},$personlistfilename);
   $self->{personlistfile} = {name => $personlistfilename, path=> $personlistfilepath};
-  
-  
+
+
   $self->{PERSONLIST} = $self->getPersonlistDOM($personlistfilepath);
   $self->addMeetingData('authorized','yes');
 
@@ -101,7 +101,7 @@ sub toFile {
         preserves_whitespace => [qw/u/],
         }
     );
-  
+
   if($self->{PERSONLIST}) {
     $pp->pretty_print($self->{PERSONLIST});
     $self->{PERSONLIST}->toFile($self->{personlistfile}->{path});
@@ -292,10 +292,13 @@ sub addAuthor {
 sub addHead {
   my $self = shift;
   my $text = shift;
+  my $lang = shift // 'cs';
   return unless $text;
   my ($node) = $self->{XPC}->findnodes('./title[last()]', $self->{TITLESTMT});
   my $titlenode = XML::LibXML::Element->new("title");
   $titlenode->appendText($text);
+  $titlenode->setAttributeNS($self->{NS}->{xml}, 'lang', $lang);
+
   if($node) { # titlenodes should be at the begining !!!
     $self->{TITLESTMT}->insertAfter($titlenode,$node)
   } elsif ($self->{TITLESTMT}->firstChild()) {
