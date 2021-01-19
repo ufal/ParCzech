@@ -442,7 +442,7 @@ sub new {
 sub getXML_DOM {
   my $self = shift;
   my $dom = XML::LibXML::Document->new("1.0", "utf-8");
-  my $root_node =  XML::LibXML::Element->new('orgList');
+  my $root_node =  XML::LibXML::Element->new('listOrg');
   $root_node->setNamespace('http://www.tei-c.org/ns/1.0');
   $root_node->setNamespace('http://www.w3.org/XML/1998/namespace', 'xml', 0);
   $dom->setDocumentElement($root_node);
@@ -611,7 +611,7 @@ sub addToXML {
     }
   }
   if(%{$self->{child}}) {
-    my $list = $org->addNewChild( undef, 'orgList');
+    my $list = $org->addNewChild( undef, 'listOrg');
     for my $ch_id (keys %{$self->{child}}){
       $self->{child}->{$ch_id}->addToXML($list);
     }
