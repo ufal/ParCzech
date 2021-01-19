@@ -22,6 +22,7 @@ sub new {
   $self->addNamespaces($self->{ROOT}, 'xi' => 'http://www.w3.org/2001/XInclude');
   $self->{tei_file_list} = [];
   $self->{seen_person_id} = {};
+  $self->{TERMS} = {};
   return $self;
 }
 
@@ -31,11 +32,12 @@ sub addTeiFile {
   my $teiFileName = shift;
   my $topic_cnt = shift;
   my $tei = shift;
-  
+
   my $persfile = $tei->getPersonListFileName();
   $self->{seen_person_id}->{$_}=$persfile for (@{$tei->getPersonIdsList()});
 
   $self->logDate($_) for @{$tei->getPeriodDate()};
+  $self->logMeeting('#parla.term',$_) for @{$tei->getMeetings('#parla.term')};
   my $srcURI = $tei->getSourceURI();
   if(defined $self->{sourceURI}) {
     my $i=0;
@@ -44,7 +46,7 @@ sub addTeiFile {
            && substr($srcURI, $i, 1) eq substr($self->{sourceURI}, $i, 1)){
       $i++;
     }
-    if ($i < length($srcURI) || $i < $self->{sourceURI}) {
+    if ($i < length($srcURI) || $i < length($self->{sourceURI})) {
       $self->{sourceURI} = substr($srcURI, 0, $i);
       $self->{sourceURI} =~ s/[^\/]*$//;
     }
@@ -68,7 +70,9 @@ sub toFile {
       $listPerson->appendChild($pers);
     }
   }
-  
+  for my $term (sort @{$self->getMeetings('#parla.term') // []}){
+    $self->addMeetingData('term',$term);
+  }
 
   my $nsUri = $self->{XPC}->lookupNs('xi');
   for my $tf (sort  {   $a->{ord}->{epoch} <=> $b->{ord}->{epoch}

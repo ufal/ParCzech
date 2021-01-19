@@ -38,6 +38,7 @@ sub new {
   $root_node->setAttributeNS($self->{NS}->{xml}, 'lang', 'cs');
   $self->{TITLESTMT} = _get_child_node_or_create($self->{XPC},$self->{HEADER},'fileDesc', 'titleStmt');
   $self->{sourceDesc_bib} = XML::LibXML::Element->new('bibl');
+  $self->{MEETING} = {};
   if($params{'title'}) {
     for my $tit (  ! ref($params{title}) eq 'ARRAY' ? $params{title} : @{$params{title}} ){
       for my $lng (keys %{$tit->{text}}) {
@@ -72,7 +73,7 @@ sub toFile {
     element => {
         inline   => [qw/note/],
         #block    => [qw//],
-        compact  => [qw/title idno date/],
+        compact  => [qw/title idno date meeting/],
         preserves_whitespace => [qw/u/],
         }
     );
@@ -134,6 +135,42 @@ sub getPeriodDateNode {
   }
   return $dt;
 }
+
+sub addMeetingData {
+  my $self = shift;
+  my ($key, $value, $force) = @_; # force means overwrite if key exists
+  my $meetingNode;
+  my $ana = "#parla.$key";
+  ($meetingNode) = $self->{TITLESTMT}->findnodes('./meeting[@ana="'.$ana.'"]');
+  return undef if !$force && $meetingNode;
+  unless($meetingNode){
+    $meetingNode = $self->{TITLESTMT}->addNewChild(undef,'meeting');
+    $meetingNode->setAttribute('ana',"$ana");
+  } else {
+    $meetingNode->removeChildNodes(); # remove possibly existing text
+  }
+  $meetingNode->setAttribute('n',"$value");
+  $meetingNode->appendText($value);
+  $self->logMeeting($ana,$value);
+  return $meetingNode;
+}
+
+sub logMeeting {
+  my $self = shift;
+  my ($ana,$val) = @_;
+  return unless $ana;
+  return unless $val;
+  $self->{MEETING}->{$ana} = {} unless defined $self->{MEETING}->{$ana};
+  $self->{MEETING}->{$ana}->{$val} = 1;
+}
+
+sub getMeetings {
+  my $self = shift;
+  my $ana = shift;
+  return unless $ana;
+  return [keys %{$self->{MEETING}->{$ana}}];
+}
+
 
 sub getPeriodDate {
   my $self = shift;

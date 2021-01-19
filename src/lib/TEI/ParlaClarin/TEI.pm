@@ -37,6 +37,7 @@ sub new {
 
   $self->{PERSONLIST} = $self->getPersonlistDOM($personlistfilepath);
   $self->addMeetingData('authorized','yes');
+  $self->addMeetingFromId();
 
   return $self;
 }
@@ -80,14 +81,7 @@ sub toFile {
   my %params = @_;
   my @id_parts = split '-', $self->{ID};
   $self->appendQueue(1); # append queue  to <text><body><div>
-
-
-
-  $self->addMeetingData('term',$id_parts[0],1);
-  $self->addMeetingData('meeting',join('/',@id_parts[0,1]),1);
-  $self->addMeetingData('sitting',join('/',@id_parts[0,1,2]),1);
-  $self->addMeetingData('agenda',join('/', @id_parts[0,1,4]),1);
-
+  $self->addMeetingFromId();
 
   my $filename = $params{outputfile} // File::Spec->catfile(join("-",@id_parts[0,1]),$self->{ID}.'.xml');
   $self->SUPER::toFile(%params,($params{outputfile} ? () : (outputfile => File::Spec->catfile($self->{output}->{dir},$filename))));
@@ -107,6 +101,15 @@ sub toFile {
     $self->{PERSONLIST}->toFile($self->{personlistfile}->{path});
   }
   return $filename;
+}
+
+sub addMeetingFromId {
+  my $self = shift;
+  my @id_parts = split '-', $self->{ID};
+  $self->addMeetingData('term',$id_parts[0],1);
+  $self->addMeetingData('meeting',join('/',@id_parts[0,1]),1);
+  $self->addMeetingData('sitting',join('/',@id_parts[0,1,2]),1);
+  $self->addMeetingData('agenda',join('/', @id_parts[0,1,4]),1);
 }
 
 sub getPersonIdsList {
@@ -453,23 +456,7 @@ sub teiID {
   return $self->{ID};
 }
 
-sub addMeetingData {
-  my $self = shift;
-  my ($key, $value, $force) = @_; # force means overwrite if key exists
-  my $meetingNode;
-  my $ana = "#parla.$key";
-  ($meetingNode) = $self->{TITLESTMT}->findnodes('./meeting[@ana="'.$ana.'"]');
-  return undef if !$force && $meetingNode;
-  unless($meetingNode){
-    $meetingNode = $self->{TITLESTMT}->addNewChild(undef,'meeting');
-    $meetingNode->setAttribute('ana',"$ana");
-  } else {
-    $meetingNode->removeChildNodes(); # remove possibly existing text
-  }
-  $meetingNode->setAttribute('n',"$value");
-  $meetingNode->appendText($value);
-  return $meetingNode;
-}
+
 # ===========================
 
 sub _get_child_node_or_create { # allow create multiple tree ancestors
