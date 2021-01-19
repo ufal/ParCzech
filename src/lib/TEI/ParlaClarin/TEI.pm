@@ -301,6 +301,7 @@ sub addHead {
   my $titlenode = XML::LibXML::Element->new("title");
   $titlenode->appendText($text);
   $titlenode->setAttributeNS($self->{NS}->{xml}, 'lang', $lang);
+  $titlenode->setAttribute( 'type', 'sub');
 
   if($node) { # titlenodes should be at the begining !!!
     $self->{TITLESTMT}->insertAfter($titlenode,$node)
