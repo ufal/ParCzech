@@ -106,6 +106,9 @@ my %appendConditions = (
   # parent => [[childname regex, xpathCondition for searching node before it should be added],...]
   fileDesc => [
       [qr/^.*$/, './*[local-name() = "sourceDesc"]'], # all nodes should be before sourceDesc
+    ],
+  teiHeader => [
+      [qr/^encodingDesc$/, './*[local-name() = "profileDesc"]'], # put encoding before profile
     ]
   );
 

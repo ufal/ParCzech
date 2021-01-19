@@ -7,6 +7,8 @@
     <pcz:item pcz:dep="ParCzech-publ-live" />
     <pcz:item pcz:dep="respKopp" />
     <pcz:item pcz:dep="funderLINDAT" />
+    <pcz:item pcz:dep="encodingDesc" />
+
   </pcz:meta>
 
   <pcz:meta pcz:name="ParCzech-live.ann">
@@ -20,6 +22,7 @@
     <pcz:item pcz:dep="ParCzech-publ-live" />
     <pcz:item pcz:dep="respKopp" />
     <pcz:item pcz:dep="funderLINDAT" />
+    <pcz:item pcz:dep="encodingDesc" />
     <pcz:item pcz:dep="profileDesc-corpus" />
   </pcz:meta>
 
@@ -99,6 +102,21 @@
           <p xml:lang="en">This work is licensed under the <ref target="https://creativecommons.org/publicdomain/zero/1.0/">CC0 1.0 Universal (CC0 1.0) Public Domain Dedication</ref>.</p>
         </availability>
         <date when="[[TODAY]]">[[TODAY]]</date>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
+
+  <pcz:meta pcz:name="encodingDesc">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc" />
+      </pcz:test>
+      <pcz:tei>
+        <projectDesc></projectDesc>
+         <tagsDecl>
+            <namespace name="http://www.tei-c.org/ns/1.0">
+            </namespace>
+         </tagsDecl>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
