@@ -9,13 +9,14 @@ CONFIG_FILE="config.sh"
 INPUT_RAW_DIR=
 INPUT_ANN_DIR=
 OUTPUT_DIR=
+VALIDATE=0
 
 usage() {
-  echo -e "Usage: $0 -t INPUT_RAW_DIR -a INPUT_ANA_DIR -O OUTPUT_DIR -c CONFIG_FILE" 1>&2
+  echo -e "Usage: $0 -v -t INPUT_RAW_DIR -a INPUT_ANA_DIR -O OUTPUT_DIR -c CONFIG_FILE" 1>&2
   exit 1
 }
 
-while getopts  ':t:a:O:c:'  opt; do
+while getopts  ':t:a:O:c:v'  opt; do
   case "$opt" in
     'c')
       CONFIG_FILE=$OPTARG
@@ -26,8 +27,11 @@ while getopts  ':t:a:O:c:'  opt; do
     'a')
       INPUT_ANA_DIR=$OPTARG
       ;;
-    '0')
+    'O')
       OUTPUT_DIR=$OPTARG
+      ;;
+    'v')
+      VALIDATE=1
       ;;
     *)
       usage
@@ -109,6 +113,11 @@ create_parlaMint() {
 create_parlaMint $INPUT_RAW_DIR $OUTPUT_RAW_DIR
 create_parlaMint $INPUT_ANA_DIR $OUTPUT_ANA_DIR
 
+
+if [ "$VALIDATE" -eq "1"  ]; then
+  $D/parlaMint/validate.sh -i $OUTPUT_RAW_DIR -c `realpath $CONFIG_FILE`
+  $D/parlaMint/validate.sh -i $OUTPUT_ANA_DIR -c `realpath $CONFIG_FILE`
+fi
 
 
 log "FINISHED $OUTPUT_DIR: $pid"
