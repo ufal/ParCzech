@@ -269,9 +269,29 @@ sub get_metadata_dom {
   }
 }
 
+sub rename {
+  my $self = shift;
+  my ($in,$out) = @_;
+  unless(defined($in) and defined($out)) {
+    print STDERR "unable to rename $self->{outpath}:  $in -> $out\n";
+    return;
+  }
+  $self->{outpath} =~ s/$in/$out/;
+  $self->patch_root_id();
+}
+
 sub save {
   my $self = shift;
+  $self->patch_root_id();
   ParCzech::PipeLine::FileManager::XML::save_to_file($self->{dom}, $self->{outpath});
+}
+
+sub patch_root_id {
+  my $self = shift;
+  my $id = $self->{outpath};
+  $id =~ s/^.*\///;
+  $id =~ s/\.xml$//;
+  $self->{dom}->documentElement()->setAttributeNS('http://www.w3.org/XML/1998/namespace','id',$id);
 }
 
 sub print {

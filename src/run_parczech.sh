@@ -147,7 +147,10 @@ mkdir -p $FILELISTS_DIR
 
 export DOWNLOADER_TEI="$CL_OUTDIR_TEI/$ID"
 export PERSON_LIST_PATH="$DOWNLOADER_TEI/person.xml"
+export INTERFIX=ana
+
 export TEICORPUS_FILENAME="ParCzech-$ID.xml"
+export ANATEICORPUS_FILENAME="ParCzech-$ID.$INTERFIX.xml"
 export TEI_FILELIST="$FILELISTS_DIR/$ID.tei.fl"
 if [ -n "$EXISTING_FILELIST" ]; then
   TEI_FILELIST=$EXISTING_FILELIST
@@ -520,7 +523,6 @@ fi
 ###############################
 
 export ANNOTATED_TEI_META=$DATA_DIR/annotated-tei-meta/${ID}
-
 if skip_process "metadater.ann" "$ANNOTATED_TEI_META" "$EXISTING_FILELIST" ; then # BEGIN METADATER.ann CONDITION
 
 mkdir -p $ANNOTATED_TEI_META
@@ -531,14 +533,18 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" \
                                    --metadata-file metadater/tei_parczech.xml \
                                    --filelist $TEI_FILELIST \
                                    --input-dir $NAMETAG_TEI \
-                                   --output-dir $ANNOTATED_TEI_META
+                                   --output-dir $ANNOTATED_TEI_META \
+                                   --rename "\\.xml\$|.${INTERFIX}.xml"
+
+
+$XSL_TRANSFORM metadater/patch_include_suffix.xsl "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" "$ANNOTATED_TEI_META/$ANATEICORPUS_FILENAME" remove=".xml" append=".$INTERFIX.xml"
 
 
 ## add metadata to teiCorpus
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus.ann" \
                                    --metadata-file metadater/tei_parczech.xml \
-                                   --input-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"  \
-                                   --output-file "$ANNOTATED_TEI_META/$TEICORPUS_FILENAME"
+                                   --input-file "$ANNOTATED_TEI_META/$ANATEICORPUS_FILENAME"  \
+                                   --output-file "$ANNOTATED_TEI_META/$ANATEICORPUS_FILENAME"
 
 fi; # END METADATER.ann CONDITION
 

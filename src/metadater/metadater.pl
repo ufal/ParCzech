@@ -15,7 +15,7 @@ my $dirname = dirname($scriptname);
 
 my $metadata_file = File::Spec->catfile($dirname,'tei_parczech.xml');
 
-my ($debug, $test, $metadata_name, $vars);
+my ($debug, $test, $metadata_name, $vars,$rename);
 my %variables = ();
 
 my $xpc = ParCzech::PipeLine::FileManager::TeiFile::new_XPathContext();
@@ -27,6 +27,7 @@ GetOptions ( ## Command line options
             'metadata-file=s' => \$metadata_file, #
             'metadata-name=s' => \$metadata_name, #
             'variables=s'     => \$vars,
+            'rename=s'        => \$rename,
             ParCzech::PipeLine::FileManager::opts()
             );
 
@@ -48,7 +49,7 @@ if($vars) {
     } else {
       print STDERR "wrong variables format '$vars', record '$record'\n";
       usage_exit();
-    } 
+    }
   }
 }
 
@@ -60,6 +61,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
   if($test) {
     $current_file->print();
   } else {
+    $current_file->rename(split('\|',$rename)) if $rename;
     $current_file->save();
   }
 }
@@ -76,6 +78,7 @@ $fm_desc
 \t--metadata-name=s\tname of metadata (/ParCzech/meta/\@name)
 \t--test\tprint result to stdout - don't change any file
 \t--variables\tpipe '|' separated list of assignments to variables in metadata-file \"TODAY=2021-01-05#EDITION=2.0\"
+\t--rename=s\tpipe '|' separated renamming regex. ie \".xml\$|.ana.xml\" will add interfix '.ana'
 ";
    exit;
 }

@@ -14,6 +14,9 @@
   <xsl:template match="/tei:teiCorpus/@xml:id">
     <xsl:attribute name="xml:id">
       <xsl:value-of select="$id-prefix" />
+      <xsl:if test="contains(.,'.')">
+        <xsl:value-of select="concat('.',substring-after(.,'.'))" />
+      </xsl:if>
     </xsl:attribute>
   </xsl:template>
 
