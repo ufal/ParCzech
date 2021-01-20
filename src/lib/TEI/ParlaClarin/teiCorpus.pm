@@ -81,6 +81,9 @@ sub toFile {
     my $child = $self->{ROOT}->addNewChild($nsUri, 'include');
     $child->setAttribute('href', $tf->{file})
   }
+
+  my $dt = $self->getPeriodDateNode(attr => '%Y-%m-%d',text => '%d.%m.%Y');
+  $self->{SETTING}->appendChild($dt) if $dt;
   return $self->SUPER::toFile(%params, outputfile => File::Spec->catfile($self->{output}->{dir},$self->{ID}.'.xml'));
 }
 

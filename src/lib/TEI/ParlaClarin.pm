@@ -37,6 +37,15 @@ sub new {
   }
   $root_node->setAttributeNS($self->{NS}->{xml}, 'lang', 'cs');
   $self->{TITLESTMT} = _get_child_node_or_create($self->{XPC},$self->{HEADER},'fileDesc', 'titleStmt');
+  $self->{SETTING} = _get_child_node_or_create($self->{XPC},$self->{HEADER},qw/profileDesc settingDesc setting/);
+  for my $r (@{$params{place}//[]}) {
+    my $n = XML::LibXML::Element->new('name');
+    $n->appendText($r->{text});
+    for my $a (keys %{$r->{attr} // {} }) {
+      $n->setAttribute($a,$r->{attr}->{$a});
+    }
+    $self->{SETTING}->appendChild($n);
+  }
   $self->{sourceDesc_bib} = XML::LibXML::Element->new('bibl');
   $self->{MEETING} = {};
   if($params{'title'}) {
@@ -73,7 +82,7 @@ sub toFile {
     element => {
         inline   => [qw/note/],
         #block    => [qw//],
-        compact  => [qw/title idno date meeting/],
+        compact  => [qw/title idno date meeting name/],
         preserves_whitespace => [qw/u/],
         }
     );

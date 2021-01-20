@@ -37,6 +37,33 @@ my $config = {
         en => 'Parliament of the Czech Republic, Chamber of Deputies'
       }
     }
+  ],
+  place => [
+    {
+      text => 'Parlament České republiky - Poslanecká sněmovna',
+      attr => {
+        type => 'org',
+      }
+    },
+    {
+      text => 'Sněmovní 176/4',
+      attr => {
+        type => 'address',
+      }
+    },
+    {
+      text => 'Praha',
+      attr => {
+        type => 'city',
+      }
+    },
+    {
+      text => 'Czech Republic',
+      attr => {
+        type => 'country',
+        key => 'CZ'
+      }
+    }
   ]
 };
 
@@ -112,7 +139,8 @@ my $new_unauthorized = {};
 my $teiCorpus = TEI::ParlaClarin::teiCorpus->new(
                                                   id => "ParCzech-$run_date",
                                                   output_dir => $tei_out_dir,
-                                                  title => $config->{title}
+                                                  title => $config->{title},
+                                                  place => $config->{place}
                                                 );
 
 # loop through terms
@@ -453,6 +481,7 @@ sub init_TEI {
   debug_print( "NEW DOCUMENT $new_doc_id " .join('-', $term_id, $meeting_id, $sitting_id, $topic_id), __LINE__, -1);
   $teiFile = TEI::ParlaClarin::TEI->new(id => $new_doc_id, output_dir => $tei_out_dir,
                                           title => $config->{title},
+                                          place => $config->{place}
                                           );
 }
 
