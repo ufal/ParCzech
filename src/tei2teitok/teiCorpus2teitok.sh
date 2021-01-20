@@ -48,5 +48,6 @@ INDIR=${CORPUS_FILE%/*}
 for tei_file in $TEI_FILES
 do
   echo "$D/tei2teitok.sh  -i "$INDIR/$tei_file" -o "$OUTPUT_DIRECTORY/$tei_file" -C $CORPUS_FILE -c " `realpath $CONFIG_FILE`
-  $D/tei2teitok.sh  -i "$INDIR/$tei_file" -o "$OUTPUT_DIRECTORY/$tei_file" -C $CORPUS_FILE -c `realpath $CONFIG_FILE`
+  teitok_file=`echo "$tei_file"| sed 's/ana\.xml$/tt.xml/'`
+  $D/tei2teitok.sh  -i "$INDIR/$tei_file" -o "$OUTPUT_DIRECTORY/$teitok_file" -C $CORPUS_FILE -c `realpath $CONFIG_FILE`
 done
