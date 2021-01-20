@@ -545,7 +545,7 @@ sub create_ID {
   if($opts{keep_case}){ # keep case in abbrevitations
     $str =~ s/ //g;
   } else {
-    $str = lc $str;
+    $str = lc $str unless $str eq uc $str;
     $str =~ s/ (\w)/\U$1/g;
   }
   return $str;
