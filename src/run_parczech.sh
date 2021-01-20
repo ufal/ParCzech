@@ -570,7 +570,7 @@ mkdir -p $TEITOK_TEI
 log "converting to teitok $TEITOK_TEI"
 
 echo "./tei2teitok/teiCorpus2teitok.sh  -C \"$ANNOTATED_TEI_META/$TEICORPUS_FILENAME\" -O \"$TEITOK_TEI\" -c " `realpath $CONFIG_FILE`
-./tei2teitok/teiCorpus2teitok.sh  -C "$ANNOTATED_TEI_META/$TEICORPUS_FILENAME" -O "$TEITOK_TEI" -c `realpath $CONFIG_FILE`
+./tei2teitok/teiCorpus2teitok.sh  -C "$ANNOTATED_TEI_META/$ANATEICORPUS_FILENAME" -O "$TEITOK_TEI" -c `realpath $CONFIG_FILE`
 
 fi; # END tei2teitok CONDITION
 
