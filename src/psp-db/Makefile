@@ -6,9 +6,9 @@ test:
 
 stat: test
 	echo "ORG ROLES"
-	cat $(OUT)/org.xml |grep -o 'role="[^"]*"'|grep -o '".*"'|tr -d '"'|sort|uniq -c
+	cat $(OUT)/org.xml |grep -o 'role="[^"]*"'|grep -o '".*"'|tr -d '"'|sort|uniq -c|sort -rn
 	echo "PERSON ROLES"
-	cat $(OUT)/person.xml |grep -o 'role="[^"]*"'|grep -o '".*"'|tr -d '"'|sort|uniq -c
+	cat $(OUT)/person.xml |grep -o 'role="[^"]*"'|grep -o '".*"'|tr -d '"'|sort|uniq -c| sort -rn
 
 clear:
 	rm -r $(OUT)
