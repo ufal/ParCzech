@@ -264,7 +264,11 @@ if skip_process "metadater" "$DOWNLOADER_TEI_META" "$EXISTING_FILELIST" ; then #
 mkdir -p $DOWNLOADER_TEI_META
 
 log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
-perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $DOWNLOADER_TEI --output-dir $DOWNLOADER_TEI_META
+perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" \
+                                   --metadata-file metadater/tei_parczech.xml \
+                                   --filelist $TEI_FILELIST \
+                                   --input-dir $DOWNLOADER_TEI \
+                                   --output-dir $DOWNLOADER_TEI_META
 
 
 
@@ -468,7 +472,10 @@ if skip_process "udpipe2" "$UDPIPE_TEI" "$EXISTING_FILELIST" ; then # BEGIN UDPI
 mkdir -p $UDPIPE_TEI
 log "annotating udpipe2 $UDPIPE_TEI"
 
-perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 --filelist $TEI_FILELIST --input-dir $DOWNLOADER_TEI_META --output-dir $UDPIPE_TEI
+perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 \
+                               --filelist $TEI_FILELIST \
+                               --input-dir $DOWNLOADER_TEI_META \
+                               --output-dir $UDPIPE_TEI
 
 fi; # END UDPIPE CONDITION
 
@@ -492,7 +499,10 @@ if skip_process "nametag2" "$NAMETAG_TEI" "$EXISTING_FILELIST" ; then # BEGIN NA
 mkdir -p $NAMETAG_TEI
 log "annotating nametag2  $NAMETAG_TEI"
 
-perl -I lib nametag2/nametag2.pl --model=czech-cnec2.0-200831 --filelist $TEI_FILELIST --input-dir $UDPIPE_TEI --output-dir $NAMETAG_TEI
+perl -I lib nametag2/nametag2.pl --model=czech-cnec2.0-200831 \
+                                 --filelist $TEI_FILELIST \
+                                 --input-dir $UDPIPE_TEI \
+                                 --output-dir $NAMETAG_TEI
 
 fi; # END NAMETAG CONDITION
 
@@ -517,7 +527,11 @@ mkdir -p $ANNOTATED_TEI_META
 
 echo "WARNING: metadata-name $METADATA_NAME.ann is temporary - in future change to ParCzech-live-2.0.ann"
 log "adding metadata $METADATA_NAME.ann $ANNOTATED_TEI_META"
-perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" --metadata-file metadater/tei_parczech.xml --filelist $TEI_FILELIST --input-dir $NAMETAG_TEI --output-dir $ANNOTATED_TEI_META
+perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" \
+                                   --metadata-file metadater/tei_parczech.xml \
+                                   --filelist $TEI_FILELIST \
+                                   --input-dir $NAMETAG_TEI \
+                                   --output-dir $ANNOTATED_TEI_META
 
 
 ## add metadata to teiCorpus
