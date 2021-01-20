@@ -16,7 +16,7 @@ sub new {
 
   $self->{static_dict} = {};
   $self->load_files(! defined $opts{single_direction}, ref($opts{tran_files}) eq 'ARRAY' ? (@{$opts{tran_files}}) : ($opts{tran_files})) if $opts{tran_files};
-
+  $self->{regex_dict} = $opts{tran_regex} // [];
   return $self
 }
 
@@ -38,9 +38,13 @@ sub load_files {
 sub translate_static {
   my $self = shift;
   my $str = shift;
-  return unless $str;
+  return "" unless $str;
   return $self->{static_dict}->{$str} if defined $self->{static_dict}->{$str};
   return $self->{static_dict}->{lc $str} if defined $self->{static_dict}->{lc $str};
+  for my $tr (@{$self->{regex_dict}}) {
+    my ($r,$t) = @$tr;
+    return $t if $str =~ m/$r/;
+  }
   return $str; # return same string if no translation
 }
 

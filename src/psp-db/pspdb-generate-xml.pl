@@ -181,9 +181,17 @@ if($use_existing_db) {
 }
 
 
+my $regex_translations = [
+  [qr/ministr/i,'minister'],
+  [qr/místopředseda/i,'vice chairman'],
+  [qr/^.+$/,'member']
+];
+
 my $personlist = ParCzech::PipeLine::FileManager::XML::open_xml($personlist_in);
 my $patcher = ParCzech::Translation->new(single_direction => 1,$patches ? (tran_files => $patches) : ());
-my $orglist = listOrg->new(db => $pspdb, translator => ParCzech::Translation->new($translations ? (tran_files => $translations) : ()),
+my $translator = ParCzech::Translation->new($translations ? (tran_files => $translations) : (),
+                                            tran_regex => $regex_translations);
+my $orglist = listOrg->new(db => $pspdb, translator => $translator,
                                          patcher => $patcher);
 
 usage_exit() unless $personlist;
@@ -256,7 +264,7 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
 
         print STDERR "MATCHING (REG-$pers->{id_osoba}) '$pers->{jmeno} $pers->{prijmeni} nar. ",($pers->{narozeni}//'???'),"'\n";
         while(my $pm = $sth->fetchrow_hashref ) {
-          addAffiliation($person,$pm->{obd_id_organ}, 'PM', $pm->{od_obd}, $pm->{do_obd});
+          addAffiliation($person,$pm->{obd_id_organ}, 'MP', $pm->{od_obd}, $pm->{do_obd});
           addAffiliation($person,$pm->{kand_id_organ}, 'candidate', $pm->{od_obd}, $pm->{do_obd});
         }
 
@@ -267,7 +275,8 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
             zaraz.od_o AS od_o,
             zaraz.do_o AS do_o,
             funk.nazev_funkce_cz AS nazev_funkce,
-            typf.typ_funkce_en AS typ_funkce_en
+            typf.typ_funkce_en AS typ_funkce_en,
+            typf.typ_funkce_cz AS typ_funkce_cz
           FROM zarazeni AS zaraz
             JOIN funkce AS funk ON funk.id_funkce = zaraz.id_of
             JOIN organy as org ON org.id_organ = funk.id_organ
@@ -276,7 +285,7 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
                 AND zaraz.cl_funkce = 1',$pers->{id_osoba}));
         $sth->execute;
         while(my $func = $sth->fetchrow_hashref ) {
-          addAffiliation($person,$func->{id_organ}, $func->{typ_funkce_en}, $func->{od_o}, $func->{do_o});#->appendText($func->{nazev_funkce});
+          addAffiliation($person,$func->{id_organ}, $func->{typ_funkce_en}//$translator->translate_static($func->{typ_funkce_cz}), $func->{od_o}, $func->{do_o});#->appendText($func->{nazev_funkce});
         }
 
         $sth = $pspdb->prepare(sprintf(
