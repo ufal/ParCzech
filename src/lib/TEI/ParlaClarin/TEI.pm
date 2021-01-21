@@ -38,7 +38,8 @@ sub new {
   $self->{PERSONLIST} = $self->getPersonlistDOM($personlistfilepath);
   $self->addMeetingData('authorized','yes');
   $self->addMeetingFromId();
-
+  $self->{TEXT} = _get_child_node_or_create($self->{XPC},$self->{ROOT},'text', 'body', 'div');
+  $self->{TEXT}->setAttribute('type','debateSection');
   return $self;
 }
 
@@ -67,6 +68,8 @@ sub load_tei {
     bless($self,$class);
     $self->{PERSONLIST} = $self->getPersonlistDOM($params{person_list}) if $params{person_list};
     # TODO -> add namespaces !!!
+    $self->{TEXT} = _get_child_node_or_create($self->{XPC},$self->{ROOT},'text', 'body', 'div');
+
     $self->{ID} = $self->{ROOT}->getAttributeNS('http://www.w3.org/XML/1998/namespace','id');
     return $self;
   } else {
@@ -171,7 +174,7 @@ sub addUtterance { # don't change actTEI
   $self->{UTT_COUNTER}++;
   $self->{SEG_COUNTER} = 0;
   my %params = @_;
-  my $tei_text = _get_child_node_or_create($self->{XPC},$self->{ROOT},'text', 'body', 'div');
+  my $tei_text = $self->{TEXT};
   my $u = XML::LibXML::Element->new("u");
   if(exists $params{author}) {
     my $author_xml_id = $self->addAuthor(%{$params{author}});
@@ -233,7 +236,7 @@ sub addToUtterance {
 sub appendQueue {
   my $self = shift;
   my $isend = shift;
-  my $element = shift // _get_child_node_or_create($self->{XPC},$self->{ROOT},'text', 'body', 'div');
+  my $element = shift // $self->{TEXT};
   while ( my $elem = shift @{$self->{QUEUE}}) {
     my ($t, $noendprint) = @$elem;
     next if $isend && $noendprint;
