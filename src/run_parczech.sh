@@ -232,10 +232,12 @@ fi
 #    psp-db/$ID/psp.db
 #    psp-db/$ID/person.xml (enriched)
 #    psp-db/$ID/org.xml (enriched)
+#    psp-db/$ID (tei files with consolidated person ids)
 ###############################
 
 export PSP_DB_DIR=$DATA_DIR/psp-db/${ID}
 export PSP_DB_FILE=$PSP_DB_DIR/psp.db
+export PSP_DB_TEI=$PSP_DB_DIR
 
 if skip_process_single_file "psp-db" "$PSP_DB_DIR/person.xml" ; then # BEGIN PSP-DB download CONDITION
 mkdir -p $PSP_DB_DIR
@@ -244,6 +246,11 @@ log "getting person and org info $PSP_DB_DIR"
 
 echo ./psp-db/pspdb.sh -p "$PERSON_LIST_PATH" -o "$PSP_DB_DIR" -g "$GOV_OUTDIR_DB/$ID" -c `realpath $CONFIG_FILE`
 ./psp-db/pspdb.sh -p "$PERSON_LIST_PATH" -o "$PSP_DB_DIR" -g "$GOV_OUTDIR_DB/$ID" -c `realpath $CONFIG_FILE`
+
+
+echo ./psp-db/travers_person.sh -p "$PSP_DB_DIR/person.xml" -i "$DOWNLOADER_TEI" -f "$TEI_FILELIST" -o "$PSP_DB_TEI" -c `realpath $CONFIG_FILE`
+./psp-db/travers_person.sh -p "$PSP_DB_DIR/person.xml" -i "$DOWNLOADER_TEI" -f "$TEI_FILELIST" -o "$PSP_DB_TEI" -c `realpath $CONFIG_FILE`
+
 
 fi # END PSP-DB download CONDITION
 
@@ -254,8 +261,9 @@ fi
 ################################
 ### Metadata to download-tei ###
 #  input:
-#    downloader-tei/$ID
+#    psp-db/$ID
 #    psp-db/$ID/person.xml
+#    psp-db/$ID/org.xml
 #  output:
 #    downloader-tei-meta/$ID
 ###############################
@@ -270,13 +278,12 @@ log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" \
                                    --metadata-file metadater/tei_parczech.xml \
                                    --filelist $TEI_FILELIST \
-                                   --input-dir $DOWNLOADER_TEI \
+                                   --input-dir $PSP_DB_TEI \
                                    --output-dir $DOWNLOADER_TEI_META
 
 
 
 ## merge personlist
-
 $XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" personlist-path="$PSP_DB_DIR/person.xml"
 
 ## add org
