@@ -29,7 +29,7 @@ my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations,$patches, $
   poslanci/typ_funkce.unl
 =cut
 
-
+my $XMLNS = 'http://www.w3.org/XML/1998/namespace';
 my $strp = DateTime::Format::Strptime->new(
   pattern   => '%d.%m.%Y',
   locale    => 'cs_CZ',
@@ -43,6 +43,7 @@ my %cast = (
 );
 
 my %data_links = ();
+my %mapper = ();
 
 my %tabledef = (
   poslanci => {
@@ -216,7 +217,7 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
         if(my $pers2 = $sth->fetchrow_hashref) {
           $pers = $pers2;
           print STDERR "MATCHING (REG-$pers->{id_osoba} <=> GOV-$gov->{id_osoba}) '$pers->{jmeno} $pers->{prijmeni} nar. ",($pers->{narozeni}//'???'),"'\n";
-          add_data_link("PERS-REG-$pers->{id_osoba}","PERS-GOV-$gov->{id_osoba}");
+          add_data_link($pers->{id_osoba},$id,$person);
         } else {
           print STDERR "No match for '$pers->{jmeno} $pers->{prijmeni} nar. ",($pers->{narozeni}//'???'),"' ($pers->{id_osoba}) in psp database\n";
 
@@ -226,11 +227,13 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
           if(my $pers2 = $sth->fetchrow_hashref) {
             $pers = $pers2;
             print STDERR "MATCHING (REG-$pers->{id_osoba} <=> GOV-$gov->{id_osoba}) '$pers->{jmeno} $pers->{prijmeni}'\n";
-            add_data_link("PERS-REG-$pers->{id_osoba}","PERS-GOV-$gov->{id_osoba}");
+            add_data_link($pers->{id_osoba},$id,$person);
           } else {
             print STDERR "No match for '$pers->{jmeno} $pers->{prijmeni}' ($pers->{id_osoba}) in psp database\n";
           }
         }
+      } else {
+        mapper_set_xml_pers($pers->{id_osoba},$person,'reg');
       }
 
       my ($pname) = $person->getChildrenByTagName('persName');
@@ -302,16 +305,61 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
         while(my $incl = $sth->fetchrow_hashref ) {
           addAffiliation($person,$incl->{id_organ}, 'member', $incl->{od_o}, $incl->{do_o});
         }
-
-
-
-        # table organy
       }
     }
   } else {
     print STDERR "invalid id $id:\n$person\n";
   }
 }
+
+for my $reg_dbid (keys %data_links) {
+  my $reg_person = mapper_get_xml_pers($reg_dbid,'reg');
+  unless($reg_person){
+    my ($gov_person) = values %{$data_links{$reg_dbid}};
+    if ($gov_person) {
+      # clone gov person node
+      $reg_person = $gov_person->cloneNode(1);
+      # change id and add to mapper
+      my $new_id=listOrg::create_ID($xpc->findvalue('concat(.//tei:forename,.//tei:surname)',$gov_person)."$reg_dbid",keep_case=>1);
+      $reg_person->setAttributeNS($XMLNS, 'id',$new_id);
+      mapper_set_xml_pers($reg_dbid,$reg_person,'reg');
+      # replace idno url
+      my ($idno) = $xpc->findnodes('./tei:idno[@type="URI"]',$reg_person);
+      if($idno){
+        $idno->removeChildNodes();
+      } else {
+        my ($namenode) = $xpc->findnodes('./tei:persName',$reg_person);
+        $idno = XML::LibXML::Element->new('idno');
+        $idno->setAttribute('type','URI');
+        $reg_person->insertAfter($idno,$namenode // undef);
+      }
+      $idno->appendText("https://www.psp.cz/sqw/detail.sqw?id=$reg_dbid");
+      # append to parent node
+      $gov_person->addSibling($reg_person);
+    }
+  }
+
+
+  if ($reg_person) {
+    print STDERR "person linking ",$reg_person->getAttributeNS($XMLNS,'id'),": ";
+    for my $gov_person (values %{$data_links{$reg_dbid}}) {
+      print STDERR " ",$gov_person->getAttributeNS($XMLNS,'id');
+      my ($idno) = $xpc->findnodes('./tei:idno[@type="URI"]',$gov_person);
+      if($idno) {
+        $idno->unbindNode();
+        my $insert_place = $xpc->findnodes('./tei:idno',$reg_person) // $xpc->findnodes('./tei:persName',$reg_person);
+        $reg_person->insertAfter($idno,$insert_place // undef);
+      }
+      $gov_person->removeChildNodes();
+      $gov_person->setAttribute('corresp','#'.$reg_person->getAttributeNS($XMLNS,'id'));
+    }
+  } else {
+    print STDERR "ERROR - NOT FOUND: $reg_dbid";
+  }
+  print STDERR "\n";
+}
+
+
 
 
 ParCzech::PipeLine::FileManager::XML::save_to_file($personlist->{dom}, File::Spec->catfile($outdir,'person.xml'));
@@ -406,11 +454,18 @@ sub addAffiliation {
 }
 
 sub add_data_link {
-  my ($a,$b) = @_;
-  $data_links{$a} = {} unless defined $data_links{$a};
-  $data_links{$b} = {} unless defined $data_links{$b};
-  $data_links{$a}->{$b} = 1;
-  $data_links{$b}->{$a} = 1;
+  my ($reg,$gov,$govperson) = @_;
+  $data_links{$reg} = {} unless defined $data_links{$reg};
+  $data_links{$reg}->{$gov} = $govperson;
+}
+
+sub mapper_get_xml_pers {
+  my ($id,$type) = @_;
+  return $mapper{"$type$id"};
+}
+sub mapper_set_xml_pers {
+  my ($id,$pers,$type) = @_;
+  $mapper{"$type$id"} = $pers;
 }
 
 sub usage_exit {
