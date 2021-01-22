@@ -262,7 +262,7 @@ sub get_metadata_dom {
   my $file = shift;
   my %vars = @_;
   return $metadata{$file} if defined($metadata{$file});
-  my $xml = ParCzech::PipeLine::FileManager::XML::open_xml($file,%vars);
+  my $xml = ParCzech::PipeLine::FileManager::XML::open_xml($file,undef,%vars);
   if($xml) {
     $metadata{$file} = $xml->{dom};
     return $metadata{$file};
@@ -283,7 +283,7 @@ sub rename {
 sub save {
   my $self = shift;
   $self->patch_root_id();
-  ParCzech::PipeLine::FileManager::XML::save_to_file($self->{dom}, $self->{outpath});
+  return ParCzech::PipeLine::FileManager::XML::save_to_file($self->{dom}, $self->{outpath});
 }
 
 sub patch_root_id {
@@ -342,6 +342,7 @@ use File::Path;
 
 sub open_xml {
   my $file = shift;
+  my $log = shift // [];
   my %vars = @_;
   my $xml;
   local $/;
@@ -355,7 +356,7 @@ sub open_xml {
   } else {
     my $parser = XML::LibXML->new();
     my $doc = "";
-    $rawxml =~ s/\[\[$_\]\]/$vars{$_}/g for keys %vars;
+    evaluate_vars(\$rawxml, $log, %vars);
     eval { $doc = $parser->load_xml(string => $rawxml); };
     if ( !$doc ) {
       print " -- invalid XML in $file\n";
@@ -366,6 +367,15 @@ sub open_xml {
     }
   }
   return $xml
+}
+
+sub evaluate_vars {
+  my $rawxml_ref = shift;
+  my $log = shift // [];
+  my %vars = @_;
+  for my $k (keys %vars) {
+    push @$log,[$k,$vars{$k}] if $$rawxml_ref =~ s/\[\[$k\]\]/$vars{$k}/g;
+  }
 }
 
 sub to_string {
@@ -394,11 +404,35 @@ sub print {
 sub save_to_file {
   my ($doc,$filename) = @_;
   my $dir = dirname($filename);
+  my $log = [];
   File::Path::mkpath($dir) unless -d $dir;
   open FILE, ">$filename";
   binmode FILE;
-  print FILE to_string($doc);
+  my $raw = to_string($doc);
+  my @variables_in_text = find_variables($raw);
+  my %vars = %{assign_cnt_vars($doc,@variables_in_text)};
+  evaluate_vars(\$raw,$log,%vars);
+  print FILE $raw;
   close FILE;
+  return [map {[$filename,@$_]} @$log];
+}
+
+sub find_variables {
+  my $text = shift;
+  my @var_names = ( ($text//'') =~ m/\[\[([A-Za-z:]+)\]\]/g );
+  my %vars = map {$_ => undef} @var_names;
+  return keys %vars;
+}
+
+sub assign_cnt_vars {
+  my $doc = shift;
+  my @cntvars = grep {m/^ELEMCNT:[A-Za-z]+$/} @_;
+  my %vars = ();
+  for my $var (@cntvars) {
+    my ($elem) = ($var =~ m/:(.*)$/);
+    $vars{$var} = $doc->findvalue("count(//*[local-name(.) = '$elem'])");
+  }
+  return \%vars;
 }
 
 

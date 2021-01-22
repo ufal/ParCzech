@@ -14,6 +14,7 @@
   <pcz:meta pcz:name="ParCzech-live.ann">
     <pcz:item pcz:dep="ParCzech-live" />
     <pcz:item pcz:dep="respKopp.ann" />
+    <pcz:item pcz:dep="tagsDecl.ann" />
   </pcz:meta>
 
   <pcz:meta pcz:name="ParCzech-live-corpus">
@@ -29,6 +30,7 @@
   <pcz:meta pcz:name="ParCzech-live-corpus.ann">
     <pcz:item pcz:dep="ParCzech-live-corpus" />
     <pcz:item pcz:dep="respKopp.ann" />
+    <pcz:item pcz:dep="tagsDecl.ann" />
     <pcz:item pcz:dep="udpipe2" />
     <pcz:item pcz:dep="udpipe2.app-czech-pdt-ud-2.6-200830" />
 
@@ -85,7 +87,10 @@
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:extent" />
       </pcz:test>
       <pcz:tei>
-        <!-- -->
+        <measure unit="speeches" quantity="[[ELEMCNT:u]]" xml:lang="cs">[[ELEMCNT:u]] promluv</measure>
+        <measure unit="speeches" quantity="[[ELEMCNT:u]]" xml:lang="en">[[ELEMCNT:u]] speeches</measure>
+        <measure unit="words" quantity="[[ELEMCNT:w]]" xml:lang="cs">[[ELEMCNT:w]] slov</measure>
+        <measure unit="words" quantity="[[ELEMCNT:w]]" xml:lang="en">[[ELEMCNT:w]] words</measure>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
@@ -115,8 +120,32 @@
         <projectDesc></projectDesc>
          <tagsDecl>
             <namespace name="http://www.tei-c.org/ns/1.0">
+               <tagUsage gi="text" occurs="[[ELEMCNT:text]]"/>
+               <tagUsage gi="body" occurs="[[ELEMCNT:body]]"/>
+               <tagUsage gi="div" occurs="[[ELEMCNT:div]]"/>
+               <tagUsage gi="note" occurs="[[ELEMCNT:note]]"/>
+               <tagUsage gi="pb" occurs="[[ELEMCNT:pb]]"/>
+               <tagUsage gi="media" occurs="[[ELEMCNT:media]]"/>
+               <tagUsage gi="u" occurs="[[ELEMCNT:u]]"/>
+               <tagUsage gi="seg" occurs="[[ELEMCNT:seg]]"/>
             </namespace>
          </tagsDecl>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
+
+  <pcz:meta pcz:name="tagsDecl.ann">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace/tei:tagUsage[@gi='link']" />
+      </pcz:test>
+      <pcz:tei>
+               <tagUsage gi="s" occurs="[[ELEMCNT:s]]"/>
+               <tagUsage gi="name" occurs="[[ELEMCNT:name]]"/>
+               <tagUsage gi="w" occurs="[[ELEMCNT:w]]"/>
+               <tagUsage gi="pc" occurs="[[ELEMCNT:pc]]"/>
+               <tagUsage gi="linkGrp" occurs="[[ELEMCNT:linkGrp]]"/>
+               <tagUsage gi="link" occurs="[[ELEMCNT:link]]"/>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>

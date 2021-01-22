@@ -15,7 +15,7 @@ my $dirname = dirname($scriptname);
 
 my $metadata_file = File::Spec->catfile($dirname,'tei_parczech.xml');
 
-my ($debug, $test, $metadata_name, $vars,$rename);
+my ($debug, $test, $metadata_name, $vars,$rename, $vars_logfile);
 my %variables = ();
 
 my $xpc = ParCzech::PipeLine::FileManager::TeiFile::new_XPathContext();
@@ -28,6 +28,7 @@ GetOptions ( ## Command line options
             'metadata-name=s' => \$metadata_name, #
             'variables=s'     => \$vars,
             'rename=s'        => \$rename,
+            'variables-log=s' => \$vars_logfile,
             ParCzech::PipeLine::FileManager::opts()
             );
 
@@ -52,20 +53,37 @@ if($vars) {
     }
   }
 }
+my @used_vars;
 
 while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $xpc)) {
   next unless defined($current_file->{dom});
-
   $current_file->add_static_data($metadata_name, $metadata_file, %variables);
 
   if($test) {
     $current_file->print();
   } else {
     $current_file->rename(split('\|',$rename)) if $rename;
-    $current_file->save();
+    my $result = $current_file->save();
+    push @used_vars,$_ for (@{ $result // [] });
   }
 }
 
+if($vars_logfile){
+  local $/;
+  my $dir = dirname($vars_logfile);
+  File::Path::mkpath($dir) unless -d $dir;
+  open FILE, ">$vars_logfile";
+  binmode FILE;
+  my %cumulative;
+  for my $v (@used_vars) {
+    print FILE "$v->[0]|$v->[1]=$v->[2]\n";
+    $cumulative{$v->[1]} = ($cumulative{$v->[1]} // 0) + $v->[2] if $v->[1] =~ m/^ELEMCNT:/;
+  }
+  for my $var (keys %cumulative) {
+    print FILE "AGGREGATED|$var=$cumulative{$var}\n";
+  }
+  close FILE;
+}
 
 sub usage_exit {
    my ($fm_args,$fm_desc) =  @{ParCzech::PipeLine::FileManager::usage('tei')};
@@ -78,7 +96,11 @@ $fm_desc
 \t--metadata-name=s\tname of metadata (/ParCzech/meta/\@name)
 \t--test\tprint result to stdout - don't change any file
 \t--variables\tpipe '|' separated list of assignments to variables in metadata-file \"TODAY=2021-01-05#EDITION=2.0\"
+\t           \tYou can use special variable for counting elements
+\t           \t(ie [[ELEMCNT:u]] for counting). If it is not set in param,
+\t           \tvalue (ie count(//u)) is used for each file
 \t--rename=s\tpipe '|' separated renamming regex. ie \".xml\$|.ana.xml\" will add interfix '.ana'
+\t--variables-log=s\tlist of files and variables with values in format: filepath|variable=value
 ";
    exit;
 }
