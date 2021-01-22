@@ -268,7 +268,7 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
         print STDERR "MATCHING (REG-$pers->{id_osoba}) '$pers->{jmeno} $pers->{prijmeni} nar. ",($pers->{narozeni}//'???'),"'\n";
         while(my $pm = $sth->fetchrow_hashref ) {
           addAffiliation($person,$pm->{obd_id_organ}, 'MP', $pm->{od_obd}, $pm->{do_obd});
-          addAffiliation($person,$pm->{kand_id_organ}, 'candidate', $pm->{od_obd}, $pm->{do_obd});
+          addAffiliation($person,$pm->{kand_id_organ}, 'candidateMP', $pm->{od_obd}, $pm->{do_obd});
         }
 
         $sth = $pspdb->prepare(sprintf(
