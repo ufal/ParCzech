@@ -274,12 +274,16 @@ if skip_process "metadater" "$DOWNLOADER_TEI_META" "$EXISTING_FILELIST" ; then #
 
 mkdir -p $DOWNLOADER_TEI_META
 
+VAR_LOG="$DOWNLOADER_TEI_META/variables.log"
+
 log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" \
                                    --metadata-file metadater/tei_parczech.xml \
                                    --filelist $TEI_FILELIST \
                                    --input-dir $PSP_DB_TEI \
-                                   --output-dir $DOWNLOADER_TEI_META
+                                   --output-dir $DOWNLOADER_TEI_META \
+                                   --variables-log "$VAR_LOG" \
+
 
 
 
@@ -291,10 +295,14 @@ $XSL_TRANSFORM metadater/add_org.xsl "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILEN
 
 
 ## add metadata to teiCorpus
+CORPUS_VARS=`cat "$VAR_LOG"|sed -n 's/^AGGREGATED[|]//p'|tr "\n" "|"|sed 's/[|]$//'`
+
+echo "$CORPUS_VARS"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus" \
                                    --metadata-file metadater/tei_parczech.xml \
                                    --input-file "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME"  \
-                                   --output-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"
+                                   --output-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" \
+                                   --variables "$CORPUS_VARS"
 
 
 

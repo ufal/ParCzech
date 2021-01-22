@@ -68,11 +68,22 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
   }
 }
 
-#if($vars_logfile){
+if($vars_logfile){
+  local $/;
+  my $dir = dirname($vars_logfile);
+  File::Path::mkpath($dir) unless -d $dir;
+  open FILE, ">$vars_logfile";
+  binmode FILE;
+  my %cumulative;
   for my $v (@used_vars) {
-    print STDERR "$v->[0]|$v->[1]=$v->[2]\n";
+    print FILE "$v->[0]|$v->[1]=$v->[2]\n";
+    $cumulative{$v->[1]} = ($cumulative{$v->[1]} // 0) + $v->[2] if $v->[1] =~ m/^ELEMCNT:/;
   }
-#}
+  for my $var (keys %cumulative) {
+    print FILE "AGGREGATED|$var=$cumulative{$var}\n";
+  }
+  close FILE;
+}
 
 sub usage_exit {
    my ($fm_args,$fm_desc) =  @{ParCzech::PipeLine::FileManager::usage('tei')};
