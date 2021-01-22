@@ -137,16 +137,15 @@
   <pcz:meta pcz:name="tagsDecl.ann">
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace/tei:tagUsage[@gi='link']" />
       </pcz:test>
+      <pcz:tei>
                <tagUsage gi="s" occurs="[[ELEMCNT:s]]"/>
                <tagUsage gi="name" occurs="[[ELEMCNT:name]]"/>
                <tagUsage gi="w" occurs="[[ELEMCNT:w]]"/>
                <tagUsage gi="pc" occurs="[[ELEMCNT:pc]]"/>
                <tagUsage gi="linkGrp" occurs="[[ELEMCNT:linkGrp]]"/>
                <tagUsage gi="link" occurs="[[ELEMCNT:link]]"/>
-      <pcz:tei>
-
       </pcz:tei>
     </pcz:item>
   </pcz:meta>

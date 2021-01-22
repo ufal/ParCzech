@@ -541,6 +541,7 @@ export ANNOTATED_TEI_META=$DATA_DIR/annotated-tei-meta/${ID}
 if skip_process "metadater.ann" "$ANNOTATED_TEI_META" "$EXISTING_FILELIST" ; then # BEGIN METADATER.ann CONDITION
 
 mkdir -p $ANNOTATED_TEI_META
+VAR_LOG_ANN="$ANNOTATED_TEI_META/variables.log"
 
 echo "WARNING: metadata-name $METADATA_NAME.ann is temporary - in future change to ParCzech-live-2.0.ann"
 log "adding metadata $METADATA_NAME.ann $ANNOTATED_TEI_META"
@@ -549,17 +550,23 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" \
                                    --filelist $TEI_FILELIST \
                                    --input-dir $NAMETAG_TEI \
                                    --output-dir $ANNOTATED_TEI_META \
-                                   --rename "\\.xml\$|.${INTERFIX}.xml"
+                                   --rename "\\.xml\$|.${INTERFIX}.xml" \
+                                   --variables-log "$VAR_LOG_ANN"
 
 
 $XSL_TRANSFORM metadater/patch_include_suffix.xsl "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" "$ANNOTATED_TEI_META/$ANATEICORPUS_FILENAME" remove=".xml" append=".$INTERFIX.xml"
 
 
 ## add metadata to teiCorpus
+ANNCORPUS_VARS=`cat "$VAR_LOG_ANN"|sed -n 's/^AGGREGATED[|]//p'|tr "\n" "|"|sed 's/[|]$//'`
+
+echo "$ANNCORPUS_VARS"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus.ann" \
                                    --metadata-file metadater/tei_parczech.xml \
                                    --input-file "$ANNOTATED_TEI_META/$ANATEICORPUS_FILENAME"  \
-                                   --output-file "$ANNOTATED_TEI_META/$ANATEICORPUS_FILENAME"
+                                   --output-file "$ANNOTATED_TEI_META/$ANATEICORPUS_FILENAME" \
+                                   --variables "$ANNCORPUS_VARS"
+
 
 fi; # END METADATER.ann CONDITION
 
