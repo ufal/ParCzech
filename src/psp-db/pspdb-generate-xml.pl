@@ -448,8 +448,14 @@ sub addAffiliation {
   my $ref = $orglist->addOrg($id)->id();
   $aff->setAttribute('ref',"#$ref");
   $aff->setAttribute('role',listOrg::create_ID($patcher->translate_static($role))) if $role;
-  $aff->setAttribute('from',$from) if $from;
-  $aff->setAttribute('to',$to) if $to;
+  if($from) {
+    $from =~ s/ /T/;
+    $aff->setAttribute('from',$from);
+  }
+  if($to){
+    $to =~ s/ /T/;
+    $aff->setAttribute('to',$to);
+  }
   return $aff;
 }
 
