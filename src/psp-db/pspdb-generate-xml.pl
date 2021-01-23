@@ -607,6 +607,7 @@ sub addOrg {
 sub create_ID {
   my $str = shift // '';
   my %opts = @_;
+
   $str =~s/^\s+|\s+$//g;
   $str =~ s/-/ /g unless $opts{keep_dash};
   $str =~ s/,/ /g;
@@ -614,10 +615,13 @@ sub create_ID {
   $str = Unicode::Diacritic::Strip::strip_diacritics($str);
   if($opts{keep_case}){ # keep case in abbrevitations
     $str =~ s/ //g;
-  } else {
+  } elsif ($str =~ m/ /) {
     $str = lc $str unless $str eq uc $str;
     $str =~ s/ (\w)/\U$1/g;
+  } elsif ( !( $str eq uc $str)){
+    $str =~ s/^(\w)/\l$1/; # make first letter small
   }
+
   return $str;
 }
 
