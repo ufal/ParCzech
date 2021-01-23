@@ -16,9 +16,7 @@
     <xsl:variable name="node" select="key('id-personlist',$person-id,$personlist-doc)/."/>
     <xsl:copy-of select="$node" />
     <xsl:if test="not($node)">
-      <xsl:value-of select="concat('LOOKING FOR: #',$person-id,' ')" />
       <xsl:variable name="corresp" select="key('id-personlist-corresp',$person-id,$personlist-doc)"/>
-      <xsl:value-of select="concat('CORRESP:',$corresp/@corresp,' ')" />
       <xsl:variable name="node" select="key('id-personlist',substring-after($corresp/@corresp,'#'),$personlist-doc)/."/>
       <xsl:if test="not(//*[local-name(.) = 'person' and contains(@corresp,$corresp/@corresp) ])">
         <!-- traversed node is new -->
