@@ -214,6 +214,9 @@ if skip_process_single_file "gov-db" "$GOV_OUTDIR_DB/$ID/gov_osoby.unl" ; then #
 mkdir -p $GOV_WORKDIR
 mkdir -p $GOV_OUTDIR_DB
 mkdir -p $GOV_OUTDIR_CACHE
+
+log "getting government persons"
+
 perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$GOV_SCRIPT --db $GOV_OUTDIR_DB --id $ID --debug 10
 
 fi # END GOV-DB download CONDITION
@@ -247,7 +250,7 @@ log "getting person and org info $PSP_DB_DIR"
 echo ./psp-db/pspdb.sh -p "$PERSON_LIST_PATH" -o "$PSP_DB_DIR" -g "$GOV_OUTDIR_DB/$ID" -c `realpath $CONFIG_FILE`
 ./psp-db/pspdb.sh -p "$PERSON_LIST_PATH" -o "$PSP_DB_DIR" -g "$GOV_OUTDIR_DB/$ID" -c `realpath $CONFIG_FILE`
 
-
+log "travers person - looking for duplicit persons"
 echo ./psp-db/travers_person.sh -p "$PSP_DB_DIR/person.xml" -i "$DOWNLOADER_TEI" -f "$TEI_FILELIST" -o "$PSP_DB_TEI" -c `realpath $CONFIG_FILE`
 ./psp-db/travers_person.sh -p "$PSP_DB_DIR/person.xml" -i "$DOWNLOADER_TEI" -f "$TEI_FILELIST" -o "$PSP_DB_TEI" -c `realpath $CONFIG_FILE`
 
@@ -284,11 +287,20 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" \
                                    --output-dir $DOWNLOADER_TEI_META \
                                    --variables-log "$VAR_LOG" \
 
+fi; # END METADATER CONDITION
 
+###############################
+### Metadata to teiCorpus   ###
+###############################
 
+if skip_process_single_file "metadater" "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" ; then # BEGIN METADATER teiCorpus CONDITION
+
+log "adding <listPerson> teiCorpus: $DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME"
 
 ## merge personlist
 $XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" personlist-path="$PSP_DB_DIR/person.xml"
+
+log "adding <listOrg> teiCorpus: $DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME"
 
 ## add org
 $XSL_TRANSFORM metadater/add_org.xsl "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" org-path="$PSP_DB_DIR/org.xml"
@@ -297,7 +309,9 @@ $XSL_TRANSFORM metadater/add_org.xsl "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILEN
 ## add metadata to teiCorpus
 CORPUS_VARS=`cat "$VAR_LOG"|sed -n 's/^AGGREGATED[|]//p'|tr "\n" "|"|sed 's/[|]$//'`
 
-echo "$CORPUS_VARS"
+log "adding metadata to teiCorpus $METADATA_NAME-corpus: $DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"
+log "VARIABLES: $CORPUS_VARS"
+
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus" \
                                    --metadata-file metadater/tei_parczech.xml \
                                    --input-file "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME"  \
@@ -306,7 +320,7 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus" \
 
 
 
-fi; # END METADATER CONDITION
+fi; # END METADATER teiCorpus CONDITION
 
 if [ "$EXIT_CONDITION" == "tei-meta" ] ; then
   echo "EXITTING: $EXIT_CONDITION"
@@ -538,10 +552,11 @@ fi
 ###############################
 
 export ANNOTATED_TEI_META=$DATA_DIR/annotated-tei-meta/${ID}
-if skip_process "metadater.ann" "$ANNOTATED_TEI_META" "$EXISTING_FILELIST" ; then # BEGIN METADATER.ann CONDITION
+VAR_LOG_ANN="$ANNOTATED_TEI_META/variables.log"
+
+if skip_process "metadater.ann" "$ANNOTATED_TEI_META" "$EXISTING_FILELIST" ; then # BEGIN METADATER.TEI.ann CONDITION
 
 mkdir -p $ANNOTATED_TEI_META
-VAR_LOG_ANN="$ANNOTATED_TEI_META/variables.log"
 
 echo "WARNING: metadata-name $METADATA_NAME.ann is temporary - in future change to ParCzech-live-2.0.ann"
 log "adding metadata $METADATA_NAME.ann $ANNOTATED_TEI_META"
@@ -554,21 +569,31 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" \
                                    --variables-log "$VAR_LOG_ANN"
 
 
+fi; # END METADATER.TEI.ann CONDITION
+
+#########################################
+### Metadata to annotated teiCorpus   ###
+#########################################
+
+if skip_process_single_file "metadater.teiCorpus.ann" "$ANNOTATED_TEI_META/$ANATEICORPUS_FILENAME" ; then # BEGIN METADATER.teiCorpus.ann CONDITION
+
 $XSL_TRANSFORM metadater/patch_include_suffix.xsl "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" "$ANNOTATED_TEI_META/$ANATEICORPUS_FILENAME" remove=".xml" append=".$INTERFIX.xml"
 
 
 ## add metadata to teiCorpus
 ANNCORPUS_VARS=`cat "$VAR_LOG_ANN"|sed -n 's/^AGGREGATED[|]//p'|tr "\n" "|"|sed 's/[|]$//'`
 
-echo "$ANNCORPUS_VARS"
+log "adding metadata to teiCorpus $METADATA_NAME.ann $ANNOTATED_TEI_META"
+log "VARIABLES: $ANNCORPUS_VARS"
+
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus.ann" \
                                    --metadata-file metadater/tei_parczech.xml \
                                    --input-file "$ANNOTATED_TEI_META/$ANATEICORPUS_FILENAME"  \
                                    --output-file "$ANNOTATED_TEI_META/$ANATEICORPUS_FILENAME" \
                                    --variables "$ANNCORPUS_VARS"
 
+fi; # END METADATER.teiCorpus.ann CONDITION
 
-fi; # END METADATER.ann CONDITION
 
 if [ "$EXIT_CONDITION" == "ann-meta" ] ; then
   echo "EXITTING: $EXIT_CONDITION"
