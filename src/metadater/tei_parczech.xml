@@ -228,7 +228,7 @@
   <pcz:meta pcz:name="respKopp">
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:titleStmt">
       <pcz:test>
-        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt/tei:persName[text() = 'Matyáš Kopp']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt/tei:persName[contains(text(), 'Kopp')]" />
       </pcz:test>
       <pcz:tei>
         <respStmt>
@@ -240,7 +240,10 @@
   </pcz:meta>
   <pcz:meta pcz:name="respKopp.ann">
     <pcz:item pcz:dep="respKopp" />
-    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt[./tei:persName/text() = 'Matyáš Kopp']">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt[contains(./tei:persName/text(), 'Kopp')]">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:respStmt/tei:persName/tei:resp[contains(text(), 'Linguistic annotation')]" />
+      </pcz:test>
       <pcz:tei>
         <resp xml:lang="en">Linguistic annotation</resp>
       </pcz:tei>
