@@ -287,6 +287,8 @@
                </category>
             </taxonomy>
             <taxonomy xml:id="meeting.parts">
+              <desc xml:lang="cs"><term></term></desc>
+              <desc xml:lang="en"><term>Agenda</term></desc>
               <category xml:id="parla.agenda">
                 <catDesc xml:lang="cs"><term>Bod jednání</term></catDesc>
                 <catDesc xml:lang="en"><term>Agenda</term>: topic discussed during sitting</catDesc>
