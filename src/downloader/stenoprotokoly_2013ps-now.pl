@@ -307,8 +307,7 @@ sub record_exporter {
   	}
   }
 
-  add_pagebreak_to_teiFile($link);
-  add_audio_to_teiFile($link); # add audio if possible
+  add_pagebreak_and_audio_to_teiFile($link);  # add audio if possible
   my ($link_id) = $link =~ m/s(\d*)\.htm$/;
 
   my $date = trim xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]/p[@class="date"]/a');
@@ -328,8 +327,7 @@ sub record_exporter {
       $topic_id =~ s/^.*b\d\d\d(\d\d\d)\d\d\.htm.*/$1/;
       ${$ref_post}->{id}->{topic} = $topic_id;
       init_TEI( map {${$ref_post}->{id}->{$_} } qw/term meeting sitting topic/ );
-      add_pagebreak_to_teiFile($link);
-      add_audio_to_teiFile($link); # add audio if possible
+      add_pagebreak_and_audio_to_teiFile($link); # add audio if possible
       $teiFile->addSittingDate($datetime) if $datetime;
       debug_print( "  UTTERANCE " .($$ref_author->{authorname}), __LINE__, 5);
       my $id = $teiFile->addUtterance(
@@ -350,7 +348,8 @@ sub record_exporter {
     } elsif (my $s = xpath_string('./@class',$cnt) eq "status") {
       next;
     } elsif (my $mp3 = xpath_string('./a[@class = "audio"]/@href',$cnt)) {
-      $teiFile->addAudioNote(url => URI->new_abs($mp3,$link));
+      print STDERR "THIS SHOULD NOT HAPPEN: AUDIO: ",URI->new_abs($mp3,$link),"\n";
+      # $teiFile->addAudioNote(url => URI->new_abs($mp3,$link));
       next;
     } elsif (xpath_string('./text()',$cnt) =~ /\s*\*\*\*\s*/) {
       next;
@@ -456,18 +455,17 @@ export_TEI();
 $teiCorpus->addSourceDesc();
 $teiCorpus->toFile();
 
-sub add_pagebreak_to_teiFile {
-  my $link = shift;
-  $teiFile->addPageBreak(source => $link)
-}
 
-sub add_audio_to_teiFile {
+
+sub add_pagebreak_and_audio_to_teiFile {
   my $link = shift;
+  my $mp3link;
   if(my $page_mp3_url = xpath_string('//div[@class="aside"]//ul[@class="link-list"]/li[contains(text(),"MP3")]/a/@href')){
-    $teiFile->addAudioNote(url => URI->new_abs($page_mp3_url, $link));
+    $mp3link = URI->new_abs($page_mp3_url, $link);
   } else { # get mp3 link from mp3file list page
-    $teiFile->addAudioNote(url => $day_audio_links{$link->as_string}) if $day_audio_links{$link};
+    $mp3link = $day_audio_links{$link->as_string} if $day_audio_links{$link->as_string};
   }
+  $teiFile->addPageBreak(source => $link, audiolink => $mp3link);
 }
 
 sub init_TEI {

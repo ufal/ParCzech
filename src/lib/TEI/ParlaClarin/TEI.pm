@@ -142,13 +142,17 @@ sub hideAudioUrls {
 
 sub addAudioFile {
   my $self = shift;
-  my $file = shift;
-  my $rec = _get_child_node_or_create($self->{XPC},$self->{HEADER},'recordingStmt')->addNewChild(undef,'recording');
+  my $url = shift;
+  my $id = shift;
+  my $rec = _get_child_node_or_create($self->{XPC},$self->{HEADER},'recordingStmt','recording');
   $rec->setAttribute('type', 'audio');
   my $media = $rec->addNewChild(undef,"media");
+  $media->setAttributeNS($self->{NS}->{xml}, 'id', $id);
   $media->setAttribute('mimeType', 'audio/mp3');
-  $media->setAttribute('url', $file);
-
+  $media->setAttribute('source',$url);
+  $url =~ s{^https?://}{};
+  $url =~ s{^.*?eknih/}{};
+  $media->setAttribute('url',$url);
   return $self;
 }
 
@@ -257,6 +261,11 @@ sub addPageBreak {
   $self->{PAGECOUNTER}++;
   $pbNode->setAttribute('n', $self->{PAGECOUNTER});
   $pbNode->setAttributeNS($self->{NS}->{xml}, 'id', sprintf("%s.pb%d",$self->{ID}, $self->{PAGECOUNTER}));
+  if($params{audiolink}){
+    my $audioid = sprintf("%s.audio%d",$self->{ID}, $self->{PAGECOUNTER});
+    $pbNode->setAttribute('corresp', "#$audioid");
+    $self->addAudioFile($params{audiolink}, $audioid);
+  }
   $self->addToElemsQueue($pbNode,1);
   return $self;
 }
@@ -375,26 +384,6 @@ sub getSourceURI {
   return $link;
 }
 
-sub addAudioNote {
-  my $self = shift;
-  my %params = @_;
-  # my $tei_text = _get_child_node_or_create($self->{ROOT},'text', 'body', 'div');
-  my $note = XML::LibXML::Element->new("note");
-  $note->setAttribute('type','media');
-  my $media = XML::LibXML::Element->new("media");
-  $media->setAttribute('mimeType',$params{mimeType} // 'audio/mp3');
-  if(exists $params{url}) {
-    my $url = $params{url};
-    $media->setAttribute('source',$url);
-    $url =~ s{^https?://}{};
-    $url =~ s{^.*?eknih/}{};
-    $media->setAttribute('url',$url);
-  }
-  $note->appendChild($media);
-  # $tei_text->appendChild($note);
-  $self->addToElemsQueue($note);
-  return $self;
-}
 
 
 sub isEmpty {
