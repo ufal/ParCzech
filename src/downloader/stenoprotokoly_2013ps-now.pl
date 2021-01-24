@@ -584,7 +584,7 @@ sub create_ref_node {
   }
   $ref->setAttribute('ana',"#parla.$type") if $type;
   $ref->setAttribute('n',$n) if $n;
-  $ref->setAttribute('source',$href) if $href;
+  $ref->setAttribute('target',$href) if $href;
 
   $ref->appendText($text);
   return $ref;
