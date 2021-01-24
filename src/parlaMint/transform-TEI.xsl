@@ -9,6 +9,14 @@
 
   <xsl:include href="parczech2parlamint.xsl" />
 
+  <xsl:template match="//tei:note[@type='media']">
+    <xsl:message>TEMPORARY REMOVING //note[./media]: <xsl:value-of select="./tei:media/@url" /></xsl:message>
+  </xsl:template>
+
+  <xsl:template match="//tei:div//tei:ref">
+    <xsl:message>TEMPORARY REMOVING //div//ref: <xsl:value-of select="./@target" /></xsl:message>
+  </xsl:template>
+
   <xsl:template name="patch-id">
     <xsl:param name="id" />
     <xsl:attribute name="xml:id">

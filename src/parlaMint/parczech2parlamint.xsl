@@ -37,6 +37,24 @@
     </xsl:copy>
   </xsl:template>
 
+  <xsl:template match="/*/tei:teiHeader">
+    <xsl:copy>
+      <xsl:apply-templates select="@*"/>
+      <xsl:apply-templates select="./tei:fileDesc"/>
+      <xsl:apply-templates select="./tei:encodingDesc"/>
+      <xsl:apply-templates select="./tei:profileDesc"/>
+      <xsl:apply-templates select="./tei:revisionDesc"/>
+    </xsl:copy>
+  </xsl:template>
+
+  <xsl:template match="/tei:TEI/tei:teiHeader/tei:encodingDesc">
+    <xsl:copy>
+      <xsl:apply-templates select="@*"/>
+      <xsl:apply-templates select="./tei:projectDesc"/>
+      <xsl:apply-templates select="./tei:tagsDecl"/>
+    </xsl:copy>
+  </xsl:template>
+
   <xsl:template match="//tei:encodingDesc/tei:projectDesc">
     <xsl:copy>
       <p xml:lang="cs"><ref target="https://www.clarin.eu/content/parlamint">ParlaMint</ref></p>
@@ -44,7 +62,7 @@
     </xsl:copy>
   </xsl:template>
 
-  <xsl:template match="//tei:fileDesc/tei:titleStmt/funder">
+  <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:funder">
     <xsl:copy>
       <orgName xml:lang="en">CLARIN research infrastructure</orgName>
       <orgName xml:lang="cs">Výzkumná infrastruktura CLARIN</orgName>

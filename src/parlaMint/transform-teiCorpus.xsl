@@ -38,7 +38,7 @@
     </xsl:attribute>
   </xsl:template>
 
-  <xsl:template match="//tei:encodingDesc">
+  <xsl:template match="tei:encodingDesc">
     <xsl:copy>
       <xsl:apply-templates select="./tei:projectDesc"/>
       <editorialDecl>
@@ -58,8 +58,32 @@
                <p xml:lang="en">The texts are segmented into utterances (speeches) and segments (corresponding to paragraphs in the source transcription).</p>
             </segmentation>
          </editorialDecl>
-      <xsl:apply-templates select="./*[not(local-name() = 'projectDesc')]"/>
+      <xsl:apply-templates select="./tei:tagsDecl"/>
+      <xsl:apply-templates select="./tei:classDecl"/>
+
+      <xsl:apply-templates select="./tei:listPrefixDef"/>
+      <xsl:apply-templates select="./tei:appInfo"/>
     </xsl:copy>
   </xsl:template>
+
+  <xsl:template match="tei:classDecl">
+    <xsl:copy>
+      <xsl:apply-templates select="./tei:taxonomy"/>
+      <taxonomy xml:id="subcorpus">
+         <desc xml:lang="cs"><term>Podkorpusy</term></desc>
+         <desc xml:lang="en"><term>Subcorpora</term></desc>
+         <category xml:id="reference">
+            <catDesc xml:lang="cs"><term>Referenční</term>: referenční podkorpus, do 2019-10-31</catDesc>
+            <catDesc xml:lang="en"><term>Reference</term>: reference subcorpus, until 2019-10-31</catDesc>
+         </category>
+         <category xml:id="covid">
+            <catDesc xml:lang="cs"><term>COVID</term>: COVID podkorpus, od 2019-11-01 dále</catDesc>
+            <catDesc xml:lang="en"><term>COVID</term>: COVID subcorpus, from 2019-11-01 onwards</catDesc>
+         </category>
+      </taxonomy>
+    </xsl:copy>
+  </xsl:template>
+
+
 
 </xsl:stylesheet>
