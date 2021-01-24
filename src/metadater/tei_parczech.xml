@@ -8,7 +8,6 @@
     <pcz:item pcz:dep="respKopp" />
     <pcz:item pcz:dep="funderLINDAT" />
     <pcz:item pcz:dep="encodingDesc" />
-
   </pcz:meta>
 
   <pcz:meta pcz:name="ParCzech-live.ann">
@@ -24,6 +23,7 @@
     <pcz:item pcz:dep="respKopp" />
     <pcz:item pcz:dep="funderLINDAT" />
     <pcz:item pcz:dep="encodingDesc" />
+    <pcz:item pcz:dep="encodingDesc-corpus" />
     <pcz:item pcz:dep="profileDesc-corpus" />
   </pcz:meta>
 
@@ -133,6 +133,199 @@
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
+
+  <pcz:meta pcz:name="encodingDesc-corpus">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl" />
+      </pcz:test>
+      <pcz:tei>
+        <classDecl>
+        </classDecl>
+      </pcz:tei>
+    </pcz:item>
+    <pcz:item pcz:dep="classDecl-parla.legislature" />
+    <pcz:item pcz:dep="classDecl-speaker_types" />
+  </pcz:meta>
+
+  <pcz:meta pcz:name="classDecl-parla.legislature">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='parla.legislature']" />
+      </pcz:test>
+      <pcz:tei>
+            <taxonomy xml:id="parla.legislature">
+               <desc xml:lang="cs"><term></term></desc>
+               <desc xml:lang="en"><term>Legislature</term></desc>
+               <category xml:id="parla.geo-political">
+                  <catDesc xml:lang="cs"><term></term></catDesc>
+                  <catDesc xml:lang="en"><term>Geo-political or administrative units</term></catDesc>
+                  <category xml:id="parla.supranational">
+                     <catDesc xml:lang="cs"><term></term></catDesc>
+                     <catDesc xml:lang="en"><term>Supranational legislature</term></catDesc>
+                  </category>
+                  <category xml:id="parla.national">
+                     <catDesc xml:lang="cs"><term></term></catDesc>
+                     <catDesc xml:lang="en"><term>National legislature</term></catDesc>
+                  </category>
+                  <category xml:id="parla.regional">
+                     <catDesc xml:lang="cs"><term></term></catDesc>
+                     <catDesc xml:lang="en"><term>Regional legislature</term></catDesc>
+                  </category>
+                  <category xml:id="parla.local">
+                     <catDesc xml:lang="cs"><term></term></catDesc>
+                     <catDesc xml:lang="en"><term>Local legislature</term></catDesc>
+                  </category>
+               </category>
+               <category xml:id="parla.organization">
+                  <catDesc xml:lang="cs"><term></term></catDesc>
+                  <catDesc xml:lang="en"><term>Organization</term></catDesc>
+                  <category xml:id="parla.chambers">
+                     <catDesc xml:lang="cs"><term></term></catDesc>
+                     <catDesc xml:lang="en"><term>Chambers</term></catDesc>
+                     <category xml:id="parla.uni">
+                        <catDesc xml:lang="cs"><term></term></catDesc>
+                        <catDesc xml:lang="en"><term>Unicameralism</term></catDesc>
+                     </category>
+                     <category xml:id="parla.bi">
+                        <catDesc xml:lang="cs"><term></term></catDesc>
+                        <catDesc xml:lang="en"><term>Bicameralism</term></catDesc>
+                        <category xml:id="parla.upper">
+                           <catDesc xml:lang="cs"><term></term></catDesc>
+                           <catDesc xml:lang="en"><term>Upper house</term></catDesc>
+                        </category>
+                        <category xml:id="parla.lower">
+                           <catDesc xml:lang="cs"><term></term></catDesc>
+                           <catDesc xml:lang="en"><term>Lower house</term></catDesc>
+                        </category>
+                     </category>
+                     <category xml:id="parla.multi">
+                        <catDesc xml:lang="cs"><term></term></catDesc>
+                        <catDesc xml:lang="en"><term>Multicameralism</term></catDesc>
+                        <category xml:id="parla.chamber">
+                           <catDesc xml:lang="cs"><term></term></catDesc>
+                           <catDesc xml:lang="en"><term>Chamber</term></catDesc>
+                        </category>
+                     </category>
+                  </category>
+                  <category xml:id="parla.committee">
+                     <catDesc xml:lang="cs"><term></term></catDesc>
+                     <catDesc xml:lang="en"><term>Committee</term></catDesc>
+                     <category xml:id="parla.committee.standing">
+                        <catDesc xml:lang="cs"><term></term></catDesc>
+                        <catDesc xml:lang="en"><term>Standing committee</term></catDesc>
+                     </category>
+                     <category xml:id="parla.committee.special">
+                        <catDesc xml:lang="cs"><term></term></catDesc>
+                        <catDesc xml:lang="en"><term>Special committee</term></catDesc>
+                     </category>
+                     <category xml:id="parla.committee.inquiry">
+                        <catDesc xml:lang="cs"><term></term></catDesc>
+                        <catDesc xml:lang="en"><term>Committee of inquiry </term></catDesc>
+                     </category>
+                  </category>
+               </category>
+               <category xml:id="parla.term">
+                  <catDesc xml:lang="cs"><term></term></catDesc>
+                  <catDesc xml:lang="en"><term>Legislative period</term>: term of the parliament between general elections.</catDesc>
+                  <category xml:id="parla.session">
+                     <catDesc xml:lang="cs"><term></term></catDesc>
+                     <catDesc xml:lang="en"><term>Legislative session</term>: the period of time in which a legislature is convened for purpose of lawmaking, usually being one of two or more smaller divisions of the entire time between two elections. A session is a meeting or series of connected meetings devoted to a single order of business, program, agenda, or announced purpose.</catDesc>
+                     <category xml:id="parla.meeting">
+                        <catDesc xml:lang="cs"><term></term></catDesc>
+                        <catDesc xml:lang="en"><term>Meeting</term>: Each meeting may be a separate session or part of a group of meetings constituting a session. The session/meeting may take one or more days.</catDesc>
+                        <category xml:id="parla.meeting-types">
+                           <catDesc xml:lang="cs"><term></term></catDesc>
+                           <catDesc xml:lang="en"><term>Types of meetings</term></catDesc>
+                           <category xml:id="parla.meeting.regular">
+                              <catDesc xml:lang="cs"><term></term></catDesc>
+                              <catDesc xml:lang="en"><term>Regular meeting</term></catDesc>
+                           </category>
+                           <category xml:id="parla.meeting.special">
+                              <catDesc xml:lang="cs"><term></term></catDesc>
+                              <catDesc xml:lang="en"><term>Special meeting</term></catDesc>
+                              <category xml:id="parla.meeting.extraordinary">
+                                 <catDesc xml:lang="cs"><term></term></catDesc>
+                                 <catDesc xml:lang="en"><term>Extraordinary meeting</term></catDesc>
+                              </category>
+                              <category xml:id="parla.meeting.urgent">
+                                 <catDesc xml:lang="cs"><term></term></catDesc>
+                                 <catDesc xml:lang="en"><term>Urgent meeting</term></catDesc>
+                              </category>
+                              <category xml:id="parla.meeting.ceremonial">
+                                 <catDesc xml:lang="cs"><term></term></catDesc>
+                                 <catDesc xml:lang="en"><term>Ceremonial meeting</term></catDesc>
+                              </category>
+                              <category xml:id="parla.meeting.commemorative">
+                                 <catDesc xml:lang="cs"><term></term></catDesc>
+                                 <catDesc xml:lang="en"><term>Commemorative meeting</term></catDesc>
+                              </category>
+                              <category xml:id="parla.meeting.opinions">
+                                 <catDesc xml:lang="cs"><term></term></catDesc>
+                                 <catDesc xml:lang="en"><term>Public presentation of opinions</term></catDesc>
+                              </category>
+                           </category>
+                           <category xml:id="parla.meeting.continued">
+                              <catDesc xml:lang="cs"><term></term></catDesc>
+                              <catDesc xml:lang="en"><term>Continued meeting</term></catDesc>
+                           </category>
+                           <category xml:id="parla.meeting.public">
+                              <catDesc xml:lang="cs"><term></term></catDesc>
+                              <catDesc xml:lang="en"><term>Public meeting</term></catDesc>
+                           </category>
+                           <category xml:id="parla.meeting.executive">
+                              <catDesc xml:lang="cs"><term></term></catDesc>
+                              <catDesc xml:lang="en"><term>Executive meeting</term></catDesc>
+                           </category>
+                        </category>
+                        <category xml:id="parla.sitting">
+                           <catDesc xml:lang="cs"><term></term></catDesc>
+                           <catDesc xml:lang="en"><term>Sitting</term>: sitting day</catDesc>
+                        </category>
+                     </category>
+                  </category>
+               </category>
+            </taxonomy>
+            <taxonomy xml:id="meeting.parts">
+              <category xml:id="parla.agenda">
+                <catDesc xml:lang="cs"><term>Bod jednání</term></catDesc>
+                <catDesc xml:lang="en"><term>Agenda</term>: topic discussed during sitting</catDesc>
+              </category>
+            </taxonomy>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
+
+
+
+  <pcz:meta pcz:name="classDecl-speaker_types">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='speaker_types']" />
+      </pcz:test>
+      <pcz:tei>
+          <taxonomy xml:id="speaker_types">
+            <desc xml:lang="cs"><term>Druhy řečníků</term></desc>
+            <desc xml:lang="en"><term>Types of speakers</term></desc>
+            <category xml:id="chair">
+              <catDesc xml:lang="cs"><term>Předsedající</term>: předsedá zasedání</catDesc>
+              <catDesc xml:lang="en"><term>Chairperson</term>: chairman of a sitting</catDesc>
+            </category>
+            <category xml:id="regular">
+              <catDesc xml:lang="cs"><term>Poslanec</term>: poslanec nebo člen vlády</catDesc>
+              <catDesc xml:lang="en"><term>Regular</term>: a regular speaker at a sitting</catDesc>
+            </category>
+            <category xml:id="guest">
+              <catDesc xml:lang="cs"><term>Host</term>: ghostující řečník na sezení</catDesc>
+              <catDesc xml:lang="en"><term>Guest</term>: a guest speaker at a sitting</catDesc>
+            </category>
+          </taxonomy>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
+
+
+
 
   <pcz:meta pcz:name="tagsDecl.ann">
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace">
@@ -268,7 +461,7 @@
   </pcz:meta>
 
 
-
+<!--
   <pcz:meta pcz:name="ParCzechPS-2.0-taxonomy">
     <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
@@ -315,7 +508,7 @@
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
-
+-->
 
   <pcz:meta pcz:name="nametag2">
     <pcz:item pcz:dep="nametag2.prefix" />
