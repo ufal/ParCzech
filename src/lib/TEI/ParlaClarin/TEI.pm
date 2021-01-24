@@ -184,7 +184,6 @@ sub addUtterance { # don't change actTEI
       my $note = XML::LibXML::Element->new("note");
       $note->setAttribute('type','speaker');
       $note->appendText($params{author}->{author_full});
-      $note->setAttribute('target',$author_xml_id) if $author_xml_id;
       $tei_text->appendChild($note);
     }
     $u->setAttribute('ana', '#'.$params{author}->{role}) if $params{author}->{role};
