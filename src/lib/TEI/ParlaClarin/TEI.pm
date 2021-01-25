@@ -39,6 +39,8 @@ sub new {
   $self->addMeetingFromId();
   $self->{TEXT} = _get_child_node_or_create($self->{XPC},$self->{ROOT},'text', 'body', 'div');
   $self->{TEXT}->setAttribute('type','debateSection');
+  $self->{ROOT}->setAttribute('ana', '#parla.agenda');
+
   return $self;
 }
 
