@@ -145,6 +145,7 @@
       </pcz:tei>
     </pcz:item>
     <pcz:item pcz:dep="classDecl-parla.legislature" />
+    <pcz:item pcz:dep="classDecl-links" />
     <pcz:item pcz:dep="classDecl-speaker_types" />
   </pcz:meta>
 
@@ -299,6 +300,28 @@
   </pcz:meta>
 
 
+
+  <pcz:meta pcz:name="classDecl-links">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='parla.links']" />
+      </pcz:test>
+      <pcz:tei>
+          <taxonomy xml:id="parla.links">
+            <desc xml:lang="cs"><term>Druhy odkazů</term></desc>
+            <desc xml:lang="en"><term>Types of links</term></desc>
+            <category xml:id="parla.voting">
+              <catDesc xml:lang="cs"><term>Hlasování</term></catDesc>
+              <catDesc xml:lang="en"><term>Voting</term></catDesc>
+            </category>
+            <category xml:id="parla.print">
+              <catDesc xml:lang="cs"><term>Sněmovní tisk</term></catDesc>
+              <catDesc xml:lang="en"><term>Regular</term></catDesc>
+            </category>
+          </taxonomy>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
 
   <pcz:meta pcz:name="classDecl-speaker_types">
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
