@@ -97,6 +97,12 @@ sub addSourceDesc {
   $idno->setAttribute('type','URI');
   $idno->appendText($self->getSourceURI());
   $self->{sourceDesc_bib}->appendChild($idno);
+  if(defined $self->{unauthorized}) {
+    my $ed = XML::LibXML::Element->new('edition');
+    $ed->appendText($self->{unauthorized});
+    $ed->setAttributeNS($self->{NS}->{xml}, 'lang', 'cs');
+    $self->{sourceDesc_bib}->appendChild($ed);
+  }
   my $dt = $self->getPeriodDateNode(attr => '%Y-%m-%d',text => '%d.%m.%Y');
   $self->{sourceDesc_bib}->appendChild($dt) if $dt;
 

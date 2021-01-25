@@ -343,8 +343,8 @@ sub record_exporter {
       );
 
     }
-    if(xpath_node('.//strong[contains(text(), "eautorizováno !" )]',$cnt) ) { # Neautorizováno or neautorizováno
-      set_current_tei_unauthorized($act_date);
+    if(my $status_str = xpath_string('.//strong[contains(text(), "eautorizováno !" )]',$cnt) ) { # Neautorizováno or neautorizováno
+      set_current_tei_unauthorized($status_str, $act_date);
     } elsif (my $s = xpath_string('./@class',$cnt) eq "status") {
       next;
     } elsif (my $mp3 = xpath_string('./a[@class = "audio"]/@href',$cnt)) {
@@ -502,10 +502,10 @@ sub export_TEI {
 
 
 sub set_current_tei_unauthorized {
+  my $str = shift;
   my $date = shift;
   my $id = $teiFile->teiID();
-  $teiFile->setUnauthorizedFlag();
-  $teiFile->setRevisionDate($date,'unauthorized');
+  $teiFile->setUnauthorizedFlag($str);
   my $h = $new_unauthorized;
   for my $p (split("-", $id)) {
   	$h = $h->{$p} = {};

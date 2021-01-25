@@ -36,7 +36,6 @@ sub new {
 
 
   $self->{PERSONLIST} = $self->getPersonlistDOM($personlistfilepath);
-  $self->addMeetingData('authorized','yes');
   $self->addMeetingFromId();
   $self->{TEXT} = _get_child_node_or_create($self->{XPC},$self->{ROOT},'text', 'body', 'div');
   $self->{TEXT}->setAttribute('type','debateSection');
@@ -326,7 +325,8 @@ sub addHead {
 
 sub setUnauthorizedFlag {
   my $self = shift;
-  $self->{unauthorized} = 1;
+  my $str = shift;
+  $self->{unauthorized} = $str;
   # $self->addMetadata('authorized','no',1); # subrutine is missing
   return $self;
 }
