@@ -348,6 +348,7 @@ sub createTimeNoteNode {
   $note->setAttribute('type','time');
   $note->appendText($params{before}//'');
   my $time = XML::LibXML::Element->new("time");
+  $time->setAttribute('when',$params{when}) if exists $params{when};
   $time->setAttribute('from',$params{from}) if exists $params{from};
   $time->setAttribute('to',$params{to}) if exists $params{to};
   $time->appendText($params{texttime}//'');

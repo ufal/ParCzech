@@ -361,7 +361,7 @@ sub record_exporter {
       my $texttime = $&;
       my $time = "$1:".($2//'00');
       $datetime = $strp->parse_datetime("$date $time");
-      my $noteNode = $teiFile->createTimeNoteNode(from=>$datetime, texttime=>$texttime);
+      my $noteNode = $teiFile->createTimeNoteNode(when=>$datetime, texttime=>$texttime);
       $teiFile->addToElemsQueue($noteNode);
       $$ref_post->{date} = $datetime;
       next;
@@ -370,7 +370,7 @@ sub record_exporter {
       my $time = "$1:".($2//'00');
 
       $datetime = $strp->parse_datetime("$date $time");
-      $teiFile->addTimeNote(to=>$datetime, texttime=>$texttime);
+      $teiFile->addTimeNote(when=>$datetime, texttime=>$texttime);
       next;
     } elsif ($cnt_html =~ m/${re_schuze}.*${re_konec}${re_cas}.*\)/) {
       my $texttime = $&;
@@ -378,13 +378,13 @@ sub record_exporter {
 
 
       $datetime = $strp->parse_datetime("$date $time");
-      $teiFile->addTimeNote(to=>$datetime, texttime=>$texttime);
+      $teiFile->addTimeNote(when=>$datetime, texttime=>$texttime);
     } elsif ($cnt_html =~ m/${re_schuze}.*${re_zacatek}${re_cas}.*\)/) {
       my $texttime = $&;
       my $time = "$1:".($2//'00');
 
       $datetime = $strp->parse_datetime("$date $time");
-      $teiFile->addTimeNote(from=>$datetime, texttime=>$texttime);
+      $teiFile->addTimeNote(when=>$datetime, texttime=>$texttime);
       next;
     } elsif(my $a = xpath_node('./b[not(../@align = "center" or ../@align = "CENTER" ) and (.//a or starts-with(text(),"Poslan"))]',$cnt)
                    ## patching obscure utterances (https://www.psp.cz/eknih/2013ps/stenprot/036schuz/s036311.htm)
