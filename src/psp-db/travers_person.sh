@@ -47,6 +47,9 @@ fi
 
 
 TRANSLATE=`$XPATH_QUERY "$PERSONLIST" "declare option saxon:output 'omit-xml-declaration=yes';string-join( for \\$i in //*[local-name() = 'person' and @corresp] return concat(\\$i/@xml:id,'=',substring-after(\\$i/@corresp, '#')),'&#10;') "`
+
+echo "$TRANSLATE"
+SCRIPT=''
 if [ ! -z "$TRANSLATE" ] ; then
   SCRIPT=" my \$l=\$_;
     my @tr = map { [split('=',\$_)]} qw/$TRANSLATE/;
@@ -56,8 +59,14 @@ if [ ! -z "$TRANSLATE" ] ; then
     };
     \$_ = \$l;
   "
-  for TEIFILE in `cat "$FILELIST"` ; do
-    mkdir -p "$OUTPUT_DIRECTORY/${TEIFILE%/*}"
-    cat "$INPUT_DIRECTORY/$TEIFILE" | perl -pe "$SCRIPT" > $OUTPUT_DIRECTORY/$TEIFILE
-  done
 fi
+for TEIFILE in `cat "$FILELIST"` ; do
+    mkdir -p "$OUTPUT_DIRECTORY/${TEIFILE%/*}"
+  if [ ! -z "$SCRIPT" ] ; then
+    echo "transform: $TEIFILE"
+    cat "$INPUT_DIRECTORY/$TEIFILE" | perl -pe "$SCRIPT" > $OUTPUT_DIRECTORY/$TEIFILE
+  else
+    echo "copy: $TEIFILE"
+    cp "$INPUT_DIRECTORY/$TEIFILE" "$OUTPUT_DIRECTORY/$TEIFILE"
+  fi
+done
