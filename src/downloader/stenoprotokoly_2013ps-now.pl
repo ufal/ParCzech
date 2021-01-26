@@ -536,6 +536,7 @@ sub export_text {
       $segm = $teiFile->addToUtterance(create_ref_node($childnode),$segm);
     } else { # text or text in node that is not converted
       my $text = ScrapperUfal::html2text($childnode); # returns empty string if it contains only spaces !!!
+      $text =~ s/\N{NO-BREAK SPACE}/ /g;
       $text = ' ' if ($text eq '') and ! ($childnode->toString() eq '');
       $text =~ s/\s*:?\s*// if $is_first; # remove initial : and spaces
       $text =~ s/\s\s+/ /g ; # squeeze spaces
