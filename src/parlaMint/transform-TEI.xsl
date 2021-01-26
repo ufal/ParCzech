@@ -15,6 +15,7 @@
 
   <xsl:template match="//tei:div//tei:ref">
     <xsl:message>TEMPORARY REMOVING //div//ref: <xsl:value-of select="./@target" /></xsl:message>
+    <xsl:apply-templates select="node()"/>
   </xsl:template>
 
   <xsl:template name="patch-id">
