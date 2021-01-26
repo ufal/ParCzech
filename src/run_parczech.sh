@@ -272,12 +272,11 @@ fi
 ###############################
 
 export DOWNLOADER_TEI_META=$DATA_DIR/downloader-tei-meta/${ID}
+VAR_LOG="$DOWNLOADER_TEI_META/variables.log"
 
 if skip_process "metadater" "$DOWNLOADER_TEI_META" "$EXISTING_FILELIST" ; then # BEGIN METADATER CONDITION
 
 mkdir -p $DOWNLOADER_TEI_META
-
-VAR_LOG="$DOWNLOADER_TEI_META/variables.log"
 
 log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" \
