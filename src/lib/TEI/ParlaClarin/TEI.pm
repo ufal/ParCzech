@@ -145,7 +145,8 @@ sub addAudioFile {
   my $self = shift;
   my $url = shift;
   my $id = shift;
-  my $rec = _get_child_node_or_create($self->{XPC},$self->{HEADER},'recordingStmt','recording');
+  $self->{sourceDesc_recording} = XML::LibXML::Element->new('recordingStmt') unless defined $self->{sourceDesc_recording};
+  my $rec = _get_child_node_or_create($self->{XPC},$self->{sourceDesc_recording},'recording');
   $rec->setAttribute('type', 'audio');
   my $media = $rec->addNewChild(undef,"media");
   $media->setAttributeNS($self->{NS}->{xml}, 'id', $id);

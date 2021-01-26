@@ -106,7 +106,9 @@ sub addSourceDesc {
   my $dt = $self->getPeriodDateNode(attr => '%Y-%m-%d',text => '%d.%m.%Y');
   $self->{sourceDesc_bib}->appendChild($dt) if $dt;
 
-  _get_child_node_or_create($self->{XPC},$self->{HEADER},'fileDesc', 'sourceDesc')->appendChild($self->{sourceDesc_bib});
+  my $sourceDesc = _get_child_node_or_create($self->{XPC},$self->{HEADER},'fileDesc', 'sourceDesc');
+  $sourceDesc->appendChild($self->{sourceDesc_bib});
+  $sourceDesc->appendChild($self->{sourceDesc_recording}) if defined $self->{sourceDesc_recording};
 }
 
 

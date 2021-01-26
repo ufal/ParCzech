@@ -47,6 +47,10 @@
     </xsl:copy>
   </xsl:template>
 
+  <xsl:template match="tei:recordingStmt"> <!-- IDs are not changed -->
+    <xsl:copy-of select="." />
+  </xsl:template>
+
   <xsl:template match="/tei:TEI/tei:teiHeader/tei:encodingDesc">
     <xsl:copy>
       <xsl:apply-templates select="@*"/>
