@@ -85,6 +85,10 @@ create_parlaMint() {
   IN_DIR=$1
   OUT_DIR=$2
   mkdir -p OUT_DIR
+  if [ ! -s "$IN_DIR" ]; then
+    echo "warning: missing input directory"
+    return 0
+  fi
   CORPFILE=`echo $IN_DIR/ParCzech*.xml`
   echo -e "in directory $IN_DIR\nout directory $OUT_DIR\n$CORPFILE\n"
   if [ ! -s $CORPFILE ]; then
