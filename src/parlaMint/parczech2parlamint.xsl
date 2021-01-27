@@ -66,6 +66,13 @@
     </xsl:copy>
   </xsl:template>
 
+  <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:title[@type='main' and @xml:lang='cs']">
+    <xsl:copy><xsl:apply-templates select="@*"/>Český parlamentní korpus ParlaMint-CZ [ParlaMint]</xsl:copy>
+  </xsl:template>
+  <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:title[@type='main' and @xml:lang='en']">
+    <xsl:copy><xsl:apply-templates select="@*"/>Czech parliamentary corpus ParlaMint-CZ [ParlaMint]</xsl:copy>
+  </xsl:template>
+
   <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:funder">
     <xsl:copy>
       <orgName xml:lang="en">CLARIN research infrastructure</orgName>
