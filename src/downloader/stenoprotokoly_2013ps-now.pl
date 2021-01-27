@@ -405,7 +405,7 @@ sub record_exporter {
       if ($a) {
         $auth =  trim xpath_string('.//* | ./text()',$a);
         ($auth_id) = (xpath_string('.//@href',$a)||'') =~ m/id=(\d+)/;
-        ($govern_id) = (xpath_string('.//@href',$a)||'') =~ m/clenove-vlady\/(.*?)\//;
+        ($govern_id) = (xpath_string('.//@href',$a)||'') =~ m/clenove-vlady.*\/(.*?)\//;
         $post_id = xpath_string('.//@id',$a);
         $a->unbindNode();
         $cnt_text = ScrapperUfal::html2text($cnt);
