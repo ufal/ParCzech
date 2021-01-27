@@ -33,6 +33,13 @@ my $config = {
     {
       type => 'main',
       text => {
+        cs => 'Český parlamentní korpus, Poslanecká sněmovna [ParCzech]',
+        en => 'Czech parliamentary corpus, Chamber of Deputies [ParCzech]'
+      }
+    },
+    {
+      type => 'sub',
+      text => {
         cs => 'Parlament České republiky, Poslanecká sněmovna',
         en => 'Parliament of the Czech Republic, Chamber of Deputies'
       }

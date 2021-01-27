@@ -50,14 +50,17 @@ sub new {
   $self->{MEETING} = {};
   if($params{'title'}) {
     for my $tit (  ! ref($params{title}) eq 'ARRAY' ? $params{title} : @{$params{title}} ){
-      for my $lng (keys %{$tit->{text}}) {
+      for my $lng (sort keys %{$tit->{text}}) {
         my $n = XML::LibXML::Element->new('title');
         $self->{TITLESTMT}->appendChild($n);
         $n->appendText($tit->{text}->{$lng});
         $n->setAttribute('type', $tit->{type}) if exists $tit->{type};
         $n->setAttributeNS($self->{NS}->{xml}, 'lang', $lng);
-
-        $self->{sourceDesc_bib}->appendChild($n->cloneNode(1));
+        if($tit->{type} eq 'sub'){
+          my $bibtitle=$n->cloneNode(1);
+          $bibtitle->setAttribute('type', 'main');
+          $self->{sourceDesc_bib}->appendChild($bibtitle);
+        }
       }
     }
   }
