@@ -158,8 +158,7 @@ sub addMeetingData {
   my ($key, $value, $force) = @_; # force means overwrite if key exists
   my $meetingNode;
   my $ana = "#parla.$key";
-  ($meetingNode) = $self->{TITLESTMT}->findnodes('./meeting[@ana="'.$ana.'"]');
-  return undef if !$force && $meetingNode;
+  ($meetingNode) = $self->{TITLESTMT}->findnodes('./meeting[@ana="'.$ana.'"]') if $force;
   unless($meetingNode){
     $meetingNode = $self->{TITLESTMT}->addNewChild(undef,'meeting');
     $meetingNode->setAttribute('ana',"$ana");
@@ -185,7 +184,7 @@ sub getMeetings {
   my $self = shift;
   my $ana = shift;
   return unless $ana;
-  return [keys %{$self->{MEETING}->{$ana}}];
+  return [keys %{$self->{MEETING}->{$ana} // {}}];
 }
 
 
