@@ -10,13 +10,15 @@ INPUT_RAW_DIR=
 INPUT_ANN_DIR=
 OUTPUT_DIR=
 VALIDATE=0
+PARAMS=()
+
 
 usage() {
   echo -e "Usage: $0 -v -t INPUT_RAW_DIR -a INPUT_ANA_DIR -O OUTPUT_DIR -c CONFIG_FILE" 1>&2
   exit 1
 }
 
-while getopts  ':t:a:O:c:v'  opt; do
+while getopts  ':t:a:O:c:h:v'  opt; do
   case "$opt" in
     'c')
       CONFIG_FILE=$OPTARG
@@ -29,6 +31,9 @@ while getopts  ':t:a:O:c:v'  opt; do
       ;;
     'O')
       OUTPUT_DIR=$OPTARG
+      ;;
+    'h')
+      PARAMS+=(handler="$OPTARG" )
       ;;
     'v')
       VALIDATE=1
@@ -99,11 +104,11 @@ create_parlaMint() {
   for TEIFILE in `grep -o '[^<>]*include [^<>]*' "$CORPFILE"|sed 's/^.*href="//;s/".*$//'`
   do
     echo "$TEIFILE $DATA_PREFIX"
-    $XSL_TRANSFORM parlaMint/transform-TEI.xsl "$IN_DIR/$TEIFILE" "$OUT_DIR/${TEIFILE##*/}" id-prefix="$DATA_PREFIX"
+    $XSL_TRANSFORM parlaMint/transform-TEI.xsl "$IN_DIR/$TEIFILE" "$OUT_DIR/${TEIFILE##*/}" id-prefix="$DATA_PREFIX" "${PARAMS[@]}"
   done
   echo
   echo $CORPFILE $OUT_DIR/${CORPFILE##*/}
-  $XSL_TRANSFORM parlaMint/transform-teiCorpus.xsl "$CORPFILE" "$OUT_DIR/${CORPFILE##*/}" id-prefix="$DATA_PREFIX" outdir="$OUT_DIR"
+  $XSL_TRANSFORM parlaMint/transform-teiCorpus.xsl "$CORPFILE" "$OUT_DIR/${CORPFILE##*/}" id-prefix="$DATA_PREFIX" outdir="$OUT_DIR" "${PARAMS[@]}"
 
   for TEIFILE in `ls "$OUT_DIR"`
   do

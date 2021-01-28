@@ -7,6 +7,7 @@
 
   <xsl:output method="xml" indent="yes" encoding="UTF-8" />
   <xsl:param name="id-prefix" />
+  <xsl:param name="handler" />
   <xsl:variable name="set-date" select="/tei:TEI//tei:settingDesc/tei:setting/tei:date[contains(concat(' ',./@ana,' '),' #parla.sitting ')]/@when"/>
   <xsl:variable name="date" select="translate($set-date, '-','')"/>
 
@@ -90,8 +91,21 @@
                <orgName xml:lang="cs">Výzkumná infrastruktura CLARIN</orgName>
                <ref target="https://www.clarin.eu/">www.clarin.eu</ref>
             </publisher>
-            <idno type="URL">https://github.com/clarin-eric/ParlaMint</idno>
-            <pubPlace><ref target="https://github.com/clarin-eric/ParlaMint">https://github.com/clarin-eric/ParlaMint</ref></pubPlace>
+            <xsl:choose>
+              <xsl:when test="$handler">
+                <idno type="handle"><xsl:value-of select="$handler" /></idno>
+                <pubPlace>
+                  <xsl:element name="ref">
+                    <xsl:attribute name="target"><xsl:value-of select="$handler" /></xsl:attribute>
+                    <xsl:value-of select="$handler" />
+                  </xsl:element>
+                </pubPlace>
+              </xsl:when>
+              <xsl:otherwise>
+                <idno type="URL">https://github.com/clarin-eric/ParlaMint</idno>
+                <pubPlace><ref target="https://github.com/clarin-eric/ParlaMint">https://github.com/clarin-eric/ParlaMint</ref></pubPlace>
+              </xsl:otherwise>
+            </xsl:choose>
 
             <availability status="free">
                <licence>http://creativecommons.org/licenses/by/4.0/</licence>
