@@ -41,6 +41,8 @@ my %cast = (
   datehour => sub {my $d = shift; return $d ? "$d:00:00" : ''},
   unescape_patch => sub {my $s = shift; $s =~ s/\\ / /g; $s =~ s/^\s+|\s+$//g; return $s},
 );
+my %uniqueOrgRoles = map {($_ => 1)} qw/parliament senate nationalCouncil president/;
+
 
 my %data_links = ();
 my %mapper = ();
@@ -631,17 +633,28 @@ sub new {
   my $this  = shift;
   my $class = ref($this) || $this;
   my %opts = @_;
-  my $self  = { map { $_ => $opts{$_} } qw/abbr name_cz name_en from to role abbr_sd/ };
+  my $self  = { map { $_ => $opts{$_} } qw/abbr name_cz name_en from to role abbr_sd id_organ/ };
   bless $self, $class;
   $self->{iddb} = {
     id => $opts{id_organ},
     parent => $opts{parent},
     type => $opts{type}
   };
-  $self->{id} = ($self->{role} ? "$self->{role}." : '') . "$opts{abbr_sd}.$opts{id_organ}";
+  $self->buildID();
   $self->{child} = {};
 
   return $self;
+}
+
+sub buildID {
+  my $self = shift;
+  my @parts;
+  push @parts, $self->{role} if $self->{role};
+  push @parts, $self->{abbr_sd};
+  unless(defined $uniqueOrgRoles{$self->{role} // ''}){
+    push @parts, $self->{id_organ};
+  }
+  $self->{id} = join('.', @parts);
 }
 
 sub id {
