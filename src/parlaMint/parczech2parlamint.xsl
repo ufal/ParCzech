@@ -20,7 +20,7 @@
 
   </xsl:template>
 
-  <xsl:template match="/tei:TEI">
+  <xsl:template match="/tei:TEI | /tei:TEI/tei:text">
     <xsl:copy>
       <xsl:apply-templates select="@*"/>
       <xsl:attribute name="ana">
