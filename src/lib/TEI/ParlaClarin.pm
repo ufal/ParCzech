@@ -22,6 +22,7 @@ sub new {
   my $self = {};
   bless($self,$class);
   $self->{output}->{dir} = $params{output_dir} // '.';
+  $self->{anaExtend} = {%{$params{anaExtend} // {} } };
 
   $self->{DOM} = XML::LibXML::Document->new("1.0", "utf-8");
   my $root_node =  XML::LibXML::Element->new($rootname);
@@ -161,10 +162,11 @@ sub addMeetingData {
   my ($key, $value, $force) = @_; # force means overwrite if key exists
   my $meetingNode;
   my $ana = "#parla.$key";
-  ($meetingNode) = $self->{TITLESTMT}->findnodes('./meeting[@ana="'.$ana.'"]') if $force;
+  my $ana_ext = $self->{anaExtend}->{$ana} ? " $self->{anaExtend}->{$ana}":'';
+  ($meetingNode) = $self->{TITLESTMT}->findnodes('./meeting[@ana="'.$ana.$ana_ext.'"]') if $force;
   unless($meetingNode){
     $meetingNode = $self->{TITLESTMT}->addNewChild(undef,'meeting');
-    $meetingNode->setAttribute('ana',"$ana");
+    $meetingNode->setAttribute('ana',"$ana$ana_ext");
   } else {
     $meetingNode->removeChildNodes(); # remove possibly existing text
   }
