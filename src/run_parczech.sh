@@ -257,6 +257,20 @@ echo ./psp-db/travers_person.sh -p "$PSP_DB_DIR/person.xml" -i "$DOWNLOADER_TEI"
 ## merge orgs with common roles to list of events
 $XSL_TRANSFORM psp-db/org_merger.xsl "$PSP_DB_DIR/org.xml" "$PSP_DB_DIR/org.merged.xml" roles="senate|parliament|government"
 
+### set parliament org to parla.term
+
+TERM_TO_PSP=`$XPATH_QUERY "$PSP_DB_DIR/org.merged.xml" "declare option saxon:output 'omit-xml-declaration=yes'; concat(string-join( for \\$i in //*[local-name() = 'org' and @role='parliament']/*[local-name() = 'listEvent']/*[local-name() = 'event'] return concat(concat('ps',substring-before(\\$i/@from, '-')),'=#',\\$i/@xml:id),' '),' ')"`
+echo "TERM_TO_PSP:$TERM_TO_PSP"
+
+cp "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$PSP_DB_DIR/$TEICORPUS_FILENAME"
+
+for FILE in `echo $TEICORPUS_FILENAME && cat $TEI_FILELIST`;
+do
+  xmlstarlet edit --inplace \
+                  --update "/*/_:teiHeader/_:fileDesc/_:titleStmt/_:meeting[contains(@ana,'#parla.term')]/@ana" \
+                  --expr "concat(.,' ',substring-before(substring-after('$TERM_TO_PSP',concat(../@n,'=')),' ')  )" \
+                  "$PSP_DB_DIR/$FILE"
+done
 
 fi # END PSP-DB download CONDITION
 
@@ -300,7 +314,7 @@ if skip_process_single_file "metadater" "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAM
 log "adding <listPerson> teiCorpus: $DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME"
 
 ## merge personlist
-$XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" personlist-path="$PSP_DB_DIR/person.xml"
+$XSL_TRANSFORM metadater/knit_persons.xsl "$PSP_DB_DIR/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" personlist-path="$PSP_DB_DIR/person.xml"
 
 log "adding <listOrg> teiCorpus: $DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME"
 
