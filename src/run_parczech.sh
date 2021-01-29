@@ -254,6 +254,9 @@ log "travers person - looking for duplicit persons"
 echo ./psp-db/travers_person.sh -p "$PSP_DB_DIR/person.xml" -i "$DOWNLOADER_TEI" -f "$TEI_FILELIST" -o "$PSP_DB_TEI" -c `realpath $CONFIG_FILE`
 ./psp-db/travers_person.sh -p "$PSP_DB_DIR/person.xml" -i "$DOWNLOADER_TEI" -f "$TEI_FILELIST" -o "$PSP_DB_TEI" -c `realpath $CONFIG_FILE`
 
+## merge orgs with common roles to list of events
+$XSL_TRANSFORM psp-db/org_merger.xsl "$PSP_DB_DIR/org.xml" "$PSP_DB_DIR/org.merged.xml" roles="senate|parliament|government"
+
 
 fi # END PSP-DB download CONDITION
 
@@ -302,7 +305,7 @@ $XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" 
 log "adding <listOrg> teiCorpus: $DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME"
 
 ## add org
-$XSL_TRANSFORM metadater/add_org.xsl "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" org-path="$PSP_DB_DIR/org.xml"
+$XSL_TRANSFORM metadater/add_org.xsl "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" org-path="$PSP_DB_DIR/org.merged.xml"
 
 ## sort header data in teiCorpus
 $XSL_TRANSFORM metadater/header_data_sorter.xsl "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/sorted.$TEICORPUS_FILENAME"
