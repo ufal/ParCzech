@@ -304,6 +304,9 @@ log "adding <listOrg> teiCorpus: $DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME"
 ## add org
 $XSL_TRANSFORM metadater/add_org.xsl "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" org-path="$PSP_DB_DIR/org.xml"
 
+## sort header data in teiCorpus
+$XSL_TRANSFORM metadater/header_data_sorter.xsl "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/sorted.$TEICORPUS_FILENAME"
+
 
 ## add metadata to teiCorpus
 CORPUS_VARS=`cat "$VAR_LOG"|sed -n 's/^AGGREGATED[|]//p'|tr "\n" "|"|sed 's/[|]$//'`
@@ -313,7 +316,7 @@ log "VARIABLES: $CORPUS_VARS"
 
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus" \
                                    --metadata-file metadater/tei_parczech.xml \
-                                   --input-file "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME"  \
+                                   --input-file "$DOWNLOADER_TEI_META/sorted.$TEICORPUS_FILENAME"  \
                                    --output-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" \
                                    --variables "$CORPUS_VARS"
 
