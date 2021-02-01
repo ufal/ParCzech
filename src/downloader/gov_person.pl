@@ -17,6 +17,7 @@ my $tz = 'Europe/Prague';
 my @patterns =       (
                       ['%e. %B %Y','cs_CZ'], # 1. července 2014
                       ['%d.%m.%Y','cs_CZ'], # 30.6.2014
+                      ['%d. %m. %Y','cs_CZ'], # 30. 6. 2014
                      );
 my @strp_patterns = map {DateTime::Format::Strptime->new(
                       pattern => $_->[0],
@@ -85,11 +86,14 @@ for my $pers_link (@pers_urls) {
   my $persName = xpath_string('./h1[1]',$main);
   my ($before,$forename,$surname,$after) = $persName =~ m/^(.*?)\s*([^\.\s]+)\s+([^\.,]+),?\s*(.*?)$/;
   $surname = trim $surname;
-  my ($pers_info) = grep {$_} map {trim $_} xpath_string('.//*[contains(./text(),"Osobní údaje")]/following::p');
-  ($pers_info) =    grep {$_} map {trim $_} xpath_string('.//*[contains(./text(),"Osobní údaje")]/following::text()') unless $pers_info;
-
+  my ($pers_info) = grep {m/\d\d\d\d/} grep {$_} map {trim $_} xpath_string('.//*[contains(./text(),"Osobní údaje")]/following::p');
+  ($pers_info) =  grep {m/\d\d\d\d/} grep {$_} map {trim $_} xpath_string('.//*[contains(./text(),"Osobní údaje")]/following::text()') unless $pers_info;
   my ($female,$birth_date,$birth_place) = ($pers_info//'') =~ m/(?:(?:rodil)|(?:rozen))(a*)\s*(?:se\s+)?(\d+\.\s+[^\s]+\s+\d\d\d\d)(?:\s+v.?\s+([^\.,]*))?/;
   $birth_date = guess_date($birth_date);
+  unless($birth_date){
+    ($female,$birth_date) = ($pers_info//'') =~ m/(?:(?:rodil)|(?:rozen))(a*)\s*(?:se\s+)?.*?(\d+\.\s+[^\s]+\s+\d\d\d\d)/;
+    $birth_date = guess_date($birth_date);
+  }
   ($female) = $surname =~ m/(á)$/  unless $birth_date;
   my $sex = $female ? 'F' : 'M';
 
