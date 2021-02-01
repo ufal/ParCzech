@@ -278,8 +278,8 @@ sub addPageBreak {
 sub addAuthor {
   my $self = shift;
   my %params = @_;
-  return unless $params{id} or $params{govern_id};
   my $xmlid = _to_xmlid($params{id} ? ('pers-', $params{name}, $params{id}) : ('pers-gov-',$params{govern_id}));
+  $xmlid = _to_xmlid('pers-', $params{name}) unless $xmlid;
   return unless $xmlid;
   return $xmlid if exists $self->{THIS_TEI_PERSON_IDS}->{$xmlid};
   if(exists $self->{PERSON_IDS}->{$xmlid}) {
@@ -291,10 +291,14 @@ sub addAuthor {
   $person->setAttributeNS($self->{NS}->{xml}, 'id', $xmlid);
   my $persname = XML::LibXML::Element->new("persName");
   $person->appendChild($persname);
-  $persname->appendText($params{name});
+  my ($forename, $surname) = $params{name} =~ m/^(.*?) (.*)$/;
+  $persname->appendTextChild('surname',$surname);
+  $persname->appendTextChild('forename',$forename);
+
   for my $link (
       ['https://www.psp.cz/sqw/detail.sqw?id=',$params{id}],
       ['https://www.vlada.cz/cz/clenove-vlady/',$params{govern_id},'/'],
+      ['',$params{link}]
       ) {
     next unless $link->[1];
     my $idno =  XML::LibXML::Element->new("idno");

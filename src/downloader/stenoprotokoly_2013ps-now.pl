@@ -349,6 +349,7 @@ sub record_exporter {
           id => $$ref_author->{author_id},
           govern_id => $$ref_author->{auth_govern_id},
           role => $$ref_author->{role},
+          link => $$ref_author->{link},
         },
 
        # link =>  $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//'')
@@ -406,12 +407,14 @@ sub record_exporter {
       my $auth_id;
       my $govern_id;
       my $post_id;
+      my $auth_link;
 
       if ($a) {
         $auth =  trim xpath_string('.//* | ./text()',$a);
         ($auth_id) = (xpath_string('.//@href',$a)||'') =~ m/id=(\d+)/;
         ($govern_id) = (xpath_string('.//@href',$a)||'') =~ m/clenove-vlady.*\/(.*?)\//;
         $post_id = xpath_string('.//@id',$a);
+        $auth_link = xpath_string('.//@href',$a) unless $auth_id || $govern_id;
         $a->unbindNode();
         $cnt_text = ScrapperUfal::html2text($cnt);
       }
@@ -421,6 +424,7 @@ sub record_exporter {
       $$ref_author->{author} = $auth;
       $$ref_author->{author_id} = $auth_id;
       $$ref_author->{auth_govern_id} = $govern_id;
+      $$ref_author->{link} = $auth_link;
       $$ref_author->{role} = get_role($$ref_author->{author});
       ### ($$ref_post->{speechnote}) = grep {m/^###.*|\@\@$/} xpath_string('./comment()',$cnt); # not at this page
       $$ref_post->{id}->{post} = $post_id;
@@ -433,6 +437,7 @@ sub record_exporter {
           id => $$ref_author->{author_id},
           govern_id => $$ref_author->{auth_govern_id},
           role => $$ref_author->{role},
+          link => $$ref_author->{link},
         },
         link =>  $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//'')
       );
