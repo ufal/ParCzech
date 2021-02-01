@@ -74,6 +74,18 @@ sub toString {
   return $self->{DOM}->toString();
 }
 
+sub addTitleSuffix {
+  my $self = shift;
+  my $suffix = shift;
+  my %opts = @_;
+  my @cond;
+  push @cond, "\@xml:lang='$opts{lang}'" if $opts{lang};
+  push @cond, "\@type='$opts{type}'" if $opts{type};
+  my $cond_str = join(' and ',@cond);
+  for my $titlenode (  $self->{TITLESTMT}->findnodes("./title[$cond_str]") ){
+    $titlenode->appendText($suffix);
+  }
+}
 
 sub toFile {
   my $self = shift;

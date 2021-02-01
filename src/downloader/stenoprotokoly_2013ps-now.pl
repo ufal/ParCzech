@@ -33,8 +33,8 @@ my $config = {
     {
       type => 'main',
       text => {
-        cs => 'Český parlamentní korpus, Poslanecká sněmovna [ParCzech]',
-        en => 'Czech parliamentary corpus, Chamber of Deputies [ParCzech]'
+        cs => 'Český parlamentní korpus, Poslanecká sněmovna',
+        en => 'Czech parliamentary corpus, Chamber of Deputies'
       }
     },
     {
@@ -45,6 +45,7 @@ my $config = {
       }
     }
   ],
+  titleSuffix => '[ParCzech]',
   place => [
     {
       text => 'Parlament České republiky - Poslanecká sněmovna',
@@ -464,6 +465,7 @@ sub record_exporter {
 
 export_TEI();
 $teiCorpus->addSourceDesc();
+$teiCorpus->addTitleSuffix(' '.$config->{titleSuffix}, type=>'main', lang=>undef);
 $teiCorpus->toFile();
 
 
@@ -498,6 +500,7 @@ sub init_TEI {
 sub export_TEI {
   if($teiFile && !$teiFile->isEmpty()) {
     $teiFile->addSourceDesc();
+    $teiFile->addTitleSuffix(sprintf(', %s %s %s',$teiFile->getFromDate()->strftime('%Y-%m-%d'), $teiFile->teiID(),$config->{titleSuffix}), type=>'main', lang=>undef);
     my $filepath = $teiFile->toFile();
     debug_print( "SAVING DOCUMENT TO $filepath", __LINE__, -1);
     $teiCorpus->addTeiFile($filepath, $topic_cntr,$teiFile);

@@ -68,10 +68,15 @@
   </xsl:template>
 
   <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:title[@type='main' and @xml:lang='cs']">
-    <xsl:copy><xsl:apply-templates select="@*"/>Český parlamentní korpus ParlaMint-CZ [ParlaMint]</xsl:copy>
+    <xsl:copy><xsl:apply-templates select="@*"/>Český parlamentní korpus ParlaMint-CZ, <xsl:call-template name="teiHeaderInterfix" />[ParlaMint]</xsl:copy>
   </xsl:template>
   <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:title[@type='main' and @xml:lang='en']">
-    <xsl:copy><xsl:apply-templates select="@*"/>Czech parliamentary corpus ParlaMint-CZ [ParlaMint]</xsl:copy>
+    <xsl:copy><xsl:apply-templates select="@*"/>Czech parliamentary corpus ParlaMint-CZ, <xsl:call-template name="teiHeaderInterfix" />[ParlaMint]</xsl:copy>
+  </xsl:template>
+  <xsl:template name="teiHeaderInterfix">
+    <xsl:if test="/tei:TEI">
+      <xsl:value-of select="concat(//tei:sourceDesc/tei:bibl[1]/tei:date/@when,' ',/*/@xml:id,' ')" />
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:funder">
