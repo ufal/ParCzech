@@ -218,6 +218,9 @@ sub addToElemsQueue {
   my $element = shift;
   my $no_endprint = shift // 0; # if zero - no printing at closing tei (audio and pb)
   push @{$self->{QUEUE}},[$element, $no_endprint];
+
+  # append queue if utterance is empty
+  $self->appendQueue(0,$self->{activeUtterance}) if $self->{activeUtterance} && ! $self->{activeUtterance}->hasChildNodes()
 }
 sub addToUtterance {
   my $self = shift;
