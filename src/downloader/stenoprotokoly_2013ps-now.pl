@@ -607,9 +607,12 @@ sub create_ref_node {
 sub get_role {
   my $text = shift;
   return 'chair' if $text =~ m/ PSP /; # Předseda / Místopředseda
+  return 'chair' if $text =~ m/^Předsedající/; #
   return 'regular' if $text =~ m/^Poslan/i;
   return 'guest' if $text =~ m/^Senátor/i;
-  return 'regular';
+  return 'regular' if $text =~ m/^Ministr/i;
+  return 'regular' if $text =~ m/^[^ ]*předsed[^ ]* vlády/i;
+  return 'guest'; # Členka rady, Guvernér, Primátor, Člen zastupitelstva, Prezident, Hejtman
 }
 
 sub debug_print {
