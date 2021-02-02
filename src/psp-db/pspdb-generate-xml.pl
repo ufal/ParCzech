@@ -203,6 +203,19 @@ my $xpc = ParCzech::PipeLine::FileManager::TeiFile::new_XPathContext();
 
 for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
   my $id = $person->getAttributeNS($xpc->lookupNs('xml'),'id');
+
+  unless($id =~ m/(-?)([0-9]+)$/){ # no id, try to find id in government persons
+    my $forename = trim($xpc->findvalue('./tei:persName/tei:forename/text()',$person));
+    my $surname = trim($xpc->findvalue('./tei:persName/tei:surname/text()',$person));
+    print STDERR "looking for $forename $surname in gov_osoby\n";
+    my $sth = $pspdb->prepare(sprintf('SELECT * FROM gov_osoby WHERE jmeno="%s" AND prijmeni="%s"', $forename, $surname));
+    $sth->execute;
+    if(my $idpers = $sth->fetchrow_hashref){
+      print STDERR "\tFOUND (GOV-$idpers->{id_osoba})\n";
+      $id.='-'.$idpers->{id_osoba};
+    }
+  }
+
   if($id =~ m/(-?)([0-9]+)$/) {
     my $prefix = $1 ? 'gov_' : '';
     my $id_osoba = $2;
@@ -380,7 +393,12 @@ ParCzech::PipeLine::FileManager::XML::save_to_file($orglist->getXML_DOM(), File:
 
 
 
-
+sub trim {
+  my $str = shift;
+  $str =~ s/^\s*//;
+  $str =~ s/\s*$//;
+  return $str;
+}
 
 
 sub create_and_fill_table {
