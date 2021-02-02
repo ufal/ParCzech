@@ -69,7 +69,7 @@ log "CONFIG FILE: $CONFIG_FILE"
 
 if [ -z "$OUTPUT_DIR" ]; then
   export ID=`date +"%Y%m%dT%H%M%S"`
-  OUTPUT_DIR="$PWD/out/ParlaMint/$ID"
+  OUTPUT_DIR="$DATA_DIR/ParlaMint/$ID"
 fi
 
 
