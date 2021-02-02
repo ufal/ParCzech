@@ -249,6 +249,16 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
         $sex->appendTextNode($pers->{pohlavi} eq 'M' ? 'mužské' : 'ženské');
         $sex->setAttribute('value',$pers->{pohlavi} eq 'M' ? 'M' : 'F') ;
       }
+
+      if($pers->{narozeni}){
+        my $birth = $person->addNewChild( undef, 'birth');
+        $birth->setAttribute('when',$pers->{narozeni}) ;
+      }
+      if($pers->{umrti}){
+        my $death = $person->addNewChild( undef, 'death');
+        $death->setAttribute('when',$pers->{umrti}) ;
+      }
+
       if($pers->{TYPE} eq 'reg') {
         # table poslanec
         $sth = $pspdb->prepare(sprintf(
