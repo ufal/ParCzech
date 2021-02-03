@@ -292,7 +292,7 @@ for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
 
         print STDERR "MATCHING (REG-$pers->{id_osoba}) '$pers->{jmeno} $pers->{prijmeni} nar. ",($pers->{narozeni}//'???'),"'\n";
         while(my $pm = $sth->fetchrow_hashref ) {
-          addAffiliation($person,$pm->{obd_id_organ}, 'MP', $pm->{od_obd}, $pm->{do_obd});
+          # addAffiliation($person,$pm->{obd_id_organ}, 'MP', $pm->{od_obd}, $pm->{do_obd}); # duplicite
           addAffiliation($person,$pm->{kand_id_organ}, 'candidateMP', $pm->{od_obd}, $pm->{do_obd});
         }
 
@@ -475,8 +475,10 @@ sub fill_table {
 sub addAffiliation {
   my ($elem,$id,$role,$from,$to) = @_;
   my $aff = $elem->addNewChild( undef, 'affiliation');
-  my $ref = $orglist->addOrg($id)->id();
+  my $org = $orglist->addOrg($id);
+  my $ref = $org->id();
   $aff->setAttribute('ref',"#$ref");
+  $role='MP' if $org->role() eq 'parliament' && ($role//'') eq 'member';
   $aff->setAttribute('role',listOrg::create_ID($patcher->translate_static($role))) if $role;
   if($from) {
     $from =~ s/ /T/;
@@ -687,6 +689,10 @@ sub buildID {
 
 sub id {
   return shift->{id}
+}
+
+sub role {
+  return shift->{role}
 }
 
 sub addChild {
