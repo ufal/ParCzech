@@ -37,6 +37,10 @@ if [ -z $XSL_TRANSFORM ] ; then
 fi
 
 CORPUS=`realpath $INDIR/ParlaMint-CZ.xml`
+if [ ! -f $CORPUS ] ; then
+  CORPUS=`realpath $INDIR/ParlaMint-CZ.ana.xml`
+fi
+
 
 for FILE in $INDIR/ParlaMint-CZ_*.xml ;
 do
