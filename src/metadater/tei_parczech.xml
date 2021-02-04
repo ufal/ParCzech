@@ -14,6 +14,7 @@
     <pcz:item pcz:dep="ParCzech-live" />
     <pcz:item pcz:dep="respKopp.ann" />
     <pcz:item pcz:dep="tagsDecl.ann" />
+    <pcz:item pcz:dep="ParCzech-extent.ann" />
   </pcz:meta>
 
   <pcz:meta pcz:name="ParCzech-live-corpus">
@@ -31,6 +32,7 @@
     <pcz:item pcz:dep="ParCzech-live-corpus" />
     <pcz:item pcz:dep="respKopp.ann" />
     <pcz:item pcz:dep="tagsDecl.ann" />
+    <pcz:item pcz:dep="ParCzech-extent.ann" />
     <pcz:item pcz:dep="udpipe2" />
     <pcz:item pcz:dep="udpipe2.app-czech-pdt-ud-2.6-200830" />
 
@@ -89,6 +91,16 @@
       <pcz:tei>
         <measure unit="speeches" quantity="[[ELEMCNT:u]]" xml:lang="cs">[[ELEMCNT:u]] promluv</measure>
         <measure unit="speeches" quantity="[[ELEMCNT:u]]" xml:lang="en">[[ELEMCNT:u]] speeches</measure>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
+
+  <pcz:meta pcz:name="ParCzech-extent.ann">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:extent">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:extent/tei:measure[@unit='words']" />
+      </pcz:test>
+      <pcz:tei>
         <measure unit="words" quantity="[[ELEMCNT:w]]" xml:lang="cs">[[ELEMCNT:w]] slov</measure>
         <measure unit="words" quantity="[[ELEMCNT:w]]" xml:lang="en">[[ELEMCNT:w]] words</measure>
       </pcz:tei>

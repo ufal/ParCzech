@@ -614,6 +614,26 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus.ann" \
 
 fi; # END METADATER.teiCorpus.ann CONDITION
 
+######################################################
+### add number of words to downloader-tei-meta/*   ###
+######################################################
+
+for cnt_line in  `grep "|ELEMCNT:w=" "$VAR_LOG_ANN"`
+do
+  fullpath=${cnt_line%|*}
+  if [ $fullpath == 'AGGREGATED' ] ; then
+    FILENAME=$TEICORPUS_FILENAME
+  else
+    FILENAME=`echo "$fullpath"| sed "s/^.*$ID\///;s/$INTERFIX.xml$/xml/"`
+  fi
+  echo "patching: #words=${cnt_line##*|} $DOWNLOADER_TEI_META/$FILENAME"
+  perl -I lib metadater/metadater.pl --metadata-name "ParCzech-extent.ann" \
+                                   --metadata-file metadater/tei_parczech.xml \
+                                   --input-file "$DOWNLOADER_TEI_META/$FILENAME"  \
+                                   --output-file "$DOWNLOADER_TEI_META/$FILENAME" \
+                                   --variables "${cnt_line##*|}"
+done
+
 
 if [ "$EXIT_CONDITION" == "ann-meta" ] ; then
   echo "EXITTING: $EXIT_CONDITION"
