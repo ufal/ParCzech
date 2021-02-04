@@ -23,6 +23,7 @@ my $url = 'http://lindat.mff.cuni.cz/services/nametag/api/recognize';
 my $word_element_name = 'w';
 my $punct_element_name = 'pc';
 my $sent_element_name = 's';
+my $connl_type;
 
 my $max_sent_cnt = 500;
 
@@ -30,6 +31,7 @@ my $max_sent_cnt = 500;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize, tag and lemmatize and parse to stdout, do not change the database
+            'conll2003' => \$connl_type,
             'model=s' => \$model, # udpipe model tagger
             'word-element=s' => \$word_element_name,
             'punct-element=s' => \$punct_element_name,
@@ -118,10 +120,25 @@ sub fill_vertical_data_doc {
     my $nm = $nodeTagger->add_name_entity($type, $linenumbers[0], $linenumbers[$#linenumbers], $name_cnt);
     $nm->setAttribute('LABEL',$text) if $nm and $debug;
   }
+  $nodeTagger->postprocess(\&cnec2connl) if $connl_type;
   return $name_cnt;
 }
 
-
+sub cnec2connl {
+  my $node = shift;
+  my %mapping = (g => 'LOC', i => 'ORG', p => 'PER');
+  my $cat = $node->getAttribute('ana');
+  $cat =~ s/^.*://;
+  print STDERR " $cat";
+  print STDERR $xpc->exists('./ancestor::*[local-name()="name"]',$node);
+  if($xpc->exists('./ancestor::*[local-name()="name"]',$node)){
+    print STDERR "SKIPPING\n";
+    return;
+  }
+  my $nametype = $mapping{substr(lc $cat,0,1)} // 'MISC';
+  print STDERR "=",$nametype,"\n";
+  $node->setAttribute('type',$nametype);
+}
 
 sub usage_exit {
    my ($fm_args,$fm_desc) =  @{ParCzech::PipeLine::FileManager::usage('tei')};
@@ -156,7 +173,7 @@ sub new {
   bless $self, $class;
   $self->{nodes} = [@_];
   $self->{id_prefix} = 'ne';
-
+  $self->{name_ent} = [];
   return $self;
 }
 
@@ -165,6 +182,11 @@ sub set_id_prefix {
   $self->{id_prefix} = shift || $self->{id_prefix};
 }
 
+sub postprocess {
+  my $self = shift;
+  my $func = shift;
+  $func->($_) for @{$self->{name_ent}};
+}
 
 sub add_name_entity {
   my $self = shift;
@@ -204,6 +226,7 @@ sub cover_tokens_with_name {
   # append last child
   $ptr->unbindNode();
   $name_elem->appendChild($ptr);
+  push @{$self->{name_ent}}, $name_elem;
   return  $name_elem;
 }
 

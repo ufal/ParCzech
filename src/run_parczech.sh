@@ -550,7 +550,8 @@ if skip_process "nametag2" "$NAMETAG_TEI" "$EXISTING_FILELIST" ; then # BEGIN NA
 mkdir -p $NAMETAG_TEI
 log "annotating nametag2  $NAMETAG_TEI"
 
-perl -I lib nametag2/nametag2.pl --model=czech-cnec2.0-200831 \
+perl -I lib nametag2/nametag2.pl --conll2003 \
+                                 --model=czech-cnec2.0-200831 \
                                  --filelist $TEI_FILELIST \
                                  --input-dir $UDPIPE_TEI \
                                  --output-dir $NAMETAG_TEI

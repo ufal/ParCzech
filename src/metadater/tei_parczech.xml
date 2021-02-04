@@ -34,10 +34,10 @@
     <pcz:item pcz:dep="udpipe2" />
     <pcz:item pcz:dep="udpipe2.app-czech-pdt-ud-2.6-200830" />
 
-    <!-- TEMPORARY -->
+
+    <pcz:item pcz:dep="NER.conll2003" />
     <pcz:item pcz:dep="nametag2" />
     <pcz:item pcz:dep="nametag2.app-czech-cnec2.0-200831" />
-    <!-- -->
 
 
   </pcz:meta>
@@ -534,6 +534,33 @@
     </pcz:item>
   </pcz:meta>
 -->
+
+  <pcz:meta pcz:name="NER.conll2003">
+    <pcz:test>
+      <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='NER']" />
+    </pcz:test>
+    <pcz:tei>
+      <taxonomy xml:id="NER">
+        <desc xml:lang="en"><term>Named entities</term></desc>
+        <category xml:id="PER">
+          <catDesc xml:lang="cs"><term>osoba</term></catDesc>
+          <catDesc xml:lang="en"><term>person</term></catDesc>
+        </category>
+        <category xml:id="LOC">
+          <catDesc xml:lang="cs"><term>místo</term></catDesc>
+          <catDesc xml:lang="en"><term>location</term></catDesc>
+        </category>
+        <category xml:id="ORG">
+          <catDesc xml:lang="cs"><term>organizace</term></catDesc>
+          <catDesc xml:lang="en"><term>organization</term></catDesc>
+        </category>
+        <category xml:id="MISC">
+          <catDesc xml:lang="cs"><term>různé</term></catDesc>
+          <catDesc xml:lang="en"><term>miscellaneous</term></catDesc>
+        </category>
+      </taxonomy>
+    </pcz:tei>
+  </pcz:meta>
 
   <pcz:meta pcz:name="nametag2">
     <pcz:item pcz:dep="nametag2.prefix" />
