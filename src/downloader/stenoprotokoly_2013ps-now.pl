@@ -588,6 +588,7 @@ sub create_ref_node {
   $href = URI->new_abs($href,$URL) if $href;
   my $id = $a->hasAttribute('id') ? $a->getAttribute('id') : '';
   my $text = ScrapperUfal::html2text($a);
+  $text =~ s/\N{NO-BREAK SPACE}/ /g;
 
   my $ref = XML::LibXML::Element->new("ref");
   my $type;
