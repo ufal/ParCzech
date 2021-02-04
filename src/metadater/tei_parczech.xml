@@ -635,165 +635,165 @@
         <taxonomy xml:id="NER.cnec2.0">
           <desc xml:lang="en">Named entities</desc>
           <category xml:id="t">
-            <catDesc xml:lang="en">time expressions</catDesc>
+            <catDesc xml:lang="en"><term>time expressions</term></catDesc>
             <category xml:id="ty">
-              <catDesc xml:lang="en">years</catDesc>
+              <catDesc xml:lang="en"><term>years</term></catDesc>
             </category>
             <category xml:id="tf">
-              <catDesc xml:lang="en">feasts</catDesc>
+              <catDesc xml:lang="en"><term>feasts</term></catDesc>
             </category>
             <category xml:id="td">
-              <catDesc xml:lang="en">days</catDesc>
+              <catDesc xml:lang="en"><term>days</term></catDesc>
             </category>
             <category xml:id="th">
-              <catDesc xml:lang="en">hours</catDesc>
+              <catDesc xml:lang="en"><term>hours</term></catDesc>
             </category>
             <category xml:id="tm">
-              <catDesc xml:lang="en">months</catDesc>
+              <catDesc xml:lang="en"><term>months</term></catDesc>
             </category>
           </category>
           <category xml:id="m">
-            <catDesc xml:lang="en">media names</catDesc>
+            <catDesc xml:lang="en"><term>media names</term></catDesc>
             <category xml:id="me">
-              <catDesc xml:lang="en">email address</catDesc>
+              <catDesc xml:lang="en"><term>email address</term></catDesc>
             </category>
             <category xml:id="ms">
-              <catDesc xml:lang="en">radio and tv stations</catDesc>
+              <catDesc xml:lang="en"><term>radio and tv stations</term></catDesc>
             </category>
             <category xml:id="mi">
-              <catDesc xml:lang="en">internet links</catDesc>
+              <catDesc xml:lang="en"><term>internet links</term></catDesc>
             </category>
             <category xml:id="mn">
-              <catDesc xml:lang="en">periodical</catDesc>
+              <catDesc xml:lang="en"><term>periodical</term></catDesc>
             </category>
           </category>
           <category xml:id="i">
-            <catDesc xml:lang="en">institutions</catDesc>
+            <catDesc xml:lang="en"><term>institutions</term></catDesc>
             <category xml:id="if">
-              <catDesc xml:lang="en">companies, concerns...</catDesc>
+              <catDesc xml:lang="en"><term>companies, concerns...</term></catDesc>
             </category>
             <category xml:id="io">
-              <catDesc xml:lang="en">government/political inst.</catDesc>
+              <catDesc xml:lang="en"><term>government/political inst.</term></catDesc>
             </category>
             <category xml:id="i_">
-              <catDesc xml:lang="en">underspecified</catDesc>
+              <catDesc xml:lang="en"><term>underspecified</term></catDesc>
             </category>
             <category xml:id="ia">
-              <catDesc xml:lang="en">conferences/contests</catDesc>
+              <catDesc xml:lang="en"><term>conferences/contests</term></catDesc>
             </category>
             <category xml:id="ic">
-              <catDesc xml:lang="en">cult./educ./scient. inst.</catDesc>
+              <catDesc xml:lang="en"><term>cult./educ./scient. inst.</term></catDesc>
             </category>
           </category>
           <category xml:id="a">
-            <catDesc xml:lang="en">numbers in addresses</catDesc>
+            <catDesc xml:lang="en"><term>numbers in addresses</term></catDesc>
             <category xml:id="at">
-              <catDesc xml:lang="en">phone/fax numbers</catDesc>
+              <catDesc xml:lang="en"><term>phone/fax numbers</term></catDesc>
             </category>
             <category xml:id="az">
-              <catDesc xml:lang="en">zip codes</catDesc>
+              <catDesc xml:lang="en"><term>zip codes</term></catDesc>
             </category>
             <category xml:id="ah">
-              <catDesc xml:lang="en">street numbers</catDesc>
+              <catDesc xml:lang="en"><term>street numbers</term></catDesc>
             </category>
           </category>
           <category xml:id="o">
-            <catDesc xml:lang="en">artifact names</catDesc>
+            <catDesc xml:lang="en"><term>artifact names</term></catDesc>
             <category xml:id="or">
-              <catDesc xml:lang="en">directives, norms</catDesc>
+              <catDesc xml:lang="en"><term>directives, norms</term></catDesc>
             </category>
             <category xml:id="op">
-              <catDesc xml:lang="en">products</catDesc>
+              <catDesc xml:lang="en"><term>products</term></catDesc>
             </category>
             <category xml:id="oa">
-              <catDesc xml:lang="en">cultural artifacts (books, movies)</catDesc>
+              <catDesc xml:lang="en"><term>cultural artifacts (books, movies)</term></catDesc>
             </category>
             <category xml:id="oe">
-              <catDesc xml:lang="en">measure units</catDesc>
+              <catDesc xml:lang="en"><term>measure units</term></catDesc>
             </category>
             <category xml:id="om">
-              <catDesc xml:lang="en">currency units</catDesc>
+              <catDesc xml:lang="en"><term>currency units</term></catDesc>
             </category>
             <category xml:id="o_">
-              <catDesc xml:lang="en">underspecified</catDesc>
+              <catDesc xml:lang="en"><term>underspecified</term></catDesc>
             </category>
           </category>
           <category xml:id="p">
-            <catDesc xml:lang="en">personal names</catDesc>
+            <catDesc xml:lang="en"><term>personal names</term></catDesc>
             <category xml:id="pm">
-              <catDesc xml:lang="en">second names</catDesc>
+              <catDesc xml:lang="en"><term>second names</term></catDesc>
             </category>
             <category xml:id="pc">
-              <catDesc xml:lang="en">inhabitant names</catDesc>
+              <catDesc xml:lang="en"><term>inhabitant names</term></catDesc>
             </category>
             <category xml:id="p_">
-              <catDesc xml:lang="en">underspecified</catDesc>
+              <catDesc xml:lang="en"><term>underspecified</term></catDesc>
             </category>
             <category xml:id="ps">
-              <catDesc xml:lang="en">surnames</catDesc>
+              <catDesc xml:lang="en"><term>surnames</term></catDesc>
             </category>
             <category xml:id="pf">
-              <catDesc xml:lang="en">first names</catDesc>
+              <catDesc xml:lang="en"><term>first names</term></catDesc>
             </category>
             <category xml:id="pd">
-              <catDesc xml:lang="en">(academic) titles</catDesc>
+              <catDesc xml:lang="en"><term>(academic) titles</term></catDesc>
             </category>
             <category xml:id="pp">
-              <catDesc xml:lang="en">relig./myth persons</catDesc>
+              <catDesc xml:lang="en"><term>relig./myth persons</term></catDesc>
             </category>
           </category>
           <category xml:id="n">
-            <catDesc xml:lang="en">number expressions</catDesc>
+            <catDesc xml:lang="en"><term>number expressions</term></catDesc>
             <category xml:id="nc">
-              <catDesc xml:lang="en">cardinal numbers</catDesc>
+              <catDesc xml:lang="en"><term>cardinal numbers</term></catDesc>
             </category>
             <category xml:id="n_">
-              <catDesc xml:lang="en">underspecified</catDesc>
+              <catDesc xml:lang="en"><term>underspecified</term></catDesc>
             </category>
             <category xml:id="ni">
-              <catDesc xml:lang="en">itemizer</catDesc>
+              <catDesc xml:lang="en"><term>itemizer</term></catDesc>
             </category>
             <category xml:id="nb">
-              <catDesc xml:lang="en">vol./page/chap./sec./fig. numbers</catDesc>
+              <catDesc xml:lang="en"><term>vol./page/chap./sec./fig. numbers</term></catDesc>
             </category>
             <category xml:id="na">
-              <catDesc xml:lang="en">age</catDesc>
+              <catDesc xml:lang="en"><term>age</term></catDesc>
             </category>
             <category xml:id="ns">
-              <catDesc xml:lang="en">sport score</catDesc>
+              <catDesc xml:lang="en"><term>sport score</term></catDesc>
             </category>
             <category xml:id="no">
-              <catDesc xml:lang="en">ordinal numbers</catDesc>
+              <catDesc xml:lang="en"><term>ordinal numbers</term></catDesc>
             </category>
           </category>
           <category xml:id="g">
-            <catDesc xml:lang="en">geographical names</catDesc>
+            <catDesc xml:lang="en"><term>geographical names</term></catDesc>
             <category xml:id="gl">
-              <catDesc xml:lang="en">geographical names - nature areas / objects</catDesc>
+              <catDesc xml:lang="en"><term>geographical names - nature areas / objects</term></catDesc>
             </category>
             <category xml:id="gu">
-              <catDesc xml:lang="en">cities/towns</catDesc>
+              <catDesc xml:lang="en"><term>cities/towns</term></catDesc>
             </category>
             <category xml:id="gh">
-              <catDesc xml:lang="en">geographical names - hydronyms</catDesc>
+              <catDesc xml:lang="en"><term>geographical names - hydronyms</term></catDesc>
             </category>
             <category xml:id="g_">
-              <catDesc xml:lang="en">geographical names - underspecified</catDesc>
+              <catDesc xml:lang="en"><term>geographical names - underspecified</term></catDesc>
             </category>
             <category xml:id="gr">
-              <catDesc xml:lang="en">territorial names</catDesc>
+              <catDesc xml:lang="en"><term>territorial names</term></catDesc>
             </category>
             <category xml:id="gq">
-              <catDesc xml:lang="en">geographical names - urban parts</catDesc>
+              <catDesc xml:lang="en"><term>geographical names - urban parts</term></catDesc>
             </category>
             <category xml:id="gs">
-              <catDesc xml:lang="en">streets, squares</catDesc>
+              <catDesc xml:lang="en"><term>streets, squares</term></catDesc>
             </category>
             <category xml:id="gc">
-              <catDesc xml:lang="en">geographical names - states</catDesc>
+              <catDesc xml:lang="en"><term>geographical names - states</term></catDesc>
             </category>
             <category xml:id="gt">
-              <catDesc xml:lang="en">continents</catDesc>
+              <catDesc xml:lang="en"><term>continents</term></catDesc>
             </category>
           </category>
         </taxonomy>
@@ -803,6 +803,9 @@
 
   <pcz:meta pcz:name="ud-syn-taxonomy">
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='UD-SYN']" />
+      </pcz:test>
       <pcz:tei>
         <taxonomy xml:id="UD-SYN">
            <desc xml:lang="en"><term>UD syntactic relations</term></desc>
