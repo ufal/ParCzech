@@ -561,7 +561,7 @@
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@tei:ident='ne']" />
       </pcz:test>
       <pcz:tei>
-        <prefixDef ident="ne" matchPattern="(.+)" replacementPattern="#$1">
+        <prefixDef ident="ne" matchPattern="(.+)" replacementPattern="#NER.cnec2.0.$1">
           <p>Taxonomy for named entities (cnec2.0)</p>
         </prefixDef>
       </pcz:tei>
@@ -634,165 +634,165 @@
       <pcz:tei>
         <taxonomy xml:id="NER.cnec2.0">
           <desc xml:lang="en"><term> CNEC 2.0 Named Entities</term></desc>
-          <category xml:id="t">
+          <category xml:id="NER.cnec2.0.t">
             <catDesc xml:lang="en"><term>time expressions</term></catDesc>
-            <category xml:id="ty">
+            <category xml:id="NER.cnec2.0.ty">
               <catDesc xml:lang="en"><term>years</term></catDesc>
             </category>
-            <category xml:id="tf">
+            <category xml:id="NER.cnec2.0.tf">
               <catDesc xml:lang="en"><term>feasts</term></catDesc>
             </category>
-            <category xml:id="td">
+            <category xml:id="NER.cnec2.0.td">
               <catDesc xml:lang="en"><term>days</term></catDesc>
             </category>
-            <category xml:id="th">
+            <category xml:id="NER.cnec2.0.th">
               <catDesc xml:lang="en"><term>hours</term></catDesc>
             </category>
-            <category xml:id="tm">
+            <category xml:id="NER.cnec2.0.tm">
               <catDesc xml:lang="en"><term>months</term></catDesc>
             </category>
           </category>
-          <category xml:id="m">
+          <category xml:id="NER.cnec2.0.m">
             <catDesc xml:lang="en"><term>media names</term></catDesc>
-            <category xml:id="me">
+            <category xml:id="NER.cnec2.0.me">
               <catDesc xml:lang="en"><term>email address</term></catDesc>
             </category>
-            <category xml:id="ms">
+            <category xml:id="NER.cnec2.0.ms">
               <catDesc xml:lang="en"><term>radio and tv stations</term></catDesc>
             </category>
-            <category xml:id="mi">
+            <category xml:id="NER.cnec2.0.mi">
               <catDesc xml:lang="en"><term>internet links</term></catDesc>
             </category>
-            <category xml:id="mn">
+            <category xml:id="NER.cnec2.0.mn">
               <catDesc xml:lang="en"><term>periodical</term></catDesc>
             </category>
           </category>
-          <category xml:id="i">
+          <category xml:id="NER.cnec2.0.i">
             <catDesc xml:lang="en"><term>institutions</term></catDesc>
-            <category xml:id="if">
+            <category xml:id="NER.cnec2.0.if">
               <catDesc xml:lang="en"><term>companies, concerns...</term></catDesc>
             </category>
-            <category xml:id="io">
+            <category xml:id="NER.cnec2.0.io">
               <catDesc xml:lang="en"><term>government/political inst.</term></catDesc>
             </category>
-            <category xml:id="i_">
+            <category xml:id="NER.cnec2.0.i_">
               <catDesc xml:lang="en"><term>underspecified</term></catDesc>
             </category>
-            <category xml:id="ia">
+            <category xml:id="NER.cnec2.0.ia">
               <catDesc xml:lang="en"><term>conferences/contests</term></catDesc>
             </category>
-            <category xml:id="ic">
+            <category xml:id="NER.cnec2.0.ic">
               <catDesc xml:lang="en"><term>cult./educ./scient. inst.</term></catDesc>
             </category>
           </category>
-          <category xml:id="a">
+          <category xml:id="NER.cnec2.0.a">
             <catDesc xml:lang="en"><term>numbers in addresses</term></catDesc>
-            <category xml:id="at">
+            <category xml:id="NER.cnec2.0.at">
               <catDesc xml:lang="en"><term>phone/fax numbers</term></catDesc>
             </category>
-            <category xml:id="az">
+            <category xml:id="NER.cnec2.0.az">
               <catDesc xml:lang="en"><term>zip codes</term></catDesc>
             </category>
-            <category xml:id="ah">
+            <category xml:id="NER.cnec2.0.ah">
               <catDesc xml:lang="en"><term>street numbers</term></catDesc>
             </category>
           </category>
-          <category xml:id="o">
+          <category xml:id="NER.cnec2.0.o">
             <catDesc xml:lang="en"><term>artifact names</term></catDesc>
-            <category xml:id="or">
+            <category xml:id="NER.cnec2.0.or">
               <catDesc xml:lang="en"><term>directives, norms</term></catDesc>
             </category>
-            <category xml:id="op">
+            <category xml:id="NER.cnec2.0.op">
               <catDesc xml:lang="en"><term>products</term></catDesc>
             </category>
-            <category xml:id="oa">
+            <category xml:id="NER.cnec2.0.oa">
               <catDesc xml:lang="en"><term>cultural artifacts (books, movies)</term></catDesc>
             </category>
-            <category xml:id="oe">
+            <category xml:id="NER.cnec2.0.oe">
               <catDesc xml:lang="en"><term>measure units</term></catDesc>
             </category>
-            <category xml:id="om">
+            <category xml:id="NER.cnec2.0.om">
               <catDesc xml:lang="en"><term>currency units</term></catDesc>
             </category>
-            <category xml:id="o_">
+            <category xml:id="NER.cnec2.0.o_">
               <catDesc xml:lang="en"><term>underspecified</term></catDesc>
             </category>
           </category>
-          <category xml:id="p">
+          <category xml:id="NER.cnec2.0.p">
             <catDesc xml:lang="en"><term>personal names</term></catDesc>
-            <category xml:id="pm">
+            <category xml:id="NER.cnec2.0.pm">
               <catDesc xml:lang="en"><term>second names</term></catDesc>
             </category>
-            <category xml:id="pc">
+            <category xml:id="NER.cnec2.0.pc">
               <catDesc xml:lang="en"><term>inhabitant names</term></catDesc>
             </category>
-            <category xml:id="p_">
+            <category xml:id="NER.cnec2.0.p_">
               <catDesc xml:lang="en"><term>underspecified</term></catDesc>
             </category>
-            <category xml:id="ps">
+            <category xml:id="NER.cnec2.0.ps">
               <catDesc xml:lang="en"><term>surnames</term></catDesc>
             </category>
-            <category xml:id="pf">
+            <category xml:id="NER.cnec2.0.pf">
               <catDesc xml:lang="en"><term>first names</term></catDesc>
             </category>
-            <category xml:id="pd">
+            <category xml:id="NER.cnec2.0.pd">
               <catDesc xml:lang="en"><term>(academic) titles</term></catDesc>
             </category>
-            <category xml:id="pp">
+            <category xml:id="NER.cnec2.0.pp">
               <catDesc xml:lang="en"><term>relig./myth persons</term></catDesc>
             </category>
           </category>
-          <category xml:id="n">
+          <category xml:id="NER.cnec2.0.n">
             <catDesc xml:lang="en"><term>number expressions</term></catDesc>
-            <category xml:id="nc">
+            <category xml:id="NER.cnec2.0.nc">
               <catDesc xml:lang="en"><term>cardinal numbers</term></catDesc>
             </category>
-            <category xml:id="n_">
+            <category xml:id="NER.cnec2.0.n_">
               <catDesc xml:lang="en"><term>underspecified</term></catDesc>
             </category>
-            <category xml:id="ni">
+            <category xml:id="NER.cnec2.0.ni">
               <catDesc xml:lang="en"><term>itemizer</term></catDesc>
             </category>
-            <category xml:id="nb">
+            <category xml:id="NER.cnec2.0.nb">
               <catDesc xml:lang="en"><term>vol./page/chap./sec./fig. numbers</term></catDesc>
             </category>
-            <category xml:id="na">
+            <category xml:id="NER.cnec2.0.na">
               <catDesc xml:lang="en"><term>age</term></catDesc>
             </category>
-            <category xml:id="ns">
+            <category xml:id="NER.cnec2.0.ns">
               <catDesc xml:lang="en"><term>sport score</term></catDesc>
             </category>
-            <category xml:id="no">
+            <category xml:id="NER.cnec2.0.no">
               <catDesc xml:lang="en"><term>ordinal numbers</term></catDesc>
             </category>
           </category>
-          <category xml:id="g">
+          <category xml:id="NER.cnec2.0.g">
             <catDesc xml:lang="en"><term>geographical names</term></catDesc>
-            <category xml:id="gl">
+            <category xml:id="NER.cnec2.0.gl">
               <catDesc xml:lang="en"><term>geographical names - nature areas / objects</term></catDesc>
             </category>
-            <category xml:id="gu">
+            <category xml:id="NER.cnec2.0.gu">
               <catDesc xml:lang="en"><term>cities/towns</term></catDesc>
             </category>
-            <category xml:id="gh">
+            <category xml:id="NER.cnec2.0.gh">
               <catDesc xml:lang="en"><term>geographical names - hydronyms</term></catDesc>
             </category>
-            <category xml:id="g_">
+            <category xml:id="NER.cnec2.0.g_">
               <catDesc xml:lang="en"><term>geographical names - underspecified</term></catDesc>
             </category>
-            <category xml:id="gr">
+            <category xml:id="NER.cnec2.0.gr">
               <catDesc xml:lang="en"><term>territorial names</term></catDesc>
             </category>
-            <category xml:id="gq">
+            <category xml:id="NER.cnec2.0.gq">
               <catDesc xml:lang="en"><term>geographical names - urban parts</term></catDesc>
             </category>
-            <category xml:id="gs">
+            <category xml:id="NER.cnec2.0.gs">
               <catDesc xml:lang="en"><term>streets, squares</term></catDesc>
             </category>
-            <category xml:id="gc">
+            <category xml:id="NER.cnec2.0.gc">
               <catDesc xml:lang="en"><term>geographical names - states</term></catDesc>
             </category>
-            <category xml:id="gt">
+            <category xml:id="NER.cnec2.0.gt">
               <catDesc xml:lang="en"><term>continents</term></catDesc>
             </category>
           </category>
