@@ -633,7 +633,7 @@
       </pcz:test>
       <pcz:tei>
         <taxonomy xml:id="NER.cnec2.0">
-          <desc xml:lang="en">Named entities</desc>
+          <desc xml:lang="en"><term> CNEC 2.0 Named Entities</term></desc>
           <category xml:id="t">
             <catDesc xml:lang="en"><term>time expressions</term></catDesc>
             <category xml:id="ty">
