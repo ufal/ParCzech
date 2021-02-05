@@ -18,23 +18,23 @@
     </xsl:attribute>
   </xsl:template>
 
-  <xsl:template match="//tei:note[@type='media']">
-    <xsl:message>TEMPORARY REMOVING //note[./media]: <xsl:value-of select="./tei:media/@url" /></xsl:message>
-  </xsl:template>
 
   <xsl:template match="//tei:div//tei:ref">
     <xsl:message>TEMPORARY REMOVING //div//ref: <xsl:value-of select="./@target" /></xsl:message>
-    <xsl:apply-templates select="node()"/>
+    <xsl:call-template name="add-only-childnodes" />
   </xsl:template>
 
   <xsl:template match="//tei:seg//tei:name[not(@type)]">
     <xsl:message>TEMPORARY REMOVING not typed name: <xsl:value-of select="./@ana" /></xsl:message>
+    <xsl:comment>name ana="<xsl:value-of select="./@ana" />"</xsl:comment>
     <xsl:apply-templates select="node()"/>
+    <xsl:comment>name</xsl:comment>
   </xsl:template>
   <xsl:template match="//tei:seg//tei:name[@type]">
     <xsl:message>TEMPORARY REMOVING ana from name: <xsl:value-of select="./@ana" /></xsl:message>
     <xsl:copy>
       <xsl:apply-templates select="@*[not(local-name()='ana')]" />
+      <xsl:comment>ana="<xsl:value-of select="./@ana" />"</xsl:comment>
       <xsl:apply-templates select="node()"/>
     </xsl:copy>
   </xsl:template>
@@ -52,6 +52,17 @@
     </xsl:attribute>
   </xsl:template>
 
+  <xsl:template name="add-only-childnodes">
+    <xsl:if test="./self::*[preceding-sibling::node()[1][self::text()][ends-with(., ' ')]] ">
+      <xsl:message><xsl:value-of select="concat('|',./preceding-sibling::text()[1],'|')" /></xsl:message>
+      <xsl:text> </xsl:text>
+    </xsl:if>
+    <xsl:apply-templates select="node()"/>
+    <xsl:if test="./self::*[following-sibling::node()[1][self::text()][starts-with(., ' ')]] ">
+      <xsl:message><xsl:value-of select="concat('|',./following-sibling::text()[1],'|')" /></xsl:message>
+      <xsl:text> </xsl:text>
+    </xsl:if>
+  </xsl:template>
 
 
 </xsl:stylesheet>
