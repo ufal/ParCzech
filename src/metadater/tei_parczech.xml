@@ -548,6 +548,7 @@
 -->
 
   <pcz:meta pcz:name="NER.conll2003">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
     <pcz:test>
       <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='NER']" />
     </pcz:test>
@@ -572,6 +573,7 @@
         </category>
       </taxonomy>
     </pcz:tei>
+    </pcz:item>
   </pcz:meta>
 
   <pcz:meta pcz:name="nametag2">
