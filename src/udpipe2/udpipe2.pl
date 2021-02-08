@@ -19,7 +19,7 @@ my $dirname = dirname($scriptname);
 
 my $udsyn_taxonomy = File::Spec->catfile($dirname,'tei_udsyn_taxonomy.xml');
 
-my ($debug, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $append_metadata);
+my ($debug, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -36,6 +36,7 @@ my $soft_max_text_length = 100000;
 # 100 000 -> udpipe: 30seconds , script: 3seconds
 
 GetOptions ( ## Command line options
+            'colon2underscore' => \$replace_colons_with_underscores, # replace colons in extended syntax relations with underscore
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize, tag and lemmatize and parse to stdout, do not change the database
             'append-metadata=s' => \$append_metadata, # add metadata from file (prefixes, taxonomy)
@@ -164,6 +165,7 @@ sub fill_conllu_data_doc {
         $nodeFeeder->add_xml_comment($1); # TEMPORARY !!!
       } elsif ($line =~ /^(\d+)\t([^\t]+)\t/) {
         my ($ti,$tt,$tl,$tp,$tg,$tf,$th,$tr, undef ,$tsp) = split(/\t/, $line);
+        $tr =~ s/:/_/g if $replace_colons_with_underscores;
         $nodeFeeder->add_token(
             i=>$ti,
             form => $tt,

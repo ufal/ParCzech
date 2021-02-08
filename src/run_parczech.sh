@@ -523,7 +523,8 @@ if skip_process "udpipe2" "$UDPIPE_TEI" "$EXISTING_FILELIST" ; then # BEGIN UDPI
 mkdir -p $UDPIPE_TEI
 log "annotating udpipe2 $UDPIPE_TEI"
 
-perl -I lib udpipe2/udpipe2.pl --model=czech-pdt-ud-2.6-200830 \
+perl -I lib udpipe2/udpipe2.pl --colon2underscore \
+                               --model=czech-pdt-ud-2.6-200830 \
                                --filelist $TEI_FILELIST \
                                --input-dir $DOWNLOADER_TEI_META \
                                --output-dir $UDPIPE_TEI
