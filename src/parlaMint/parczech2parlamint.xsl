@@ -129,4 +129,14 @@
 
   <xsl:template match="text()"><xsl:value-of select="normalize-space(.)"/></xsl:template>
 
+  <xsl:template name="remove-prefix">
+    <xsl:param name="prefix" />
+    <xsl:variable name="before" select="substring-before(concat(' ',.),concat(' ',$prefix,':'))" />
+    <xsl:variable name="after" select="substring-after(substring-after(concat(' ',.),concat(' ',$prefix,':')),' ')" />
+    <xsl:variable name="result" select="normalize-space(concat($before,' ',$after))" />
+    <xsl:if test="$result">
+      <xsl:copy><xsl:value-of select="$result" /></xsl:copy>
+    </xsl:if>
+  </xsl:template>
+
 </xsl:stylesheet>

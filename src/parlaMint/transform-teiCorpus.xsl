@@ -19,6 +19,7 @@
       </xsl:if>
     </xsl:attribute>
   </xsl:template>
+  <xsl:template match="/tei:teiCorpus/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@ident='pdt']" /><!-- removing pdt prefix definition -->
 
   <xsl:template match="/tei:teiCorpus/xi:include">
     <xsl:element name="xi:include">

@@ -39,6 +39,12 @@
     </xsl:copy>
   </xsl:template>
 
+  <xsl:template match="//tei:*[local-name() = 'w' or local-name() = 'pc']/@ana">
+    <xsl:call-template name="remove-prefix">
+      <xsl:with-param name="prefix" select="string('pdt')" />
+    </xsl:call-template>
+  </xsl:template>
+
   <xsl:template match="//tei:w/@pos" />  <!-- removing  w/@pos -->
   <xsl:template match="//tei:pc/@pos" /> <!-- removing pc/@pos -->
   <xsl:template match="//tei:pc/@lemma">
