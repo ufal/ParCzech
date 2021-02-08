@@ -225,11 +225,27 @@ sub _add_static_data_items {
     next unless $self->_static_data_items_test($self->{xpc}->findnodes('./pcz:test', $item));
 
     if($xpath) {
-      my $appendPlace = ParCzech::PipeLine::FileManager::XML::makenode( $self->{dom}, $xpath, $self->{xpc}, \&nodeConditionalAppender);
+      my $baseNode = ParCzech::PipeLine::FileManager::XML::makenode( $self->{dom}, $xpath, $self->{xpc}, \&nodeConditionalAppender);
       my ($teiNodes) = $self->{xpc}->findnodes('./pcz:tei', $item);
       if (defined $teiNodes) {
         for my $content ($teiNodes->childNodes()) {
-          $appendPlace->appendChild($content->cloneNode(1));
+          $baseNode->appendChild($content->cloneNode(1));
+        }
+      }
+      my ($replNode) = $self->{xpc}->findnodes('./pcz:replace-text', $item);
+      if (defined $replNode) {
+        my $replXpath = $replNode->getAttributeNS($xmlNs{pcz}, 'xpath') // './self::*';
+        my $search_cond = $replNode->getAttributeNS($xmlNs{pcz}, 'search');
+        my $replace_cond = $replNode->getAttributeNS($xmlNs{pcz}, 'replace');
+        my $replace_flags = $replNode->getAttributeNS($xmlNs{pcz}, 'flags') // '';
+        if(defined $search_cond and defined $replace_cond) {
+          for my $node ($self->{xpc}->findnodes($replXpath,$baseNode)){
+            for my $chNode (grep {$_->nodeType() == XML_TEXT_NODE} $node->childNodes()){
+              $chNode->replaceDataRegEx( $search_cond, $replace_cond, $replace_flags );
+            }
+          }
+        } else {
+          print STDERR "ERROR in configuration replace-text: $name\n";
         }
       }
     } elsif ($dep_name) {

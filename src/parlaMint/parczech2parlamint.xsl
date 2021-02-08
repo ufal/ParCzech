@@ -68,10 +68,10 @@
   </xsl:template>
 
   <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:title[@type='main' and @xml:lang='cs']">
-    <xsl:copy><xsl:apply-templates select="@*"/>Český parlamentní korpus ParlaMint-CZ, <xsl:call-template name="teiHeaderInterfix" />[ParlaMint]</xsl:copy>
+    <xsl:copy><xsl:apply-templates select="@*"/>Český parlamentní korpus ParlaMint-CZ, <xsl:call-template name="teiHeaderInterfix" />[ParlaMint<xsl:value-of select="substring-after(.,'[ParCzech')" /></xsl:copy>
   </xsl:template>
   <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:title[@type='main' and @xml:lang='en']">
-    <xsl:copy><xsl:apply-templates select="@*"/>Czech parliamentary corpus ParlaMint-CZ, <xsl:call-template name="teiHeaderInterfix" />[ParlaMint]</xsl:copy>
+    <xsl:copy><xsl:apply-templates select="@*"/>Czech parliamentary corpus ParlaMint-CZ, <xsl:call-template name="teiHeaderInterfix" />[ParlaMint<xsl:value-of select="substring-after(.,'[ParCzech')" /></xsl:copy>
   </xsl:template>
   <xsl:template name="teiHeaderInterfix">
     <xsl:if test="/tei:TEI">
