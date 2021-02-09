@@ -278,10 +278,37 @@ if [ "$EXIT_CONDITION" == "psp-db" ] ; then
   echo "EXITTING: $EXIT_CONDITION"
   exit
 fi
+
 ################################
-### Metadata to download-tei ###
+### Annotate incidents       ###
 #  input:
 #    psp-db/$ID
+#    psp-db/$ID/person.xml ???
+#  output:
+#    incidents-tei/$ID
+###############################
+
+export INCIDENTS_TEI=$DATA_DIR/incidents-tei/${ID}
+
+
+if skip_process "incidents" "$INCIDENTS_TEI" "$EXISTING_FILELIST" ; then # BEGIN INCIDENTS CONDITION
+
+perl -I lib incidents/incidents.pl \
+                                   --filelist $TEI_FILELIST \
+                                   --input-dir $PSP_DB_TEI \
+                                   --output-dir $INCIDENTS_TEI
+
+fi # END INCIDENTS CONDITION
+
+if [ "$EXIT_CONDITION" == "incidents" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+
+#################################
+### Metadata to incidents-tei ###
+#  input:
+#    incidents-tei/$ID
 #    psp-db/$ID/person.xml
 #    psp-db/$ID/org.xml
 #  output:
@@ -299,7 +326,7 @@ log "adding metadata $METADATA_NAME $DOWNLOADER_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME" \
                                    --metadata-file metadater/tei_parczech.xml \
                                    --filelist $TEI_FILELIST \
-                                   --input-dir $PSP_DB_TEI \
+                                   --input-dir $INCIDENTS_TEI \
                                    --output-dir $DOWNLOADER_TEI_META \
                                    --variables-log "$VAR_LOG" \
 

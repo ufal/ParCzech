@@ -25,7 +25,7 @@ my @reg_match = (
   [qr/k řečni/i, qw/kinesic kinesic/],
   [qr/ukazuje/i, qw/kinesic gesture/],
   [qr/směje|smích|úsměv/i, qw/vocal laughter/],
-  [qr/\bnesroz/i, qw/gab inaudible/],
+  [qr/\bnesroz/i, qw/gap inaudible/],
   [qr/[aA]no/, qw/vocal speaking/],
   [qr/zvonění/i, qw/incident sound/],
   [qr/^hlasit[áýé]\b/i, qw/vocal speaking/],
@@ -59,11 +59,12 @@ sub new {
 sub classify {
   my $self = shift;
   my $string = shift;
+  $string =~ s/^\((.*)\)$/$1/;
   $string =~ s/^\s*|\.?\s*$//g;
   return $full_match{lc $string} if defined($full_match{lc $string});
   for my $pattern (@reg_match) {
     my $reg = $pattern->[0];
-    return [$pattern->[1],$pattern->[2]] if $string =~ /$reg/;
+    return [$pattern->[1], ($pattern->[1] eq 'gap' ? 'reason' : 'type'), $pattern->[2]] if $string =~ /$reg/;
   }
   return undef;
 }

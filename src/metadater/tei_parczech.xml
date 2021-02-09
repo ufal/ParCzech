@@ -146,6 +146,11 @@
                <tagUsage gi="media" occurs="[[ELEMCNT:media]]"/>
                <tagUsage gi="u" occurs="[[ELEMCNT:u]]"/>
                <tagUsage gi="seg" occurs="[[ELEMCNT:seg]]"/>
+               <tagUsage gi="kinesic" occurs="[[ELEMCNT:kinesic]]"/>
+               <tagUsage gi="vocal" occurs="[[ELEMCNT:vocal]]"/>
+               <tagUsage gi="incident" occurs="[[ELEMCNT:incident]]"/>
+               <tagUsage gi="gap" occurs="[[ELEMCNT:gap]]"/>
+               <tagUsage gi="desc" occurs="[[ELEMCNT:desc]]"/>
             </namespace>
          </tagsDecl>
       </pcz:tei>
