@@ -268,8 +268,11 @@ for my $person_node ($xpc->findnodes('//tei:person',$personlist->{dom})) {
                                     );
   print STDERR "PERSON $forename $surname " ,join(' ',values %data)," = $person_id\n";
   my $person = $new_personlist->findPerson(id => $person_id);
-  for my $link ($xpc->findvalue('./tei:idno[type="URI"]/text()',$person_node)) {
-    print STDERR "$person_id: add link : $link\n";
+  for my $link ($xpc->findvalue('normalize-space(./tei:idno[@type="URI"]/text())',$person_node)) {
+    my $type = 'guest';
+    $type = 'gov' if $link =~ m/vlada.cz/;
+    $type = 'psp' if $link =~ m/psp.cz/;
+    $person->addLink($link,$type);
   }
   $new_personlist->addPersonXMLID($id,$person_id);
 }
@@ -528,6 +531,12 @@ sub createPerson {
   }
 
   my $person = listPerson::person->new(%opts);
+  my $person_id = $person->id;
+  if(defined $self->{listPerson}->{$person_id}){ # test if person exists
+    undef $person;
+    return $self->{listPerson}->{$person_id};
+  }
+
   # add affiliations
   if($person->isInPSP){
     ###########
@@ -589,9 +598,6 @@ sub createPerson {
     while(my $incl = $sth->fetchrow_hashref ) {
       $self->addAffiliation($person,$incl->{id_organ}, 'member', $incl->{od_o}, $incl->{do_o});
     }
-  }
-  if(defined $self->{listPerson}->{$person->id}){
-    print STDERR "ERROR: ",$person->id," already exists (this should not happen)\n";
   }
   $self->{listPerson}->{$person->id} = $person;
   return $person;
@@ -677,7 +683,7 @@ sub init {
       $self->{alternative_ids}->{$type} = $opts{"${type}_id"}
     }
     if(defined $opts{"${type}_link"}){
-      $self->{idno}->{$type}->{$opts{"${type}_link"}} = 1;
+      $self->addLink($opts{"${type}_link"},$type);
     }
   }
   for my $key (qw/forename surname birth death sex/){
@@ -698,6 +704,15 @@ sub init {
   }
 }
 
+sub addLink {
+  my $self = shift;
+  my ($link,$type) = (@_,'guest');
+  print STDERR "======================================\n";
+  print STDERR Dumper($self->{idno});
+  $self->{idno}->{$type}->{$link} = 1;
+  print STDERR Dumper($self->{idno});
+}
+
 sub affiliate {
   my $self = shift;
   my %opts = @_;
@@ -710,7 +725,7 @@ sub affiliate {
 
 sub toString {
   my $self = shift;
-  return 'TODO';
+  return $self->id;
 }
 
 sub addToXML {
