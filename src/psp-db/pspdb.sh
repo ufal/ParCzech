@@ -10,7 +10,7 @@ usage() {
   exit 1
 }
 
-while getopts  ':p:o:g:c:'  opt; do
+while getopts  ':p:o:g:t:a:c:'  opt; do
   case "$opt" in
     'p')
       PERSONLIST=$OPTARG
@@ -20,6 +20,12 @@ while getopts  ':p:o:g:c:'  opt; do
       ;;
     'g')
       PARAMS+=(--gov-input-dir $OPTARG )
+      ;;
+    't')
+      PARAMS+=(--term-list $OPTARG )
+      ;;
+    'a')
+      PARAMS+=(--allterm-person-outfile $OPTARG )
       ;;
     'c')
       CONFIG_FILE=$OPTARG

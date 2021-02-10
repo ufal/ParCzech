@@ -14,7 +14,7 @@ use Data::Dumper;
 
 
 
-my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations,$patches, $flat);
+my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations,$patches, $flat, $term_list, $allterm_person_filepath);
 
 =note
 
@@ -136,6 +136,8 @@ my %tabledef = (
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'flat' => \$flat,
+            'term-list=s' => \$term_list,
+            'allterm-person-outfile=s' => \$allterm_person_filepath,
             'person-list=s' => \$personlist_in,
             'output-dir=s' => \$outdir,
             'gov-input-dir=s' => \$govdir,
@@ -198,196 +200,84 @@ my $orglist = listOrg->new(db => $pspdb, translator => $translator,
                                          patcher => $patcher);
 
 usage_exit() unless $personlist;
-
 my $xpc = ParCzech::PipeLine::FileManager::TeiFile::new_XPathContext();
 
-for my $person ($xpc->findnodes('//tei:person',$personlist->{dom})) {
-  my $id = $person->getAttributeNS($xpc->lookupNs('xml'),'id');
+my $new_personlist = listPerson->new(org_list => $orglist, db => $pspdb);
+my %allterm_persons;
 
-  unless($id =~ m/(-?)([0-9]+)$/){ # no id, try to find id in government persons
-    my $forename = trim($xpc->findvalue('./tei:persName/tei:forename/text()',$person));
-    my $surname = trim($xpc->findvalue('./tei:persName/tei:surname/text()',$person));
-    print STDERR "looking for $forename $surname in gov_osoby\n";
-    my $sth = $pspdb->prepare(sprintf('SELECT * FROM gov_osoby WHERE jmeno="%s" AND prijmeni="%s"', $forename, $surname));
-    $sth->execute;
-    if(my $idpers = $sth->fetchrow_hashref){
-      print STDERR "\tFOUND (GOV-$idpers->{id_osoba})\n";
-      $id.='-'.$idpers->{id_osoba};
-    }
-  }
 
-  if($id =~ m/(-?)([0-9]+)$/) {
-    my $prefix = $1 ? 'gov_' : '';
-    my $id_osoba = $2;
-    my $type = $prefix ? 'gov' : 'reg';
-    my $sth = $pspdb->prepare(sprintf('SELECT  "%s" as TYPE,* FROM %sosoby WHERE id_osoba=%s', $type, $prefix,$id_osoba));
-    $sth->execute;
-    my ($gov, $pers);
-    if($pers = $sth->fetchrow_hashref){
-      if($prefix){ # govern person
-        $gov = $pers;
-        # match based on name and birthdate:
-        $sth = $pspdb->prepare(sprintf('SELECT "reg" as TYPE, * FROM osoby WHERE jmeno="%s" AND prijmeni="%s" AND narozeni="%s"', $gov->{jmeno}, $gov->{prijmeni}, $gov->{narozeni}//''));
-        $sth->execute;
-        if(my $pers2 = $sth->fetchrow_hashref) {
-          $pers = $pers2;
-          print STDERR "MATCHING (REG-$pers->{id_osoba} <=> GOV-$gov->{id_osoba}) '$pers->{jmeno} $pers->{prijmeni} nar. ",($pers->{narozeni}//'???'),"'\n";
-          add_data_link($pers->{id_osoba},$id,$person);
-        } else {
-          print STDERR "No match for '$pers->{jmeno} $pers->{prijmeni} nar. ",($pers->{narozeni}//'???'),"' ($pers->{id_osoba}) in psp database\n";
+# firstly add all persons for given term to $new_personlist
+for my $term (split(/,/,$term_list//'')){
+  # find corresponding Chamber of Deputies organization id (id_organ)
 
-          # match based on name:
-          $sth = $pspdb->prepare(sprintf('SELECT "reg" as TYPE, * FROM osoby WHERE jmeno="%s" AND prijmeni="%s"', $gov->{jmeno}, $gov->{prijmeni}));
-          $sth->execute;
-          if(my $pers2 = $sth->fetchrow_hashref) {
-            $pers = $pers2;
-            print STDERR "MATCHING (REG-$pers->{id_osoba} <=> GOV-$gov->{id_osoba}) '$pers->{jmeno} $pers->{prijmeni}'\n";
-            add_data_link($pers->{id_osoba},$id,$person);
-          } else {
-            print STDERR "No match for '$pers->{jmeno} $pers->{prijmeni}' ($pers->{id_osoba}) in psp database\n";
-          }
-        }
-      } else {
-        mapper_set_xml_pers($pers->{id_osoba},$person,'reg');
-      }
-
-      my ($pname) = $person->getChildrenByTagName('persName');
-      if($pname){
-        $pname->removeChildNodes();
-        $pname->appendTextChild('surname',$pers->{prijmeni});
-        $pname->appendTextChild('forename',$pers->{jmeno});
-      }
-      if($pers->{pohlavi}){
-        my $sex = $person->addNewChild( undef, 'sex');
-        $sex->appendTextNode($pers->{pohlavi} eq 'M' ? 'mužské' : 'ženské');
-        $sex->setAttribute('value',$pers->{pohlavi} eq 'M' ? 'M' : 'F') ;
-      }
-
-      if($pers->{narozeni}){
-        my $birth = $person->addNewChild( undef, 'birth');
-        $birth->setAttribute('when',$pers->{narozeni}) ;
-      }
-      if($pers->{umrti}){
-        my $death = $person->addNewChild( undef, 'death');
-        $death->setAttribute('when',$pers->{umrti}) ;
-      }
-
-      if($pers->{TYPE} eq 'reg') {
-        # table poslanec
-        $sth = $pspdb->prepare(sprintf(
+  print STDERR "$term\n";
+  my $sth = $pspdb->prepare(sprintf(
          'SELECT
             posl.id_osoba AS id_osoba,
-            kand.id_organ AS kand_id_organ,
-            kand.zkratka AS kand_zkratka,
-            obd.id_organ AS obd_id_organ,
-            obd.zkratka AS obd_zkratka,
-            obd.od_organ AS od_obd,
-            obd.do_organ AS do_obd
-
+            obd.zkratka AS obd_zkratka
           FROM poslanec AS posl
             JOIN organy AS obd ON posl.id_obdobi = obd.id_organ
-            JOIN organy AS kand ON posl.id_kandidatka = kand.id_organ
-          WHERE posl.id_osoba=%s',$pers->{id_osoba}));
-        $sth->execute;
-
-        print STDERR "MATCHING (REG-$pers->{id_osoba}) '$pers->{jmeno} $pers->{prijmeni} nar. ",($pers->{narozeni}//'???'),"'\n";
-        while(my $pm = $sth->fetchrow_hashref ) {
-          # addAffiliation($person,$pm->{obd_id_organ}, 'MP', $pm->{od_obd}, $pm->{do_obd}); # duplicite
-          addAffiliation($person,$pm->{kand_id_organ}, 'candidateMP', $pm->{od_obd}, $pm->{do_obd});
-        }
-
-        $sth = $pspdb->prepare(sprintf(
-         'SELECT
-            org.id_organ AS id_organ,
-            org.zkratka AS zkratka,
-            zaraz.od_o AS od_o,
-            zaraz.do_o AS do_o,
-            funk.nazev_funkce_cz AS nazev_funkce,
-            typf.typ_funkce_en AS typ_funkce_en,
-            typf.typ_funkce_cz AS typ_funkce_cz
-          FROM zarazeni AS zaraz
-            JOIN funkce AS funk ON funk.id_funkce = zaraz.id_of
-            JOIN organy as org ON org.id_organ = funk.id_organ
-            JOIN typ_funkce AS typf ON funk.id_typ_funkce = typf.id_typ_funkce
-          WHERE zaraz.id_osoba=%s
-                AND zaraz.cl_funkce = 1',$pers->{id_osoba}));
-        $sth->execute;
-        while(my $func = $sth->fetchrow_hashref ) {
-          addAffiliation($person,$func->{id_organ}, $func->{typ_funkce_en}//$translator->translate_static($func->{typ_funkce_cz}), $func->{od_o}, $func->{do_o});#->appendText($func->{nazev_funkce});
-        }
-
-        $sth = $pspdb->prepare(sprintf(
-         'SELECT
-            org.id_organ AS id_organ,
-            org.zkratka AS zkratka,
-            zaraz.od_o AS od_o,
-            zaraz.do_o AS do_o
-          FROM zarazeni AS zaraz
-            JOIN organy AS org ON org.id_organ = zaraz.id_of
-          WHERE zaraz.id_osoba=%s
-                AND zaraz.cl_funkce = 0',$pers->{id_osoba}));
-        $sth->execute;
-        while(my $incl = $sth->fetchrow_hashref ) {
-          addAffiliation($person,$incl->{id_organ}, 'member', $incl->{od_o}, $incl->{do_o});
-        }
-      }
-    }
-  } else {
-    print STDERR "invalid id $id:\n$person\n";
+          WHERE substr(obd.od_organ,1,4)="%s"',$term));
+  $sth->execute;
+  while(my $pm = $sth->fetchrow_hashref ) {
+    my $person_id = $new_personlist->addPerson(psp_id => $pm->{id_osoba});
+    $allterm_persons{$person_id} = 1;
+    print STDERR "$person_id ";
   }
 }
 
-for my $reg_dbid (keys %data_links) {
-  my $reg_person = mapper_get_xml_pers($reg_dbid,'reg');
-  unless($reg_person){
-    my ($gov_person) = values %{$data_links{$reg_dbid}};
-    if ($gov_person) {
-      # clone gov person node
-      $reg_person = $gov_person->cloneNode(1);
-      # change id and add to mapper
-      my $new_id=listOrg::create_ID($xpc->findvalue('concat(.//tei:forename,.//tei:surname)',$gov_person)."$reg_dbid",keep_case=>1);
-      $reg_person->setAttributeNS($XMLNS, 'id',$new_id);
-      mapper_set_xml_pers($reg_dbid,$reg_person,'reg');
-      # replace idno url
-      my ($idno) = $xpc->findnodes('./tei:idno[@type="URI"]',$reg_person);
-      if($idno){
-        $idno->removeChildNodes();
-      } else {
-        my ($namenode) = $xpc->findnodes('./tei:persName',$reg_person);
-        $idno = XML::LibXML::Element->new('idno');
-        $idno->setAttribute('type','URI');
-        $reg_person->insertAfter($idno,$namenode // undef);
-      }
-      $idno->appendText("https://www.psp.cz/sqw/detail.sqw?id=$reg_dbid");
-      # append to parent node
-      $gov_person->addSibling($reg_person);
-    }
-  }
 
-
-  if ($reg_person) {
-    print STDERR "person linking ",$reg_person->getAttributeNS($XMLNS,'id'),": ";
-    for my $gov_person (values %{$data_links{$reg_dbid}}) {
-      print STDERR " ",$gov_person->getAttributeNS($XMLNS,'id');
-      my ($idno) = $xpc->findnodes('./tei:idno[@type="URI"]',$gov_person);
-      if($idno) {
-        $idno->unbindNode();
-        my $insert_place = $xpc->findnodes('./tei:idno',$reg_person) // $xpc->findnodes('./tei:persName',$reg_person);
-        $reg_person->insertAfter($idno,$insert_place // undef);
-      }
-      $gov_person->removeChildNodes();
-      $gov_person->setAttribute('corresp','#'.$reg_person->getAttributeNS($XMLNS,'id'));
-    }
-  } else {
-    print STDERR "ERROR - NOT FOUND: $reg_dbid";
+# print "allterm" persons to file
+if($allterm_person_filepath) {
+  my $dom = XML::LibXML::Document->new("1.0", "utf-8");
+  my $root_node =  XML::LibXML::Element->new('listPerson');
+  $root_node->setNamespace('http://www.tei-c.org/ns/1.0');
+  $root_node->setNamespace('http://www.w3.org/XML/1998/namespace', 'xml', 0);
+  $dom->setDocumentElement($root_node);
+  for my $id (sort keys %allterm_persons) {
+    my $person = $root_node->addNewChild( undef, 'person');
+    $person->setAttributeNS($XMLNS,'id',"mp-$id");
+    $person->setAttribute('corresp',"person.xml#$id");
   }
-  print STDERR "\n";
+  print STDERR "adding ",scalar(keys %allterm_persons)," persons to $allterm_person_filepath\n";
+  ParCzech::PipeLine::FileManager::XML::save_to_file($dom, $allterm_person_filepath);
 }
 
 
 
+# loop over persons in $personlist and add them to $new_personlist
 
-ParCzech::PipeLine::FileManager::XML::save_to_file($personlist->{dom}, File::Spec->catfile($outdir,'person.xml'));
+for my $person_node ($xpc->findnodes('//tei:person',$personlist->{dom})) {
+  my $id = $person_node->getAttributeNS($xpc->lookupNs('xml'),'id');
+  my $forename = trim($xpc->findvalue('./tei:persName/tei:forename/text()',$person_node));
+  my $surname = trim($xpc->findvalue('./tei:persName/tei:surname/text()',$person_node));
+  my %data = ();
+
+  if( my ($gov_id) = $id =~ m/-([0-9]+)$/){
+    $data{gov_id} = $gov_id;
+  } elsif (my ($psp_id) = $id =~ m/[^-]([0-9]+)$/) {
+    $data{psp_id} = $psp_id;
+  } else {
+    $data{guest_id} = $id;
+  }
+
+  my $person_id = $new_personlist->addPerson(
+                                    forename => $forename,
+                                    surname  => $surname,
+                                    %data
+                                    );
+  print STDERR "PERSON $forename $surname " ,join(' ',values %data)," = $person_id\n";
+  my $person = $new_personlist->findPerson(id => $person_id);
+  for my $link ($xpc->findvalue('./tei:idno[type="URI"]/text()',$person_node)) {
+    print STDERR "$person_id: add link : $link\n";
+  }
+  $new_personlist->addPersonXMLID($id,$person_id);
+}
+
+
+
+#ParCzech::PipeLine::FileManager::XML::save_to_file($personlist->{dom}, File::Spec->catfile($outdir,'person.xml'));
+ParCzech::PipeLine::FileManager::XML::save_to_file($new_personlist->getXML_DOM(), File::Spec->catfile($outdir,'person.xml'));
 ParCzech::PipeLine::FileManager::XML::save_to_file($orglist->getXML_DOM(), File::Spec->catfile($outdir,'org.xml'));
 
 
@@ -472,24 +362,6 @@ sub fill_table {
   $pspdb->commit;
 }
 
-sub addAffiliation {
-  my ($elem,$id,$role,$from,$to) = @_;
-  my $aff = $elem->addNewChild( undef, 'affiliation');
-  my $org = $orglist->addOrg($id);
-  my $ref = $org->id();
-  $aff->setAttribute('ref',"#$ref");
-  $role='MP' if $org->role() eq 'parliament' && ($role//'') eq 'member';
-  $aff->setAttribute('role',listOrg::create_ID($patcher->translate_static($role))) if $role;
-  if($from) {
-    $from =~ s/ /T/;
-    $aff->setAttribute('from',$from);
-  }
-  if($to){
-    $to =~ s/ /T/;
-    $aff->setAttribute('to',$to);
-  }
-  return $aff;
-}
 
 sub add_data_link {
   my ($reg,$gov,$govperson) = @_;
@@ -520,6 +392,371 @@ Usage: pspdb-generate-xml.pl  --person-list <STRING> --output-dir <STRING> --inp
 ";
    exit;
 }
+
+
+package listPerson;
+use Data::Dumper;
+
+
+sub new {
+  my $this  = shift;
+  my $class = ref($this) || $this;
+  my %opts = @_;
+  my $self  = {};
+  bless $self, $class;
+  $self->{org_list} = $opts{org_list};
+  $self->{listPerson} = {};
+  $self->{ids_in_xml} = {};
+
+  #   gov:gov_id   -> id
+  #   psp:psp_id   -> id
+  #   guest:guest_id -> id
+  $self->{ids_to_main_id} = {};
+
+
+  return $self;
+}
+
+sub addPerson { # create new person or use existing based on passed data
+  my $self = shift;
+  my %opts = @_;
+  my $person = $self->findPerson(%opts);
+  print STDERR join(' ',@_),"\n";
+  my $sth;
+  unless ($person){
+    if(defined $opts{guest_id}){ # try to find id in government persons
+      print STDERR "looking for $opts{forename} $opts{surname} in gov_osoby\n";
+      $sth = $pspdb->prepare(sprintf('SELECT * FROM gov_osoby WHERE jmeno="%s" AND prijmeni="%s"', $opts{forename}//'', $opts{surname}//''));
+      $sth->execute;
+      if(my $idpers = $sth->fetchrow_hashref){
+        print STDERR "\tFOUND (GOV:$idpers->{id_osoba})\n";
+        $opts{gov_id} = $idpers->{id_osoba};
+      } else {
+        print STDERR "\tperson not found in any database: $opts{guest_id}\n";
+      }
+    }
+    if(defined $opts{gov_id}){
+      $sth = $pspdb->prepare(sprintf('SELECT * FROM gov_osoby WHERE id_osoba=%s', $opts{gov_id}));
+      $sth->execute;
+      if(my $gov_pers = $sth->fetchrow_hashref) {
+        # match based on name and birthdate:
+        print STDERR "found GOV:$gov_pers->{id_osoba} '$gov_pers->{jmeno} $gov_pers->{prijmeni} (",($gov_pers->{narozeni}//'???'),")'\n";
+        $sth = $pspdb->prepare(sprintf('SELECT * FROM osoby WHERE jmeno="%s" AND prijmeni="%s" AND narozeni="%s"', $gov_pers->{jmeno}, $gov_pers->{prijmeni}, $gov_pers->{narozeni}//''));
+        $sth->execute;
+        if(my $psp_pers = $sth->fetchrow_hashref) {
+          print STDERR "MATCHING (REG:$psp_pers->{id_osoba} <=> GOV:$gov_pers->{id_osoba}) '$psp_pers->{jmeno} $psp_pers->{prijmeni} nar. ",($psp_pers->{narozeni}//'???'),"'\n";
+          $opts{psp_id} = $psp_pers->{id_osoba};
+        } else {
+          print STDERR "No match for '$gov_pers->{jmeno} $gov_pers->{prijmeni} nar. ",($gov_pers->{narozeni}//'???'),"' ($gov_pers->{id_osoba}) in psp database\n";
+          # match based on name:
+          $sth = $pspdb->prepare(sprintf('SELECT * FROM osoby WHERE jmeno="%s" AND prijmeni="%s"', $gov_pers->{jmeno}, $gov_pers->{prijmeni}));
+          $sth->execute;
+          if(my $psp_pers = $sth->fetchrow_hashref) {
+            print STDERR "MATCHING (REG:$psp_pers->{id_osoba} <=> GOV:$gov_pers->{id_osoba}) '$psp_pers->{jmeno} $psp_pers->{prijmeni}'\n";
+            $opts{psp_id} = $psp_pers->{id_osoba};
+          } else {
+            print STDERR "No match for '$gov_pers->{jmeno} $gov_pers->{prijmeni}' (GOV:$gov_pers->{id_osoba}) in psp database\n";
+          }
+        }
+      } else {
+        print STDERR "INVALID DATA: No record in GOV database for $opts{gov_id}\n";
+      }
+    }
+
+    if(defined $opts{psp_id}){
+      $sth = $pspdb->prepare(sprintf('SELECT * FROM osoby WHERE id_osoba=%s', $opts{psp_id}));
+      $sth->execute;
+      if(my $psp_pers = $sth->fetchrow_hashref) {
+        print STDERR "found REG:$psp_pers->{id_osoba} '$psp_pers->{jmeno} $psp_pers->{prijmeni} (",($psp_pers->{narozeni}//'???'),")'\n";
+      } else {
+        print STDERR "INVALID DATA: No record in PSP database for $opts{psp_id}\n";
+      }
+    }
+
+    $person = $self->createPerson(%opts);
+
+  } else {
+    print STDERR "person already exists: ", $person->toString(),"\n";
+  }
+
+  # add links to ids_to_main_id
+  for my $type (qw/psp gov guest/){
+    if(defined $opts{"${type}_id"}){
+      my $prefixed_id = $type.':'.$opts{"${type}_id"};
+      $self->{ids_to_main_id}->{$prefixed_id} = $person->id;
+    }
+  }
+  $person->id
+}
+
+
+sub findPerson {
+  my $self = shift;
+  my %opts = @_;
+  return $self->{listPerson}->{$opts{id}} if defined $opts{id};
+  for my $type (qw/psp gov guest/){
+    if(defined $opts{"${type}_id"}){
+      my $prefixed_id = $type.':'.$opts{"${type}_id"};
+      print STDERR "LOOKING FOR $prefixed_id -> $self->{ids_to_main_id}->{prefixed_id}\n";
+      return $self->{listPerson}->{$self->{ids_to_main_id}->{$prefixed_id}} if defined $self->{ids_to_main_id}->{prefixed_id};
+    }
+  }
+}
+
+sub createPerson {
+  my $self = shift;
+  my %opts = @_;
+  # create person
+  my $pers;
+  my $sth;
+  if($opts{psp_id}){
+    my $sth = $pspdb->prepare(sprintf('SELECT * FROM osoby WHERE id_osoba=%s', $opts{psp_id}));
+    $sth->execute;
+    $pers = $sth->fetchrow_hashref;
+    $opts{psp_link} = "https://www.psp.cz/sqw/detail.sqw?id=$opts{psp_id}" if $pers;
+
+  }
+  if(!$pers && $opts{gov_id}){
+    my $sth = $pspdb->prepare(sprintf('SELECT * FROM gov_osoby WHERE id_osoba=%s', $opts{gov_id}));
+    $sth->execute;
+    $pers = $sth->fetchrow_hashref;
+  }
+  if($pers) {
+    $opts{forename} = $pers->{jmeno} if $pers->{jmeno};
+    $opts{surname} = $pers->{prijmeni} if $pers->{prijmeni};
+    $opts{birth} = $pers->{narozeni} if $pers->{narozeni};
+    $opts{death} = $pers->{umrti} if $pers->{umrti};
+    $opts{sex} = $pers->{pohlavi} eq 'M' ? 'M' : 'F' if $pers->{pohlavi};
+  }
+
+  my $person = listPerson::person->new(%opts);
+  # add affiliations
+  if($person->isInPSP){
+    ###########
+    # table poslanec
+    $sth = $pspdb->prepare(sprintf(
+         'SELECT
+            posl.id_osoba AS id_osoba,
+            kand.id_organ AS kand_id_organ,
+            kand.zkratka AS kand_zkratka,
+            obd.id_organ AS obd_id_organ,
+            obd.zkratka AS obd_zkratka,
+            obd.od_organ AS od_obd,
+            obd.do_organ AS do_obd
+          FROM poslanec AS posl
+            JOIN organy AS obd ON posl.id_obdobi = obd.id_organ
+            JOIN organy AS kand ON posl.id_kandidatka = kand.id_organ
+          WHERE posl.id_osoba=%s',$pers->{id_osoba}));
+    $sth->execute;
+
+    while(my $pm = $sth->fetchrow_hashref ) {
+      # addAffiliation($person,$pm->{obd_id_organ}, 'MP', $pm->{od_obd}, $pm->{do_obd}); # duplicite
+      $self->addAffiliation($person,$pm->{kand_id_organ}, 'candidateMP', $pm->{od_obd}, $pm->{do_obd});
+    }
+
+    ###########
+    # functions
+    $sth = $pspdb->prepare(sprintf(
+         'SELECT
+            org.id_organ AS id_organ,
+            org.zkratka AS zkratka,
+            zaraz.od_o AS od_o,
+            zaraz.do_o AS do_o,
+            funk.nazev_funkce_cz AS nazev_funkce,
+            typf.typ_funkce_en AS typ_funkce_en,
+            typf.typ_funkce_cz AS typ_funkce_cz
+          FROM zarazeni AS zaraz
+            JOIN funkce AS funk ON funk.id_funkce = zaraz.id_of
+            JOIN organy as org ON org.id_organ = funk.id_organ
+            JOIN typ_funkce AS typf ON funk.id_typ_funkce = typf.id_typ_funkce
+          WHERE zaraz.id_osoba=%s
+                AND zaraz.cl_funkce = 1',$pers->{id_osoba}));
+    $sth->execute;
+    while(my $func = $sth->fetchrow_hashref ) {
+      $self->addAffiliation($person,$func->{id_organ}, $func->{typ_funkce_en}//$translator->translate_static($func->{typ_funkce_cz}), $func->{od_o}, $func->{do_o});
+    }
+    ###########
+    # members
+    $sth = $pspdb->prepare(sprintf(
+         'SELECT
+            org.id_organ AS id_organ,
+            org.zkratka AS zkratka,
+            zaraz.od_o AS od_o,
+            zaraz.do_o AS do_o
+          FROM zarazeni AS zaraz
+            JOIN organy AS org ON org.id_organ = zaraz.id_of
+          WHERE zaraz.id_osoba=%s
+                AND zaraz.cl_funkce = 0',$pers->{id_osoba}));
+    $sth->execute;
+    while(my $incl = $sth->fetchrow_hashref ) {
+      $self->addAffiliation($person,$incl->{id_organ}, 'member', $incl->{od_o}, $incl->{do_o});
+    }
+  }
+  if(defined $self->{listPerson}->{$person->id}){
+    print STDERR "ERROR: ",$person->id," already exists (this should not happen)\n";
+  }
+  $self->{listPerson}->{$person->id} = $person;
+  return $person;
+}
+
+sub addAffiliation {
+  my $self = shift;
+  my ($person,$org_db_id,$role,$from,$to) = @_;
+  my $org = $self->{org_list}->addOrg($org_db_id);
+  $role='MP' if $org->role() eq 'parliament' && ($role//'') eq 'member';
+  $role = listOrg::create_ID($patcher->translate_static($role)) if $role;
+  $from =~ s/ /T/ if $from;
+  $to =~ s/ /T/ if $to;
+  $person->affiliate(ref => '#'.$org->id(), role => $role, from => $from, to => $to);
+}
+
+sub addPersonXMLID {
+  my $self = shift;
+  my ($xml_id,$person_id) = @_;
+  return if $person_id eq $xml_id;
+  $self->{ids_in_xml}->{$xml_id} = $person_id;
+}
+
+sub getXML_DOM {
+  my $self = shift;
+  my $dom = XML::LibXML::Document->new("1.0", "utf-8");
+  my $root_node =  XML::LibXML::Element->new('listPerson');
+  $root_node->setNamespace('http://www.tei-c.org/ns/1.0');
+  $root_node->setNamespace('http://www.w3.org/XML/1998/namespace', 'xml', 0);
+  $dom->setDocumentElement($root_node);
+  $self->addToXML($root_node);
+  return $dom
+}
+
+sub addToXML {
+  my $self = shift;
+  my $parent = shift;
+  return unless $parent;
+  for my $pers_id (sort keys %{$self->{listPerson}} ){
+    $self->{listPerson}->{$pers_id}->addToXML($parent);
+  }
+  for my $xml_id (sort keys %{$self->{ids_in_xml}}) {
+    my $person = $parent->addNewChild( undef, 'person');
+    $person->setAttributeNS($XMLNS,'id',$xml_id);
+    $person->setAttribute('corresp',"#".$self->{ids_in_xml}->{$xml_id});
+  }
+}
+
+
+package listPerson::person;
+use Data::Dumper;
+
+sub new {
+  my $this  = shift;
+  my $class = ref($this) || $this;
+  my %opts = @_;
+  my $self  = {};
+  bless $self, $class;
+  $self->{alternative_ids} = {}; # type => value
+  $self->{idno} = {};
+  $self->{affiliation} = [];
+  $self->init(%opts);
+  print STDERR Dumper($self);
+  return $self;
+}
+
+sub id {
+  my $self = shift;
+  my $type = shift;
+  return $self->{id} unless $type;
+  return $self->{alternative_ids}->{$type};
+}
+
+sub isInPSP {
+  my $self = shift;
+  return !!$self->{alternative_ids}->{psp};
+}
+
+sub init {
+  my $self = shift;
+  my %opts = @_;
+  for my $type (qw/psp gov guest/){
+    if(defined $opts{"${type}_id"}){
+      $self->{alternative_ids}->{$type} = $opts{"${type}_id"}
+    }
+    if(defined $opts{"${type}_link"}){
+      $self->{idno}->{$type}->{$opts{"${type}_link"}} = 1;
+    }
+  }
+  for my $key (qw/forename surname birth death sex/){
+    if(defined $opts{$key} and $opts{$key}){
+      $self->{$key} = $opts{$key}
+    }
+  }
+  if(defined $self->{forename} and defined $self->{surname}){
+    my $year = '';
+    if(defined $self->{birth}){
+      ($year) = $self->{birth} =~ m/^(\d\d\d\d)/;
+      $year = ".$year" if $year;
+    }
+
+    $self->{id} = $self->{forename}.$self->{surname}.$year;
+    $self->{id} =~ s/ //g;
+    $self->{id} = Unicode::Diacritic::Strip::strip_diacritics($self->{id})
+  }
+}
+
+sub affiliate {
+  my $self = shift;
+  my %opts = @_;
+  my $aff = {};
+  for $a (qw/ref role from to/){
+    $aff->{$a} = $opts{$a} if $opts{$a}
+  }
+  push @{$self->{affiliation}},$aff;
+}
+
+sub toString {
+  my $self = shift;
+  return 'TODO';
+}
+
+sub addToXML {
+  my $self = shift;
+  my $parent = shift;
+  return unless $parent;
+  my $pers = $parent->addNewChild( undef, 'person');
+  $pers->setAttributeNS($XMLNS, 'id', $self->id);
+  # personal data
+  my $pname = $pers->addNewChild( undef, 'persName');
+  $pname->appendTextChild($_,$self->{$_}) for qw/surname forename/;
+  if($self->{sex}){
+    my $sex = $pers->addNewChild( undef, 'sex');
+    $sex->appendTextNode($self->{sex} eq 'M' ? 'mužské' : 'ženské');
+    $sex->setAttribute('value',$self->{sex} eq 'M' ? 'M' : 'F') ;
+  }
+  for my $life_event (qw/birth death/) {
+    if($self->{life_event}){
+      my $event = $pers->addNewChild( undef, $life_event);
+      $event->setAttribute('when',$self->{life_event}) ;
+    }
+  }
+  # links
+  for my $type (qw/psp gov guest/){
+    if(defined $self->{idno}->{$type}){
+      for my $link (keys %{$self->{idno}->{$type}}){
+        my $idno = $pers->addNewChild( undef, 'idno');
+        $idno->setAttribute('type','URI');
+        $idno->appendText($link);
+      }
+    }
+  }
+  # affiliations
+  for my $pers_aff (sort { $b->{from} cmp $a->{from} } @{$self->{affiliation} // []}){
+    my $aff = $pers->addNewChild( undef, 'affiliation');
+    for my $a (qw/ref role from to/){
+      $aff->setAttribute($a,$pers_aff->{$a}) if $pers_aff->{$a};
+    }
+  }
+}
+
+
+###############################################################
 
 package listOrg;
 

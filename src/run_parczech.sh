@@ -234,6 +234,7 @@ fi
 #  output:
 #    psp-db/$ID/psp.db
 #    psp-db/$ID/person.xml (enriched)
+#    psp-db/$ID/all-term-person-corresp.xml
 #    psp-db/$ID/org.xml (enriched)
 #    psp-db/$ID (tei files with consolidated person ids)
 ###############################
@@ -241,14 +242,23 @@ fi
 export PSP_DB_DIR=$DATA_DIR/psp-db/${ID}
 export PSP_DB_FILE=$PSP_DB_DIR/psp.db
 export PSP_DB_TEI=$PSP_DB_DIR
+export PSP_DB_ALL_TERM_PERSON=$PSP_DB_DIR/all-term-person-corresp.xml
 
 if skip_process_single_file "psp-db" "$PSP_DB_DIR/person.xml" ; then # BEGIN PSP-DB download CONDITION
 mkdir -p $PSP_DB_DIR
 
 log "getting person and org info $PSP_DB_DIR"
+TERM_LIST=`$XPATH_QUERY "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "declare option saxon:output 'omit-xml-declaration=yes'; string-join( for \\$i in //*[local-name() = 'meeting' and contains(@ana,'#parla.term')]/@n return substring-after(\\$i,'ps'),',')"`
+echo "TERM_LIST='$TERM_LIST'"
 
-echo ./psp-db/pspdb.sh -p "$PERSON_LIST_PATH" -o "$PSP_DB_DIR" -g "$GOV_OUTDIR_DB/$ID" -c `realpath $CONFIG_FILE`
-./psp-db/pspdb.sh -p "$PERSON_LIST_PATH" -o "$PSP_DB_DIR" -g "$GOV_OUTDIR_DB/$ID" -c `realpath $CONFIG_FILE`
+./psp-db/pspdb.sh -p "$PERSON_LIST_PATH"\
+                  -o "$PSP_DB_DIR" \
+                  -g "$GOV_OUTDIR_DB/$ID" \
+                  -t "$TERM_LIST" \
+                  -a "$PSP_DB_ALL_TERM_PERSON" \
+                  -c `realpath $CONFIG_FILE`
+
+exit
 
 log "travers person - looking for duplicit persons"
 echo ./psp-db/travers_person.sh -p "$PSP_DB_DIR/person.xml" -i "$DOWNLOADER_TEI" -f "$TEI_FILELIST" -o "$PSP_DB_TEI" -c `realpath $CONFIG_FILE`
@@ -340,8 +350,11 @@ if skip_process_single_file "metadater" "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAM
 
 log "adding <listPerson> teiCorpus: $DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME"
 
+## add all term persons
+$XSL_TRANSFORM metadater/add_allterm_persons.xsl "$PSP_DB_DIR/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/allpers.$TEICORPUS_FILENAME" allterm-personlist-path="$PSP_DB_ALL_TERM_PERSON"
+
 ## merge personlist
-$XSL_TRANSFORM metadater/knit_persons.xsl "$PSP_DB_DIR/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" personlist-path="$PSP_DB_DIR/person.xml"
+$XSL_TRANSFORM metadater/knit_persons.xsl "$PSP_DB_DIR/allpers.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" personlist-path="$PSP_DB_DIR/person.xml"
 
 log "adding <listOrg> teiCorpus: $DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME"
 
