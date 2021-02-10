@@ -281,8 +281,6 @@ ParCzech::PipeLine::FileManager::XML::save_to_file($new_personlist->getXML_DOM()
 ParCzech::PipeLine::FileManager::XML::save_to_file($orglist->getXML_DOM(), File::Spec->catfile($outdir,'org.xml'));
 
 
-
-
 sub trim {
   my $str = shift;
   $str =~ s/^\s*//;
@@ -497,8 +495,8 @@ sub findPerson {
   for my $type (qw/psp gov guest/){
     if(defined $opts{"${type}_id"}){
       my $prefixed_id = $type.':'.$opts{"${type}_id"};
-      print STDERR "LOOKING FOR $prefixed_id -> $self->{ids_to_main_id}->{prefixed_id}\n";
-      return $self->{listPerson}->{$self->{ids_to_main_id}->{$prefixed_id}} if defined $self->{ids_to_main_id}->{prefixed_id};
+      print STDERR "LOOKING FOR $prefixed_id -> $self->{ids_to_main_id}->{$prefixed_id}\n";
+      return $self->{listPerson}->{$self->{ids_to_main_id}->{$prefixed_id}} if defined $self->{ids_to_main_id}->{$prefixed_id};
     }
   }
 }
@@ -656,7 +654,6 @@ sub new {
   $self->{idno} = {};
   $self->{affiliation} = [];
   $self->init(%opts);
-  print STDERR Dumper($self);
   return $self;
 }
 
