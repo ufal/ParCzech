@@ -353,7 +353,7 @@ log "adding <listPerson> teiCorpus: $DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAM
 $XSL_TRANSFORM metadater/add_allterm_persons.xsl "$PSP_DB_DIR/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/allpers.$TEICORPUS_FILENAME" allterm-personlist-path="$PSP_DB_ALL_TERM_PERSON"
 
 ## merge personlist
-$XSL_TRANSFORM metadater/knit_persons.xsl "$PSP_DB_DIR/allpers.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" personlist-path="$PSP_DB_DIR/person.xml"
+$XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI_META/allpers.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" personlist-path="$PSP_DB_DIR/person.xml"
 
 log "adding <listOrg> teiCorpus: $DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME"
 
