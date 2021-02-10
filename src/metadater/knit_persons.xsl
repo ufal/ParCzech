@@ -44,7 +44,7 @@
       <xsl:otherwise>
         <xsl:message>looking for corresp for <xsl:value-of select="$person-id" /></xsl:message>
         <xsl:variable name="corresp" select="key('id-personlist-corresp',$person-id,$personlist-doc)"/>
-        <xsl:variable name="existingnode" select="//*[local-name(.) = 'person' and contains(@corresp,$corresp/@corresp)]"/>
+        <xsl:variable name="existingnode" select="//*[local-name(.) = 'person' and ends-with(@corresp,$corresp/@corresp)]"/>
         <xsl:variable name="node" select="key('id-personlist',substring-after($corresp/@corresp,'#'),$personlist-doc)/."/>
 
         <xsl:if test="$existingnode">
