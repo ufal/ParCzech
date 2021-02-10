@@ -258,7 +258,6 @@ echo "TERM_LIST='$TERM_LIST'"
                   -a "$PSP_DB_ALL_TERM_PERSON" \
                   -c `realpath $CONFIG_FILE`
 
-exit
 
 log "travers person - looking for duplicit persons"
 echo ./psp-db/travers_person.sh -p "$PSP_DB_DIR/person.xml" -i "$DOWNLOADER_TEI" -f "$TEI_FILELIST" -o "$PSP_DB_TEI" -c `realpath $CONFIG_FILE`
