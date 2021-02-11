@@ -196,6 +196,30 @@ if [ "$EXIT_CONDITION" == "steno" ] ; then
 fi
 
 ################################
+### audio files              ###
+#  input:
+#    downloader-tei/$ID
+#
+#  output:
+#    audio/$ID.audio_urls.sh  # runnable list of audio links
+###############################
+export AUDIO_DIR=$DATA_DIR/audio
+export AUDIO_URL_LIST=$AUDIO_DIR/${ID}.audio_urls.sh
+
+mkdir -p $AUDIO_DIR
+
+if skip_process_single_file "audio-links" "AUDIO_URL_LIST" ; then # BEGIN AUDIO-LINKS CONDITION
+
+
+$XSL_TRANSFORM audio/get-audiolinks.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$AUDIO_URL_LIST" data-path="$DOWNLOADER_TEI"
+
+fi; # END AUDIO-LINKS CONDITION
+
+if [ "$EXIT_CONDITION" == "audio-links" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+################################
 ### vlada.cz database file   ###
 #  input:
 #
