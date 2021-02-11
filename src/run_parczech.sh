@@ -196,6 +196,30 @@ if [ "$EXIT_CONDITION" == "steno" ] ; then
 fi
 
 ################################
+### audio files              ###
+#  input:
+#    downloader-tei/$ID
+#
+#  output:
+#    audio/$ID.audio_urls.sh  # runnable list of audio links
+###############################
+export AUDIO_DIR=$DATA_DIR/audio
+export AUDIO_URL_LIST=$AUDIO_DIR/${ID}.audio_urls.sh
+
+mkdir -p $AUDIO_DIR
+
+if skip_process_single_file "audio-links" "AUDIO_URL_LIST" ; then # BEGIN AUDIO-LINKS CONDITION
+
+
+$XSL_TRANSFORM audio/get-audiolinks.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$AUDIO_URL_LIST" data-path="$DOWNLOADER_TEI"
+
+fi; # END AUDIO-LINKS CONDITION
+
+if [ "$EXIT_CONDITION" == "audio-links" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+################################
 ### vlada.cz database file   ###
 #  input:
 #
@@ -574,6 +598,38 @@ if [ "$EXIT_CONDITION" == "udpipe" ] ; then
   echo "EXITTING: $EXIT_CONDITION"
   exit
 fi
+
+################################
+### audio vertical           ###
+#  input:
+#    udpipe-tei/$ID
+#
+#  output:
+#    audio-vert-in/$ID            # verticals from tokenized tei files
+#    audio-vert-in/$ID/vertical.fl
+###############################
+export AUDIO_VERT_DIR=$DATA_DIR/audio-vert-in/${ID}
+export AUDIO_VERT_LIST=$AUDIO_VERT_DIR/vertical.fl
+
+mkdir -p $AUDIO_VERT_DIR
+
+if skip_process "audio-vert" "$AUDIO_VERT_DIR" "$EXISTING_FILELIST" ; then # BEGIN AUDIO-VERT-IN CONDITION
+
+
+for FILE in `cat $TEI_FILELIST`;
+do
+  OUTFILE="$AUDIO_VERT_DIR/${FILE%.*}.vert"
+  mkdir -p "${OUTFILE%/*}"
+  $XSL_TRANSFORM audio/token_ids.xsl "$UDPIPE_TEI/$FILE" "$OUTFILE"
+done
+
+fi; # END AUDIO-VERT-IN CONDITION
+
+if [ "$EXIT_CONDITION" == "audio-vert-in" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+
 
 ###############################
 ###     NameTag tei         ###
