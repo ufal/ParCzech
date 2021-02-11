@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-xmlns:fo="http://www.w3.org/1999/XSL/Format" >
+<xsl:stylesheet version="1.0"
+  xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+  xmlns:fo="http://www.w3.org/1999/XSL/Format"
+  xmlns="http://www.tei-c.org/ns/1.0"
+  xmlns:tei="http://www.tei-c.org/ns/1.0">
     <xsl:output method="text" omit-xml-declaration="yes" indent="no"/>
-    <xsl:template match="*[local-name(.) = 'media' and @mimeType='audio/mp3']">
+    <xsl:template match="tei:pb">
         <xsl:text># AUDIO: </xsl:text>
-        <xsl:value-of select="./@url" />
+        <xsl:variable name="audio-id" select="substring-after(@corresp,'#')" />
+        <xsl:value-of select="//tei:media[@xml:id=$audio-id]/@source" />
         <xsl:text>&#xA;</xsl:text>
     </xsl:template>
 

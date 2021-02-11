@@ -599,6 +599,38 @@ if [ "$EXIT_CONDITION" == "udpipe" ] ; then
   exit
 fi
 
+################################
+### audio vertical           ###
+#  input:
+#    udpipe-tei/$ID
+#
+#  output:
+#    audio-vert-in/$ID            # verticals from tokenized tei files
+#    audio-vert-in/$ID/vertical.fl
+###############################
+export AUDIO_VERT_DIR=$DATA_DIR/audio-vert-in/${ID}
+export AUDIO_VERT_LIST=$AUDIO_VERT_DIR/vertical.fl
+
+mkdir -p $AUDIO_VERT_DIR
+
+if skip_process "audio-vert" "$AUDIO_VERT_DIR" "$EXISTING_FILELIST" ; then # BEGIN AUDIO-VERT-IN CONDITION
+
+
+for FILE in `cat $TEI_FILELIST`;
+do
+  OUTFILE="$AUDIO_VERT_DIR/${FILE%.*}.vert"
+  mkdir -p "${OUTFILE%/*}"
+  $XSL_TRANSFORM audio/token_ids.xsl "$UDPIPE_TEI/$FILE" "$OUTFILE"
+done
+
+fi; # END AUDIO-VERT-IN CONDITION
+
+if [ "$EXIT_CONDITION" == "audio-vert-in" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+
+
 ###############################
 ###     NameTag tei         ###
 #  input:
