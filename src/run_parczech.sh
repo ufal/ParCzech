@@ -453,13 +453,14 @@ export AUDIO_VERT_LIST=$AUDIO_VERT_DIR/vertical.fl
 
 mkdir -p $AUDIO_VERT_DIR
 
-if skip_process "audio-vert" "$AUDIO_VERT_DIR" "$EXISTING_FILELIST" ; then # BEGIN AUDIO-VERT-IN CONDITION
+if skip_process_single_file "audio-vert" "$AUDIO_VERT_LIST" ; then # BEGIN AUDIO-VERT-IN CONDITION
 
 
 for FILE in `cat $TEI_FILELIST`;
 do
   OUTFILE="$AUDIO_VERT_DIR/${FILE%.*}.vert"
   mkdir -p "${OUTFILE%/*}"
+  echo "${FILE%.*}.vert" >> $AUDIO_VERT_LIST
   $XSL_TRANSFORM audio/token_ids.xsl "$UDPIPE_TEI/$FILE" "$OUTFILE"
 done
 
