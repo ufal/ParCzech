@@ -339,6 +339,7 @@ sub fill_table {
   open(my $fh,"<:encoding($encoding)",  $dbfile_structure{"$prefix$tablename"}) or die "Cannot open:$!\n";
   $pspdb->begin_work;
   while(my $line = <$fh>) {
+    $line =~ s/\N{U+00A0}/ /g;
     my @fields = map {s/^\s*$//;$_} split('\|',$line);
     my @dbname;
     my @dbval;
