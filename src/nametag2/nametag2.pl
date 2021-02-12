@@ -129,18 +129,23 @@ sub fill_vertical_data_doc {
 
 sub cnec2connl {
   my $node = shift;
-  my %mapping = (g => 'LOC', i => 'ORG', p => 'PER');
+  my %mapping = (
+    g  => 'LOC',
+    i  => 'ORG',
+    p  => 'PER',
+    ms => 'MISC',
+    mn => 'MISC',
+    or => 'MISC',
+    op => 'MISC',
+    oa => 'MISC',
+  );
   my $cat = $node->getAttribute('ana');
   $cat =~ s/^.*://;
-  print STDERR " $cat";
-  print STDERR $xpc->exists('./ancestor::*[local-name()="name"]',$node);
   if($xpc->exists('./ancestor::*[local-name()="name"]',$node)){
-    print STDERR "SKIPPING\n";
     return;
   }
-  my $nametype = $mapping{substr(lc $cat,0,1)} // 'MISC';
-  print STDERR "=",$nametype,"\n";
-  $node->setAttribute('type',$nametype);
+  my $nametype = $mapping{$cat} // $mapping{substr(lc $cat,0,1)};
+  $node->setAttribute('type',$nametype) if $nametype;
 }
 
 sub variedTEI {
