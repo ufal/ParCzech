@@ -147,7 +147,7 @@ sub variedTEI {
   my $node = shift;
   my %names = (
     t  => 'date',
-    th => 'tyme',
+    th => 'time',
     me => 'email',
     mi => 'ref',
     # o => '???',
