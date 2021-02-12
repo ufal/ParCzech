@@ -24,19 +24,16 @@
     <xsl:call-template name="add-only-childnodes" />
   </xsl:template>
 
-  <xsl:template match="//tei:seg//tei:name[not(@type)]">
-    <xsl:message>TEMPORARY REMOVING not typed name: <xsl:value-of select="./@ana" /></xsl:message>
-    <xsl:comment>name ana="<xsl:value-of select="./@ana" />"</xsl:comment>
-    <xsl:apply-templates select="node()"/>
-    <xsl:comment>name</xsl:comment>
-  </xsl:template>
-  <xsl:template match="//tei:seg//tei:name[@type]">
-    <xsl:message>TEMPORARY REMOVING ana from name: <xsl:value-of select="./@ana" /></xsl:message>
-    <xsl:copy>
-      <xsl:apply-templates select="@*[not(local-name()='ana')]" />
-      <xsl:comment>ana="<xsl:value-of select="./@ana" />"</xsl:comment>
+
+  <xsl:template match="//tei:seg//tei:*[not(local-name(..) = 'node') and starts-with(@ana,'ne:') and contains(' ref email num age unit measure time date ',concat(' ',local-name(),' ') ) ]">
+    <xsl:message>TEMPORARY RENAMING <xsl:value-of select="local-name()" /> to name</xsl:message>
+    <xsl:text>&#xA;</xsl:text><xsl:comment>BEGIN <xsl:value-of select="local-name()" /></xsl:comment><xsl:text>&#xA;</xsl:text>
+    <xsl:element name="name">
+      <xsl:apply-templates select="@*" />
       <xsl:apply-templates select="node()"/>
-    </xsl:copy>
+    </xsl:element>
+    <xsl:text>&#xA;</xsl:text><xsl:comment>END <xsl:value-of select="local-name()" /></xsl:comment><xsl:text>&#xA;</xsl:text>
+
   </xsl:template>
 
   <xsl:template match="//tei:*[local-name() = 'w' or local-name() = 'pc']/@ana">
