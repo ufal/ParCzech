@@ -24,6 +24,7 @@ my $word_element_name = 'w';
 my $punct_element_name = 'pc';
 my $sent_element_name = 's';
 my $connl_type;
+my $varied_tei_elements;
 
 my $max_sent_cnt = 500;
 
@@ -32,6 +33,7 @@ GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize, tag and lemmatize and parse to stdout, do not change the database
             'conll2003' => \$connl_type,
+            'varied-tei-elements' => \$varied_tei_elements,
             'model=s' => \$model, # udpipe model tagger
             'word-element=s' => \$word_element_name,
             'punct-element=s' => \$punct_element_name,
@@ -120,7 +122,8 @@ sub fill_vertical_data_doc {
     my $nm = $nodeTagger->add_name_entity($type, $linenumbers[0], $linenumbers[$#linenumbers], $name_cnt);
     $nm->setAttribute('LABEL',$text) if $nm and $debug;
   }
-  $nodeTagger->postprocess(\&cnec2connl) if $connl_type;
+  $nodeTagger->postprocess(\&cnec2connl) if $connl_type; # note: looking at entity names
+  $nodeTagger->postprocess(\&variedTEI) if $varied_tei_elements; # change entity names
   return $name_cnt;
 }
 
@@ -140,6 +143,28 @@ sub cnec2connl {
   $node->setAttribute('type',$nametype);
 }
 
+sub variedTEI {
+  my $node = shift;
+  my %names = (
+    t  => 'date',
+    th => 'tyme',
+    me => 'email',
+    mi => 'ref',
+    # o => '???',
+    # 'o_' => '???',
+    a  => 'num',
+    oe => 'unit',
+    om => 'unit',
+    n  => 'num',
+    nc => 'measure',
+    na => 'age',
+  );
+  my $cat = $node->getAttribute('ana');
+  $cat =~ s/^.*://;
+  my $elemName = $names{$cat} // $names{substr(lc $cat,0,1)};
+  return unless $elemName;
+  $node->setNodeName($elemName);
+}
 sub usage_exit {
    my ($fm_args,$fm_desc) =  @{ParCzech::PipeLine::FileManager::usage('tei')};
    print

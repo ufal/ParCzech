@@ -487,6 +487,7 @@ mkdir -p $NAMETAG_TEI
 log "annotating nametag2  $NAMETAG_TEI"
 
 perl -I lib nametag2/nametag2.pl --conll2003 \
+                                 --varied-tei-elements \
                                  --model=czech-cnec2.0-200831 \
                                  --filelist $TEI_FILELIST \
                                  --input-dir $UDPIPE_TEI \
