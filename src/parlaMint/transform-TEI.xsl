@@ -8,13 +8,13 @@
   <xsl:output method="xml" indent="yes" encoding="UTF-8" />
 
   <xsl:include href="parczech2parlamint.xsl" />
-
+  <xsl:variable name="id-prefix-extended" select="concat($id-prefix,'_',$set-date,'-')" />
 
   <xsl:template match="//tei:linkGrp[@type='UD-SYN']/tei:link/@target">
     <xsl:param name="headid" select="substring-after(substring-before(.,' '),'#')" />
     <xsl:param name="argumentid" select="substring-after(substring-after(.,' '),'#')" />
     <xsl:attribute name="target">
-      <xsl:value-of select="concat('#',$id-prefix,'_',$set-date,'_', $headid,' #',$id-prefix,'_',$set-date,'_', $argumentid)" />
+      <xsl:value-of select="concat('#',$id-prefix-extended, $headid,' #',$id-prefix-extended, $argumentid)" />
     </xsl:attribute>
   </xsl:template>
 
@@ -51,7 +51,7 @@
   <xsl:template name="patch-id">
     <xsl:param name="id" />
     <xsl:attribute name="xml:id">
-      <xsl:value-of select="concat($id-prefix,'_',$set-date,'_', $id)" />
+      <xsl:value-of select="concat($id-prefix-extended, $id)" />
     </xsl:attribute>
   </xsl:template>
 
