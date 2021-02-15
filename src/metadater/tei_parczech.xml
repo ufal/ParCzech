@@ -708,7 +708,7 @@
               <catDesc xml:lang="en"><term>email</term>: Email address</catDesc>
             </category>
             <category xml:id="NER.cnec2.0.ms">
-              <catDesc xml:lang="en"><term>media station</term>: Radio and TV station</term></catDesc>
+              <catDesc xml:lang="en"><term>media station</term>: Radio and TV station</catDesc>
             </category>
             <category xml:id="NER.cnec2.0.mi">
               <catDesc xml:lang="en"><term>url</term>: Internet link</catDesc>
