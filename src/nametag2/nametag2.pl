@@ -133,11 +133,16 @@ sub cnec2connl {
     g  => 'LOC',
     i  => 'ORG',
     p  => 'PER',
-    ms => 'MISC',
-    mn => 'MISC',
+    ms => 'ORG',
+    mn => 'ORG',
+    o  => 'MISC',
     or => 'MISC',
     op => 'MISC',
     oa => 'MISC',
+   'o_'=> 'MISC',
+   oe => '',
+   om => '',
+
   );
   my $cat = $node->getAttribute('ana');
   $cat =~ s/^.*://;
@@ -155,14 +160,10 @@ sub variedTEI {
     th => 'time',
     me => 'email',
     mi => 'ref',
-    # o => '???',
-    # 'o_' => '???',
     a  => 'num',
     oe => 'unit',
     om => 'unit',
     n  => 'num',
-    nc => 'measure',
-    na => 'age',
   );
   my $cat = $node->getAttribute('ana');
   $cat =~ s/^.*://;

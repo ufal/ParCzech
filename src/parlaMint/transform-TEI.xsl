@@ -25,6 +25,7 @@
   </xsl:template>
 
 
+  <!--
   <xsl:template match="//tei:seg//tei:*[not(local-name(..) = 'node') and starts-with(@ana,'ne:') and contains(' ref email num age unit measure time date ',concat(' ',local-name(),' ') ) ]">
     <xsl:message>TEMPORARY RENAMING <xsl:value-of select="local-name()" /> to name</xsl:message>
     <xsl:text>&#xA;</xsl:text><xsl:comment>BEGIN <xsl:value-of select="local-name()" /></xsl:comment><xsl:text>&#xA;</xsl:text>
@@ -33,8 +34,8 @@
       <xsl:apply-templates select="node()"/>
     </xsl:element>
     <xsl:text>&#xA;</xsl:text><xsl:comment>END <xsl:value-of select="local-name()" /></xsl:comment><xsl:text>&#xA;</xsl:text>
-
   </xsl:template>
+-->
 
   <xsl:template match="//tei:*[local-name() = 'w' or local-name() = 'pc']/@ana">
     <xsl:call-template name="remove-prefix">
