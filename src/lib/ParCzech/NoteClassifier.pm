@@ -6,9 +6,9 @@ use open qw(:std :utf8);
 use utf8;
 
 my %full_match = (
-  ano => [qw/vocal speaking/],
-  ne => [qw/vocal speaking/],
-  slibuji => [qw/vocal speaking/],
+  ano => [qw/vocal type speaking/],
+  ne => [qw/vocal type speaking/],
+  slibuji => [qw/vocal type speaking/],
 );
 
 my @reg_match = (
