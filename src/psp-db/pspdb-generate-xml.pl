@@ -196,7 +196,9 @@ my $personlist = ParCzech::PipeLine::FileManager::XML::open_xml($personlist_in);
 my $patcher = ParCzech::Translation->new(single_direction => 1,$patches ? (tran_files => $patches) : ());
 my $translator = ParCzech::Translation->new($translations ? (tran_files => $translations) : (),
                                             tran_regex => $regex_translations);
-my $orglist = listOrg->new(db => $pspdb, translator => $translator,
+
+my $org_translator = ParCzech::Translation->new($translations ? (tran_files => $translations) : ());
+my $orglist = listOrg->new(db => $pspdb, translator => $org_translator,
                                          patcher => $patcher);
 
 usage_exit() unless $personlist;
