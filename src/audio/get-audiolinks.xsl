@@ -16,7 +16,6 @@ REJECT="$SELF.reject"
 cat "$SELF" | sed -n "s/^#AUDIO://p"| wget --no-verbose --no-clobber --directory-prefix "$DIR" --output-file "$LOG" --rejected-log "$REJECT" --force-directories -w 1 -i-
 
 
-#AUDIO:https://psp.cz/eknih/2010ps/audio/2012/01/31/2012013113581412.mp3
 # LIST OF FILES:
 </xsl:text>
 
