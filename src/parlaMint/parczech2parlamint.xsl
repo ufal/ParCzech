@@ -127,7 +127,17 @@
     </xsl:copy>
   </xsl:template>
 
-  <xsl:template match="text()"><xsl:value-of select="normalize-space(.)"/></xsl:template>
+  <xsl:template match="text()">
+    <xsl:if test="starts-with(., ' ') and preceding-sibling::*">
+      <xsl:text> </xsl:text>
+    </xsl:if>
+    <xsl:value-of select="normalize-space(.)"/>
+    <xsl:if test="ends-with(., ' ') and following-sibling::* ">
+      <xsl:text> </xsl:text>
+    </xsl:if>
+
+
+  </xsl:template>
 
   <xsl:template name="remove-prefix">
     <xsl:param name="prefix" />
