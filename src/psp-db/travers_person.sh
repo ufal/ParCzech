@@ -55,7 +55,7 @@ if [ ! -z "$TRANSLATE" ] ; then
     my @tr = map { [split('=',\$_)]} qw/$TRANSLATE/;
     for my \$i (@tr){
       my (\$s,\$t) = @\$i;
-      print STDERR '.' if \$l =~ s/\\Q#\$s\\E/#\$t/g;
+      print STDERR '.' if \$l =~ s/\\Q#\$s\"\\E/#\$t\"/g;
     };
     \$_ = \$l;
   "
