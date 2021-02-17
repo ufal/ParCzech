@@ -11,6 +11,7 @@ use File::Path;
 use XML::LibXML;
 use XML::LibXML::PrettyPrint;
 use Unicode::Diacritic::Strip;
+use DateTime;
 
 binmode STDOUT, ":utf8";
 #binmode STDERR, ":utf8";
@@ -155,6 +156,10 @@ sub addAudioFile {
   $url =~ s{^https?://}{};
   $url =~ s{^.*?eknih/}{};
   $media->setAttribute('url',$url);
+  my ($dy,$dm,$dd,$sh,$sM,$eh,$eM) = $url =~ m/([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})\.mp3$/;
+  my $start = DateTime->new(year => $dy, month => $dm, day => $dd, hour => $sh, minute => $sM);
+  my $end   = DateTime->new(year => $dy, month => $dm, day => $dd, hour => $eh, minute => $eM);
+  $self->{last_seen_audio} = {from => $start, to => $end, id => $id};
   return $self;
 }
 
@@ -273,8 +278,13 @@ sub addPageBreak {
     my $audioid = sprintf("%s.audio%d",$self->{ID}, $self->{PAGECOUNTER});
     $pbNode->setAttribute('corresp', "#$audioid");
     $self->addAudioFile($params{audiolink}, $audioid);
+    undef $self->{last_seen_no_audio_pb};
+  } else {
+    print STDERR "\tNO AUDIO MATCH\n";
+    $self->{last_seen_no_audio_pb} = $pbNode;
   }
   $self->addToElemsQueue($pbNode,1);
+
   return $self;
 }
 
@@ -365,6 +375,18 @@ sub createTimeNoteNode {
   $time->appendText($params{texttime}//'');
   $note->appendChild($time);
   $note->appendText($params{before}//'');
+  if(defined $self->{last_seen_no_audio_pb} && defined $params{when}){
+    print STDERR "\tLOOKING FOR AUDIO\n";
+    if(defined $self->{last_seen_audio}){
+      if(  $params{when} > $self->{last_seen_audio}->{from}
+        && $params{when} < $self->{last_seen_audio}->{to}){
+        print STDERR "\tADDING AUDIO FROM PREVIEOUS PAGE: $self->{last_seen_audio}->{id}\n";
+        $self->{last_seen_no_audio_pb}->setAttribute('corresp', "#".$self->{last_seen_audio}->{id});
+      }
+      undef $self->{last_seen_audio};
+    }
+    undef $self->{last_seen_no_audio_pb};
+  }
   return $note;
 }
 
