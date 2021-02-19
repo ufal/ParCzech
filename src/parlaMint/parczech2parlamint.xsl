@@ -3,7 +3,8 @@
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns="http://www.tei-c.org/ns/1.0"
   xmlns:tei="http://www.tei-c.org/ns/1.0"
-  exclude-result-prefixes="tei" >
+  xmlns:pcz="http://ufal.mff.cuni.cz/parczech/ns/1.0"
+  exclude-result-prefixes="tei pcz" >
 
   <xsl:output method="xml" indent="yes" encoding="UTF-8" />
   <xsl:param name="id-prefix" />
@@ -14,10 +15,13 @@
 
 
   <xsl:template match="@xml:id">
-    <xsl:call-template name="patch-id">
-      <xsl:with-param name="id" select="."/>
-    </xsl:call-template>
-
+    <xsl:variable name="new-id" select="pcz:patch-id(.)" />
+    <xsl:if test="not(./parent::*/ancestor::*)" >
+      <xsl:message><xsl:value-of select="concat('RENAME: ',.,' ',$new-id)" /></xsl:message> <!-- DO NOT REMOVE !!! -->
+    </xsl:if>
+    <xsl:attribute name="xml:id">
+      <xsl:value-of select="$new-id" />
+    </xsl:attribute>
   </xsl:template>
 
   <xsl:template match="/tei:TEI | /tei:TEI/tei:text">

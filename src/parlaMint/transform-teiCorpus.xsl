@@ -4,40 +4,49 @@
   xmlns="http://www.tei-c.org/ns/1.0"
   xmlns:tei="http://www.tei-c.org/ns/1.0"
   xmlns:xi="http://www.w3.org/2001/XInclude"
-  exclude-result-prefixes="tei" >
+  xmlns:pcz="http://ufal.mff.cuni.cz/parczech/ns/1.0"
+  exclude-result-prefixes="tei pcz" >
 
   <xsl:output method="xml" indent="yes" encoding="UTF-8" />
   <xsl:param name="outdir" />
+  <xsl:param name="rename" />
+
+  <xsl:variable name="rename-files-doc" select="document($rename)" />
+  <xsl:key name="rename-list" match="file" use="@from" />
 
   <xsl:include href="parczech2parlamint.xsl" />
 
   <xsl:template match="/tei:teiCorpus/@xml:id">
+    <xsl:variable name="new-id" select="pcz:patch-corpus-id(.)" />
+    <xsl:message><xsl:value-of select="concat('RENAME: ',.,' ',$new-id)" /></xsl:message> <!-- DO NOT REMOVE !!! -->
     <xsl:attribute name="xml:id">
-      <xsl:value-of select="$id-prefix" />
-      <xsl:if test="contains(.,'.')">
-        <xsl:value-of select="concat('.',substring-after(.,'.'))" />
-      </xsl:if>
+      <xsl:value-of select="$new-id" />
     </xsl:attribute>
   </xsl:template>
   <xsl:template match="/tei:teiCorpus/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@ident='pdt']" /><!-- removing pdt prefix definition -->
 
   <xsl:template match="/tei:teiCorpus/xi:include">
     <xsl:element name="xi:include">
-      <xsl:variable name="filename" select="substring-after(./@href,'/')" />
       <xsl:attribute name="href">
-        <xsl:value-of select="document(concat($outdir,'/',$filename))/tei:TEI/@xml:id"/>
-        <xsl:text>.xml</xsl:text>
+        <xsl:value-of select=" key('rename-list',@href,$rename-files-doc)/@to"/>
       </xsl:attribute>
+
     </xsl:element>
   </xsl:template>
 
 
-  <xsl:template name="patch-id">
+  <xsl:function name="pcz:patch-id">
     <xsl:param name="id" />
-    <xsl:attribute name="xml:id">
-      <xsl:value-of select="$id" />
-    </xsl:attribute>
-  </xsl:template>
+    <xsl:value-of select="$id" />
+  </xsl:function>
+
+  <xsl:function name="pcz:patch-corpus-id">
+    <xsl:param name="id" />
+    <xsl:if test="contains($id,'.')">
+      <xsl:value-of select="concat($id-prefix,'.',substring-after($id,'.'))" />
+    </xsl:if>
+    <xsl:value-of select="$id-prefix" />
+  </xsl:function>
 
   <xsl:template match="tei:encodingDesc">
     <xsl:copy>

@@ -3,7 +3,8 @@
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns="http://www.tei-c.org/ns/1.0"
   xmlns:tei="http://www.tei-c.org/ns/1.0"
-  exclude-result-prefixes="tei" >
+  xmlns:pcz="http://ufal.mff.cuni.cz/parczech/ns/1.0"
+  exclude-result-prefixes="tei pcz" >
 
   <xsl:output method="xml" indent="yes" encoding="UTF-8" />
 
@@ -49,12 +50,10 @@
   <!--  <xsl:message>REMOVING pc/@lemma - TODO: do this in udpipe?</xsl:message> -->
   </xsl:template> <!-- removing pc/@lemma -->
 
-  <xsl:template name="patch-id">
+  <xsl:function name="pcz:patch-id">
     <xsl:param name="id" />
-    <xsl:attribute name="xml:id">
-      <xsl:value-of select="concat($id-prefix-extended, $id)" />
-    </xsl:attribute>
-  </xsl:template>
+    <xsl:value-of select="concat($id-prefix-extended, $id)" />
+  </xsl:function>
 
   <xsl:template name="add-only-childnodes">
     <xsl:if test="./self::*[preceding-sibling::node()[1][self::text()][ends-with(., ' ')]] ">

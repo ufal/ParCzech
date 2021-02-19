@@ -81,14 +81,43 @@ fi
 
 export OUTPUT_ANA_DIR="$OUTPUT_DIR/$DATA_PREFIX.ana/$DATA_PREFIX.TEI.ana"
 export OUTPUT_RAW_DIR="$OUTPUT_DIR/$DATA_PREFIX/$DATA_PREFIX.TEI"
-
+export RENAME_LOG="$OUTPUT_DIR/parczech2parlemint.rename"
 
 mkdir -p "$OUTPUT_DIR"
+
+filter_rename () {
+  FILE=$1
+  while read LINE; do
+    echo "$LINE"
+    echo "$LINE" | grep "^RENAME:" >> $FILE
+  done
+}
+
+create_xml_remame () {
+  echo '<?xml version="1.0" encoding="UTF-8"?>';
+  echo "<rename>"
+  while read LINE; do
+    echo "$LINE" | sed 's/^RENAME: \([^-]*-[^-]*\)\([^ ]*\) \([^ ]*\)$/  <file from="\1\/\1\2.xml" to="\3.xml" \/>/'
+  done
+  echo "</rename>"
+
+}
+
+rename_xml_file () {
+  DIR=$1
+  while read LINE; do
+    FROM=`echo "$LINE" | cut -d' ' -f 2`
+    TO=`echo "$LINE" | cut -d' ' -f 3`
+    echo "$FROM.xml -> $TO.xml"
+    mv "$DIR/$FROM.xml" "$DIR/$TO.xml"
+  done
+}
 
 
 create_parlaMint() {
   IN_DIR=$1
   OUT_DIR=$2
+  LOG=$3
   mkdir -p OUT_DIR
   if [ ! -s "$IN_DIR" ]; then
     echo "warning: missing input directory"
@@ -104,23 +133,20 @@ create_parlaMint() {
   for TEIFILE in `grep -o '[^<>]*include [^<>]*' "$CORPFILE"|sed 's/^.*href="//;s/".*$//'`
   do
     echo "$TEIFILE $DATA_PREFIX"
-    $XSL_TRANSFORM parlaMint/transform-TEI.xsl "$IN_DIR/$TEIFILE" "$OUT_DIR/${TEIFILE##*/}" id-prefix="$DATA_PREFIX" "${PARAMS[@]}"
+    $XSL_TRANSFORM parlaMint/transform-TEI.xsl "$IN_DIR/$TEIFILE" "$OUT_DIR/${TEIFILE##*/}" id-prefix="$DATA_PREFIX" "${PARAMS[@]}" 2>&1 \
+        | filter_rename $LOG
   done
+  cat $LOG | create_xml_remame > $LOG.xml
   echo
   echo $CORPFILE $OUT_DIR/${CORPFILE##*/}
-  $XSL_TRANSFORM parlaMint/transform-teiCorpus.xsl "$CORPFILE" "$OUT_DIR/${CORPFILE##*/}" id-prefix="$DATA_PREFIX" outdir="$OUT_DIR" "${PARAMS[@]}"
+  $XSL_TRANSFORM parlaMint/transform-teiCorpus.xsl "$CORPFILE" "$OUT_DIR/${CORPFILE##*/}" id-prefix="$DATA_PREFIX" outdir="$OUT_DIR" rename="$LOG.xml" "${PARAMS[@]}" 2>&1 \
+        | filter_rename $LOG
 
-  for TEIFILE in `ls "$OUT_DIR"`
-  do
-    TEIFILE_REN=`$XPATH_QUERY "$OUT_DIR/$TEIFILE" "declare option saxon:output 'omit-xml-declaration=yes'; concat(/*/@*[local-name()='id'],'.xml')"`
-    echo "$TEIFILE -> $TEIFILE_REN"
-    mv "$OUT_DIR/$TEIFILE" "$OUT_DIR/${TEIFILE_REN}"
-  done
-
+  cat $LOG | rename_xml_file $OUT_DIR
 }
 
-create_parlaMint $INPUT_RAW_DIR $OUTPUT_RAW_DIR
-create_parlaMint $INPUT_ANA_DIR $OUTPUT_ANA_DIR
+create_parlaMint $INPUT_RAW_DIR $OUTPUT_RAW_DIR "$RENAME_LOG.raw"
+create_parlaMint $INPUT_ANA_DIR $OUTPUT_ANA_DIR "$RENAME_LOG.ana"
 
 
 if [ "$VALIDATE" -eq "1"  ]; then
