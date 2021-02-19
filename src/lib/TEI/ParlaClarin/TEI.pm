@@ -22,6 +22,9 @@ sub new {
   my $self = $class->SUPER::new('TEI',%params);
   bless($self,$class);
   $self->{PAGECOUNTER} = 0;
+  $self->{PAGES} = [];
+  $self->{AUDIO} = {};
+
   $self->{UTT_COUNTER} = 0;
   $self->{UTT_ID} = ''; # current utterance ID
   $self->{SEG_COUNTER} = 0;
@@ -145,7 +148,11 @@ sub hideAudioUrls {
 sub addAudioFile {
   my $self = shift;
   my $url = shift;
-  my $id = shift;
+  my $num = shift;
+  my ($name) = $url =~ m/([0-9]*)\.mp3$/;
+  return $self->{AUDIO}->{$name}->{id} if defined $self->{AUDIO}->{$name};
+
+  my $id = sprintf("%s.audio%d",$self->{ID}, $num);
   $self->{sourceDesc_recording} = XML::LibXML::Element->new('recordingStmt') unless defined $self->{sourceDesc_recording};
   my $rec = _get_child_node_or_create($self->{XPC},$self->{sourceDesc_recording},'recording');
   $rec->setAttribute('type', 'audio');
@@ -156,11 +163,11 @@ sub addAudioFile {
   $url =~ s{^https?://}{};
   $url =~ s{^.*?eknih/}{};
   $media->setAttribute('url',$url);
-  my ($dy,$dm,$dd,$sh,$sM,$eh,$eM) = $url =~ m/([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})\.mp3$/;
-  my $start = DateTime->new(year => $dy, month => $dm, day => $dd, hour => $sh, minute => $sM);
-  my $end   = DateTime->new(year => $dy, month => $dm, day => $dd, hour => $eh, minute => $eM);
-  $self->{last_seen_audio} = {from => $start, to => $end, id => $id};
-  return $self;
+  $self->{AUDIO}->{$name} = {
+    id => $id,
+    node => $media,
+  };
+  return $id;
 }
 
 
@@ -266,26 +273,43 @@ sub appendQueue {
   return $element;
 }
 
+sub addAudio {
+  my $self = shift;
+  my %opts = @_;
+  my $page = $self->{PAGES}->[$opts{page_number} - 1];
+  my $audioid = $self->addAudioFile($opts{audio_link}, $page->{page_number});
+  $page->{page_node}->setAttribute('corresp', "#$audioid");
+  $page->{audio_id} = $audioid;
+}
+
 sub addPageBreak {
   my $self = shift;
   my %params = @_;
+  my $page = {};
   my $pbNode =  XML::LibXML::Element->new("pb");
   $pbNode->setAttribute('source', $params{source}) if defined $params{source};
   $self->{PAGECOUNTER}++;
+  $page->{page_number} = $self->{PAGECOUNTER};
+  $page->{page_node} = $pbNode;
+  $page->{link} = $params{source};
   $pbNode->setAttribute('n', $self->{PAGECOUNTER});
   $pbNode->setAttributeNS($self->{NS}->{xml}, 'id', sprintf("%s.pb%d",$self->{ID}, $self->{PAGECOUNTER}));
+  push @{$self->{PAGES}}, $page;
   if($params{audiolink}){
-    my $audioid = sprintf("%s.audio%d",$self->{ID}, $self->{PAGECOUNTER});
-    $pbNode->setAttribute('corresp', "#$audioid");
-    $self->addAudioFile($params{audiolink}, $audioid);
-    undef $self->{last_seen_no_audio_pb};
+    $self->addAudio(
+                     page_number => $self->{PAGECOUNTER},
+                     audio_link  => $params{audiolink}
+                    );
   } else {
     print STDERR "\tNO AUDIO MATCH\n";
-    $self->{last_seen_no_audio_pb} = $pbNode;
   }
   $self->addToElemsQueue($pbNode,1);
-
   return $self;
+}
+
+sub getPages {
+  my $self = shift;
+  return map {  {number => $_->{page_number}, link => $_->{link}, from => $_->{from}, to => $_->{to}, has_audio => !!$_->{audio_id}} } @{$self->{PAGES}};
 }
 
 sub addAuthor {
@@ -369,25 +393,32 @@ sub createTimeNoteNode {
   $note->setAttribute('type','time');
   $note->appendText($params{before}//'');
   my $time = XML::LibXML::Element->new("time");
+  $self->addPageTime($params{when}) if exists $params{when};
   $time->setAttribute('when',$params{when}) if exists $params{when};
   $time->setAttribute('from',$params{from}) if exists $params{from};
   $time->setAttribute('to',$params{to}) if exists $params{to};
   $time->appendText($params{texttime}//'');
   $note->appendChild($time);
   $note->appendText($params{before}//'');
-  if(defined $self->{last_seen_no_audio_pb} && defined $params{when}){
-    print STDERR "\tLOOKING FOR AUDIO\n";
-    if(defined $self->{last_seen_audio}){
-      if(  $params{when} > $self->{last_seen_audio}->{from}
-        && $params{when} < $self->{last_seen_audio}->{to}){
-        print STDERR "\tADDING AUDIO FROM PREVIEOUS PAGE: $self->{last_seen_audio}->{id}\n";
-        $self->{last_seen_no_audio_pb}->setAttribute('corresp', "#".$self->{last_seen_audio}->{id});
-      }
-      undef $self->{last_seen_audio};
-    }
-    undef $self->{last_seen_no_audio_pb};
-  }
   return $note;
+}
+
+sub addPageTime {
+  my $self = shift;
+  my $time = shift;
+  my $page = $self->currentPage();
+  return unless $page;
+  $page->{from} = $time unless defined $page->{from};
+  $page->{to} = $time unless defined $page->{to};
+  $page->{from} = $time if $page->{from} > $time;
+  $page->{to} = $time if $page->{to} < $time;
+}
+
+sub currentPage {
+  my $self = shift;
+  return unless $self->{PAGECOUNTER};
+  return unless $self->{PAGECOUNTER} == scalar(@{$self->{PAGES}});
+  return $self->{PAGES}->[$self->{PAGECOUNTER} - 1];
 }
 
 sub createNoteNode {

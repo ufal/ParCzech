@@ -7,6 +7,7 @@ use File::Spec;
 use File::Path;
 use TEI::ParlaClarin::TEI;
 use TEI::ParlaClarin::teiCorpus;
+use ParCzech::WebTools::Audio;
 use Getopt::Long;
 use Data::Dumper;
 
@@ -27,6 +28,7 @@ my $cache_dir;
 my $run_date = ScrapperUfal::get_timestamp('%Y%m%dT%H%M%S');
 my $prune_regex = undef;
 my $debug_level = 0;
+my $GuessAudioLink = ParCzech::WebTools::Audio->new(debug => 1);
 
 my $config = {
   title => [
@@ -341,6 +343,7 @@ sub record_exporter {
   my $topic_id;
   my $datetime;
   my $act_date;
+  my $pagedate;
 
   if($act_date=xpath_string('//*[@id="main-content"]/p[@class = "status"]')) {
   	$act_date =~ s/^[^\d]*//;
@@ -372,6 +375,7 @@ sub record_exporter {
       ${$ref_post}->{id}->{topic} = $topic_id;
       init_TEI( map {${$ref_post}->{id}->{$_} } qw/term meeting sitting topic/ );
       add_pagebreak_and_audio_to_teiFile($link); # add audio if possible
+      $teiFile->addPageTime($pagedate) if $pagedate;
       $teiFile->addSittingDate($datetime) if $datetime;
       debug_print( "  UTTERANCE " .($$ref_author->{authorname}), __LINE__, 5);
       my $id = $teiFile->addUtterance(
@@ -407,6 +411,7 @@ sub record_exporter {
       my $time = "$1:".($2//'00');
       $datetime = $strp->parse_datetime("$date $time");
       my $noteNode = $teiFile->createTimeNoteNode(when=>$datetime, texttime=>$texttime);
+      $pagedate = $datetime->clone();
       $teiFile->addToElemsQueue($noteNode);
       $$ref_post->{date} = $datetime;
       next;
@@ -429,6 +434,7 @@ sub record_exporter {
       my $time = "$1:".($2//'00');
 
       $datetime = $strp->parse_datetime("$date $time");
+      $pagedate = $datetime->clone();
       $teiFile->addTimeNote(when=>$datetime, texttime=>$texttime);
       next;
     } elsif(my $a = xpath_node('./b[not(../@align = "center" or ../@align = "CENTER" ) and (.//a or starts-with(text(),"Poslan"))]',$cnt)
@@ -560,6 +566,25 @@ sub init_TEI {
 
 sub export_TEI {
   if($teiFile && !$teiFile->isEmpty()) {
+    my ($term) = map {s/^([a-z]*)(\d*)$/$2$1/; $_} @{$teiFile->getMeetings('#parla.term')};
+    $GuessAudioLink->set_term_id($term);
+    for my $page ($teiFile->getPages) {
+      unless ($page->{has_audio}) {
+        print STDERR "looking for audio for (".($page->{from}//'?DATE?').") $page->{link}\n";
+        my $audiolink;
+        if($page->{from}){
+          $audiolink = $GuessAudioLink->get_audio_link($page->{from});
+          if(defined $audiolink) {
+            print STDERR "\taudio: $audiolink\n";
+          } else {
+            print STDERR "\taudio - looking to previous 10 minutes\n";
+            $audiolink = $GuessAudioLink->get_audio_link($page->{from}->subtract(minutes => 10)) unless $audiolink; # look to previeous audio - can be overlap
+             print STDERR "\t\taudio found $audiolink\n" if $audiolink;
+          }
+        }
+        $teiFile->addAudio(page_number=>$page->{number}, audio_link=>$audiolink) if defined $audiolink;
+      }
+    }
     $teiFile->addSourceDesc();
     $teiFile->addTitleSuffix(sprintf(', %s %s %s',$teiFile->getFromDate()->strftime('%Y-%m-%d'), $teiFile->teiID(),$config->{titleSuffix}), type=>'main', lang=>undef);
     my $filepath = $teiFile->toFile();
