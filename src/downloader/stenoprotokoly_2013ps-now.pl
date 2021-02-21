@@ -143,32 +143,17 @@ my @steno_sittings;
 my @steno_topic_anchor;
 my @steno_topic_links;
 my @day_audio_page_links; # list of urls that contain audio_links
-my %day_audio_links = ( # stores audio links - page -> audio_link
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002002.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112814081422.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002003.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112814181432.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002004.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112814381452.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002005.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112814481502.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002006.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112814581512.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002007.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112815081522.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002008.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112815181532.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002009.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112815281542.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002010.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112816581712.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002011.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112817081722.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002012.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112817181732.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002013.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112817281742.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002014.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112817381752.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002015.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112817481802.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002016.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112817581812.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002017.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112818081822.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002018.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112818181832.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002019.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112818281842.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002020.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112818381852.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002021.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112818481902.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002022.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112818581912.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002023.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112819081922.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002024.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112819181932.mp3',
-  'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002025.htm' => 'https://www.psp.cz/eknih/2017ps/audio/2017/11/28/2017112819281942.mp3',
+my %day_audio_links = (); # stores audio links - page -> audio_link
+
+
+my %date_to_patch = (
+  '2017ps 002' => {
+    text => 'Úterý 28. listopadu 2017',
+    from => 2, # inclusive
+    to => 26 # exclusive
+  },
 );
+
 my %link_patcher_data = (
   'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002026.htm',
   );
@@ -518,15 +503,25 @@ sub html_patcher {
     print STDERR "document is not loaded, unable to patch: $link\n";
     return;
   }
-  if($link =~ m/2017ps\/stenprot\/002schuz\/s0020(..)\.htm/
-     && $1 <= 25) {
+  my ($term, $meeting, $part) = $link =~ m/(\d+ps)\/stenprot\/.*\/s(\d\d\d)(\d\d\d).htm$/;
+  my $patched = date_patcher($link, $term,$meeting,$part);
+  return $patched;
+}
+
+sub date_patcher {
+  my ($link, $term, $meeting, $part) = @_;
+  return unless defined $date_to_patch{"$term $meeting"};
+  if($date_to_patch{"$term $meeting"}->{from} <= $part
+    && $date_to_patch{"$term $meeting"}->{to} > $part ){
     print STDERR "PATCHING: $link\n";
     my $node = xpath_node('//*[@id="main-content"]/*[has(@class,"document-nav")]/p[@class="date"]/a');
-    my $text = "Úterý 28. listopadu 2017";
+    #my $text = "Úterý 28. listopadu 2017";
+    my $text = $date_to_patch{"$term $meeting"}->{text};
     print STDERR "\t'",$node->textContent(),"' -> '$text'\n";
     $node->removeChildNodes();
     $node->appendText( $text );
   }
+  return 1;
 }
 
 sub link_patcher {
