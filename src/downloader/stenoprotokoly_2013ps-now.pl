@@ -152,10 +152,40 @@ my %date_to_patch = (
     from => 2, # inclusive
     to => 26 # exclusive
   },
+  '2017ps 005' => {
+    text => 'Středa 10. ledna 2018',
+    from => 2, # inclusive
+    to => 44 # exclusive
+  },
+  '2017ps 012' => {
+    text => 'Úterý 10. dubna 2018',
+    from => 2, # inclusive
+    to => 31 # exclusive
+  },
+  '2017ps 031' => {
+    text => 'Středa 29. května 2019',
+    from => 3, # inclusive
+    to => 31 # exclusive
+  },
+  '2017ps 035' => {
+    text => 'Úterý 15. října 2019',
+    from => 2, # inclusive
+    to => 40 # exclusive
+  },
+  '2017ps 049' => {
+    text => 'Úterý 26. května 2020',
+    from => 6, # inclusive
+    to => 48 # exclusive
+  },
 );
 
 my %link_patcher_data = (
   'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002026.htm',
+  'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/005schuz/s005002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/005schuz/s005044.htm',
+  'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/012schuz/s012002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/012schuz/s012031.htm',
+  'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/031schuz/s031003.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/031schuz/s031032.htm',
+  'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/035schuz/s035002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/035schuz/s035040.htm',
+  'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/049schuz/s049006.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/049schuz/s049048.htm',
   );
 
 my $unauthorized = JSON::from_json(ScrapperUfal::get_note('unauthorized')||'{}');
