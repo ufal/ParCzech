@@ -520,8 +520,10 @@ sub date_patcher {
     print STDERR "\t'",$node->textContent(),"' -> '$text'\n";
     $node->removeChildNodes();
     $node->appendText( $text );
+    undef $day_audio_links{$link}; # removing audio link from list of known pairing
+    $_->unbindNode() for (xpath_node('//div[@class="aside"]//ul[@class="link-list"]/li[contains(text(),"MP3")]/a')); # remove wrong link from DOM
+    return 1;
   }
-  return 1;
 }
 
 sub link_patcher {
