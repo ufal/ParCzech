@@ -208,7 +208,7 @@ export AUDIO_URL_LIST=$AUDIO_DIR/${ID}.audio_urls.sh
 
 mkdir -p $AUDIO_DIR
 
-if skip_process_single_file "audio-links" "AUDIO_URL_LIST" ; then # BEGIN AUDIO-LINKS CONDITION
+if skip_process_single_file "audio-links" "$AUDIO_URL_LIST" ; then # BEGIN AUDIO-LINKS CONDITION
 
 
 $XSL_TRANSFORM audio/get-audiolinks.xsl "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$AUDIO_URL_LIST" data-path="$DOWNLOADER_TEI"
