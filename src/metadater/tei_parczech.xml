@@ -143,7 +143,6 @@
                <tagUsage gi="div" occurs="[[ELEMCNT:div]]"/>
                <tagUsage gi="note" occurs="[[ELEMCNT:note]]"/>
                <tagUsage gi="pb" occurs="[[ELEMCNT:pb]]"/>
-               <tagUsage gi="media" occurs="[[ELEMCNT:media]]"/>
                <tagUsage gi="u" occurs="[[ELEMCNT:u]]"/>
                <tagUsage gi="seg" occurs="[[ELEMCNT:seg]]"/>
                <tagUsage gi="kinesic" occurs="[[ELEMCNT:kinesic]]"/>
@@ -151,6 +150,8 @@
                <tagUsage gi="incident" occurs="[[ELEMCNT:incident]]"/>
                <tagUsage gi="gap" occurs="[[ELEMCNT:gap]]"/>
                <tagUsage gi="desc" occurs="[[ELEMCNT:desc]]"/>
+               <tagUsage gi="time" occurs="[[ELEMCNT:time]]"/>
+               <tagUsage gi="ref" occurs="[[ELEMCNT:ref]]"/>
             </namespace>
          </tagsDecl>
       </pcz:tei>
@@ -380,9 +381,17 @@
       <pcz:test>
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace/tei:tagUsage[@gi='link']" />
       </pcz:test>
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='ref']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='time']" />
       <pcz:tei>
                <tagUsage gi="s" occurs="[[ELEMCNT:s]]"/>
                <tagUsage gi="name" occurs="[[ELEMCNT:name]]"/>
+               <tagUsage gi="time" occurs="[[ELEMCNT:time]]"/>
+               <tagUsage gi="date" occurs="[[ELEMCNT:date]]"/>
+               <tagUsage gi="unit" occurs="[[ELEMCNT:unit]]"/>
+               <tagUsage gi="num" occurs="[[ELEMCNT:num]]"/>
+               <tagUsage gi="email" occurs="[[ELEMCNT:email]]"/>
+               <tagUsage gi="ref" occurs="[[ELEMCNT:ref]]"/>
                <tagUsage gi="w" occurs="[[ELEMCNT:w]]"/>
                <tagUsage gi="pc" occurs="[[ELEMCNT:pc]]"/>
                <tagUsage gi="linkGrp" occurs="[[ELEMCNT:linkGrp]]"/>
