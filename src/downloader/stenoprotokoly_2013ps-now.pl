@@ -515,7 +515,7 @@ sub record_exporter {
         $teiFile->addHead($cnt_text);
         $cnt = xpath_node('./b', $cnt) // $cnt;
       }
-      export_text($cnt, 1);
+      export_text($cnt, 1, no_note => 1);
     }
   }
   return $topic_id;
@@ -650,6 +650,7 @@ sub set_document_date {
 sub export_text {
   my $cnt = shift;
   my $is_first = shift; # remove initial : if true
+  my %opts = @_;
   # my $text = shift;
   # start <seg>
   my @child_nodes;
@@ -668,6 +669,10 @@ sub export_text {
       $text = ' ' if ($text eq '') and ! ($childnode->toString() eq '');
       $text =~ s/\s*:?\s*// if $is_first; # remove initial : and spaces
       $text =~ s/\s\s+/ /g ; # squeeze spaces
+      if(defined $opts{no_note}){
+        $segm = $teiFile->addToUtterance($text,$segm);
+        $text = '';
+      }
       while($text){
         if($text =~ s/^\s+//) {
           $teiFile->addToElemsQueue($&);
