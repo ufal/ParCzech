@@ -226,12 +226,7 @@ sub _add_static_data_items {
 
     if($xpath) {
       my $baseNode = ParCzech::PipeLine::FileManager::XML::makenode( $self->{dom}, $xpath, $self->{xpc}, \&nodeConditionalAppender);
-      my ($teiNodes) = $self->{xpc}->findnodes('./pcz:tei', $item);
-      if (defined $teiNodes) {
-        for my $content ($teiNodes->childNodes()) {
-          $baseNode->appendChild($content->cloneNode(1));
-        }
-      }
+
       my ($replNode) = $self->{xpc}->findnodes('./pcz:replace-text', $item);
       if (defined $replNode) {
         my $replXpath = $replNode->getAttributeNS($xmlNs{pcz}, 'xpath') // './self::*';
@@ -246,6 +241,25 @@ sub _add_static_data_items {
           }
         } else {
           print STDERR "ERROR in configuration replace-text: $name\n";
+        }
+      }
+      my @remNodes = $self->{xpc}->findnodes('./pcz:remove-node', $item);
+      for my $remNode (@remNodes) {
+        my $remXpath = $remNode->getAttributeNS($xmlNs{pcz}, 'xpath') // './self::*';
+        if(defined $remXpath) {
+          for my $node ($self->{xpc}->findnodes($remXpath,$baseNode)){
+            $node->unbindNode();
+          }
+        } else {
+          print STDERR "ERROR in configuration remove-node: $name\n";
+        }
+      }
+
+      # appending new nodes should be at the end - avoids overwritting data
+      my ($teiNodes) = $self->{xpc}->findnodes('./pcz:tei', $item);
+      if (defined $teiNodes) {
+        for my $content ($teiNodes->childNodes()) {
+          $baseNode->appendChild($content->cloneNode(1));
         }
       }
     } elsif ($dep_name) {
