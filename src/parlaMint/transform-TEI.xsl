@@ -25,7 +25,7 @@
     <xsl:call-template name="add-only-childnodes" />
   </xsl:template>
 
-
+  <xsl:template match="tei:s"><xsl:copy><xsl:apply-templates select="@*|element()"/></xsl:copy></xsl:template>
   <!--
   <xsl:template match="//tei:seg//tei:*[not(local-name(..) = 'node') and starts-with(@ana,'ne:') and contains(' ref email num age unit measure time date ',concat(' ',local-name(),' ') ) ]">
     <xsl:message>TEMPORARY RENAMING <xsl:value-of select="local-name()" /> to name</xsl:message>
