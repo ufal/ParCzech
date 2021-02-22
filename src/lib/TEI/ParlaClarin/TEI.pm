@@ -315,8 +315,7 @@ sub getPages {
 sub addAuthor {
   my $self = shift;
   my %params = @_;
-  my $xmlid = _to_xmlid($params{id} ? ('pers-', $params{name}, $params{id}) : ('pers-gov-',$params{govern_id}));
-  $xmlid = _to_xmlid('pers-', $params{name}) unless $xmlid;
+  my $xmlid = _to_xmlid($params{govern_id} ? ('pers-gov-',$params{govern_id}) :  ('pers-', $params{name}, $params{id}//'') );
   return unless $xmlid;
   return $xmlid if exists $self->{THIS_TEI_PERSON_IDS}->{$xmlid};
   if(exists $self->{PERSON_IDS}->{$xmlid}) {
