@@ -8,6 +8,7 @@
     <pcz:item pcz:dep="respKopp" />
     <pcz:item pcz:dep="funderLINDAT" />
     <pcz:item pcz:dep="encodingDesc" />
+    <pcz:item pcz:dep="tagsDecl" />
   </pcz:meta>
 
   <pcz:meta pcz:name="ParCzech-live.ann">
@@ -25,6 +26,7 @@
     <pcz:item pcz:dep="respKopp" />
     <pcz:item pcz:dep="funderLINDAT" />
     <pcz:item pcz:dep="encodingDesc" />
+    <pcz:item pcz:dep="tagsDecl" />
     <pcz:item pcz:dep="encodingDesc-corpus" />
     <pcz:item pcz:dep="profileDesc-corpus" />
   </pcz:meta>
@@ -138,6 +140,18 @@
         <projectDesc></projectDesc>
          <tagsDecl>
             <namespace name="http://www.tei-c.org/ns/1.0">
+            </namespace>
+         </tagsDecl>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
+
+  <pcz:meta pcz:name="tagsDecl">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace/tei:tagUsage[@gi='w']" />
+      </pcz:test>
+      <pcz:tei>
                <tagUsage gi="text" occurs="[[ELEMCNT:text]]"/>
                <tagUsage gi="body" occurs="[[ELEMCNT:body]]"/>
                <tagUsage gi="div" occurs="[[ELEMCNT:div]]"/>
@@ -152,8 +166,6 @@
                <tagUsage gi="desc" occurs="[[ELEMCNT:desc]]"/>
                <tagUsage gi="time" occurs="[[ELEMCNT:time]]"/>
                <tagUsage gi="ref" occurs="[[ELEMCNT:ref]]"/>
-            </namespace>
-         </tagsDecl>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
