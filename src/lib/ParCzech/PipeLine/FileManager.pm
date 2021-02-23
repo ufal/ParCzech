@@ -460,7 +460,7 @@ sub assign_cnt_vars {
   my %vars = ();
   for my $var (@cntvars) {
     my ($elem) = ($var =~ m/:(.*)$/);
-    $vars{$var} = $doc->findvalue("count(//*[local-name(.) = '$elem'])");
+    $vars{$var} = $doc->findvalue("count(/*/*[local-name(.) = 'text']//*[local-name(.) = '$elem'])");
   }
   return \%vars;
 }
