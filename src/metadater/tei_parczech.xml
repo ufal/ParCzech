@@ -146,11 +146,34 @@
     </pcz:item>
   </pcz:meta>
 
+
+  <pcz:meta pcz:name="ParlaMint.tagsDecl">
+    <pcz:item pcz:dep="tagsDecl" />
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader"> <!-- remove added ref - not in ParlaMint raw data -->
+      <pcz:remove-node pcz:xpath="./tei:encodingDesc/tei:tagsDecl/tei:namespace/tei:tagUsage[@gi='ref']" />
+    </pcz:item>
+  </pcz:meta>
+  <pcz:meta pcz:name="ParlaMint.tagsDecl.ana">
+    <pcz:item pcz:dep="tagsDecl.ann" />
+  </pcz:meta>
+
   <pcz:meta pcz:name="tagsDecl">
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace">
-      <pcz:test>
-        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace/tei:tagUsage[@gi='w']" />
-      </pcz:test>
+      <!-- replace data -->
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='text']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='body']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='div']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='note']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='pb']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='u']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='seg']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='kinesic']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='vocal']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='incident']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='gap']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='desc']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='time']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='ref']" />
       <pcz:tei>
                <tagUsage gi="text" occurs="[[ELEMCNT:text]]"/>
                <tagUsage gi="body" occurs="[[ELEMCNT:body]]"/>
@@ -166,6 +189,39 @@
                <tagUsage gi="desc" occurs="[[ELEMCNT:desc]]"/>
                <tagUsage gi="time" occurs="[[ELEMCNT:time]]"/>
                <tagUsage gi="ref" occurs="[[ELEMCNT:ref]]"/>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
+
+  <pcz:meta pcz:name="tagsDecl.ann">
+    <pcz:item pcz:dep="tagsDecl" />
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace">
+      <!-- replace data -->
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='s']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='name']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='time']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='date']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='unit']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='num']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='email']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='ref']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='w']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='pc']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='linkGrp']" />
+      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='link']" />
+      <pcz:tei>
+               <tagUsage gi="s" occurs="[[ELEMCNT:s]]"/>
+               <tagUsage gi="name" occurs="[[ELEMCNT:name]]"/>
+               <tagUsage gi="time" occurs="[[ELEMCNT:time]]"/>
+               <tagUsage gi="date" occurs="[[ELEMCNT:date]]"/>
+               <tagUsage gi="unit" occurs="[[ELEMCNT:unit]]"/>
+               <tagUsage gi="num" occurs="[[ELEMCNT:num]]"/>
+               <tagUsage gi="email" occurs="[[ELEMCNT:email]]"/>
+               <tagUsage gi="ref" occurs="[[ELEMCNT:ref]]"/>
+               <tagUsage gi="w" occurs="[[ELEMCNT:w]]"/>
+               <tagUsage gi="pc" occurs="[[ELEMCNT:pc]]"/>
+               <tagUsage gi="linkGrp" occurs="[[ELEMCNT:linkGrp]]"/>
+               <tagUsage gi="link" occurs="[[ELEMCNT:link]]"/>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
@@ -385,32 +441,6 @@
     </pcz:item>
   </pcz:meta>
 
-
-
-
-  <pcz:meta pcz:name="tagsDecl.ann">
-    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace">
-      <pcz:test>
-        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:tagsDecl/tei:namespace/tei:tagUsage[@gi='link']" />
-      </pcz:test>
-      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='ref']" />
-      <pcz:remove-node pcz:xpath="./tei:tagUsage[@gi='time']" />
-      <pcz:tei>
-               <tagUsage gi="s" occurs="[[ELEMCNT:s]]"/>
-               <tagUsage gi="name" occurs="[[ELEMCNT:name]]"/>
-               <tagUsage gi="time" occurs="[[ELEMCNT:time]]"/>
-               <tagUsage gi="date" occurs="[[ELEMCNT:date]]"/>
-               <tagUsage gi="unit" occurs="[[ELEMCNT:unit]]"/>
-               <tagUsage gi="num" occurs="[[ELEMCNT:num]]"/>
-               <tagUsage gi="email" occurs="[[ELEMCNT:email]]"/>
-               <tagUsage gi="ref" occurs="[[ELEMCNT:ref]]"/>
-               <tagUsage gi="w" occurs="[[ELEMCNT:w]]"/>
-               <tagUsage gi="pc" occurs="[[ELEMCNT:pc]]"/>
-               <tagUsage gi="linkGrp" occurs="[[ELEMCNT:linkGrp]]"/>
-               <tagUsage gi="link" occurs="[[ELEMCNT:link]]"/>
-      </pcz:tei>
-    </pcz:item>
-  </pcz:meta>
 
   <pcz:meta pcz:name="ParCzechPS-2.0">
     <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:fileDesc/tei:editionStmt">
