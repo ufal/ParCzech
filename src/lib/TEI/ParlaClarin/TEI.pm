@@ -239,7 +239,9 @@ sub addToUtterance {
   my $element = shift;
   my $segment = shift;
   unless($self->{activeUtterance}){ # DEFINE NO SPEAKER UTTERANCE
-    $self->addToElemsQueue($self->createNoteNode(type => 'comment', text => $element));
+    if( $element !~ m/^[\s\n\r]*$/ ) {
+      $self->addToElemsQueue($self->createNoteNode(type => 'comment', text => $element));
+    }
     return;
   }
   if(!defined($segment) && scalar @{$self->{QUEUE}}) { # print queue if segment is not defined

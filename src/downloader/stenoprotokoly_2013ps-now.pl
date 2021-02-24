@@ -511,11 +511,13 @@ sub record_exporter {
 
 
     } elsif($cnt_text) {
+      my %header_opts = ();
       if($cnt->nodeType == XML::LibXML::XML_ELEMENT_NODE && lc($cnt->getAttribute('align')//'') eq 'center'){
         $teiFile->addHead($cnt_text);
         $cnt = xpath_node('./b', $cnt) // $cnt;
+        %header_opts = (no_note => 1);
       }
-      export_text($cnt, 1, no_note => 1);
+      export_text($cnt, 1,%header_opts);
     }
   }
   return $topic_id;
