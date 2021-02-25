@@ -118,6 +118,7 @@ create_parlaMint() {
   IN_DIR=$1
   OUT_DIR=$2
   LOG=$3
+  FLAG=$4
   mkdir -p OUT_DIR
   if [ ! -s "$IN_DIR" ]; then
     echo "warning: missing input directory"
@@ -142,11 +143,13 @@ create_parlaMint() {
   $XSL_TRANSFORM parlaMint/transform-teiCorpus.xsl "$CORPFILE" "$OUT_DIR/${CORPFILE##*/}" id-prefix="$DATA_PREFIX" outdir="$OUT_DIR" rename="$LOG.xml" "${PARAMS[@]}" 2>&1 \
         | filter_rename $LOG
 
+  echo;echo "UPDATING tagUsage:"
+  $D/metadater/update_tagUsage.sh -M -c config.sh $FLAG "$CORPFILE"
   cat $LOG | rename_xml_file $OUT_DIR
 }
 
-create_parlaMint $INPUT_RAW_DIR $OUTPUT_RAW_DIR "$RENAME_LOG.raw"
-create_parlaMint $INPUT_ANA_DIR $OUTPUT_ANA_DIR "$RENAME_LOG.ana"
+create_parlaMint $INPUT_RAW_DIR $OUTPUT_RAW_DIR "$RENAME_LOG.raw" -t
+create_parlaMint $INPUT_ANA_DIR $OUTPUT_ANA_DIR "$RENAME_LOG.ana" -a
 
 
 if [ "$VALIDATE" -eq "1"  ]; then
