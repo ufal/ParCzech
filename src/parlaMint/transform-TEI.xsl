@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xsl:stylesheet version="1.0"
+<xsl:stylesheet version="3.0"
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns="http://www.tei-c.org/ns/1.0"
   xmlns:tei="http://www.tei-c.org/ns/1.0"
   xmlns:pcz="http://ufal.mff.cuni.cz/parczech/ns/1.0"
   exclude-result-prefixes="tei pcz" >
 
-  <xsl:output method="xml" indent="yes" encoding="UTF-8" />
+  <xsl:output method="xml" indent="yes" suppress-indentation="w" encoding="UTF-8" />
 
   <xsl:include href="parczech2parlamint.xsl" />
   <xsl:variable name="id-prefix-extended" select="concat($id-prefix,'_',$set-date,'-')" />
