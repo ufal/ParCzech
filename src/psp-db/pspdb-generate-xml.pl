@@ -193,7 +193,7 @@ my $regex_translations = [
 ];
 
 my $personlist = ParCzech::PipeLine::FileManager::XML::open_xml($personlist_in);
-my $patcher = ParCzech::Translation->new(single_direction => 1,$patches ? (tran_files => $patches) : ());
+my $patcher = ParCzech::Translation->new(single_direction => 1, keep_if_no_match => 1 ,$patches ? (tran_files => $patches) : ());
 my $translator = ParCzech::Translation->new($translations ? (tran_files => $translations) : (),
                                             tran_regex => $regex_translations);
 
@@ -845,7 +845,7 @@ sub getRole {
         parent => "PARENT",
         name_cz => $r->{name_cz},
         name_en => $r->{name_en},
-        id => create_ID($self->{patcher}->translate_static($r->{name_en} // $self->{translator}->translate_static($r->{name_cz})))
+        id => create_ID($self->{patcher}->translate_static($r->{name_en} // $self->{translator}->translate_static($r->{name_cz}) // 'institution'))
       };
     } else {
       print STDERR "ERROR: unknown role id_typ_org=$rid\n";
