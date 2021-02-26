@@ -224,7 +224,7 @@ for my $term (split(/,/,$term_list//'')){
   while(my $pm = $sth->fetchrow_hashref ) {
     my $person_id = $new_personlist->addPerson(psp_id => $pm->{id_osoba});
     $allterm_persons{$person_id} = 1;
-    print STDERR "$person_id ";
+    print STDERR "\tMATCH $person_id \n";
   }
 }
 
@@ -501,7 +501,7 @@ sub findPerson {
   for my $type (qw/psp gov guest/){
     if(defined $opts{"${type}_id"}){
       my $prefixed_id = $type.':'.$opts{"${type}_id"};
-      print STDERR "LOOKING FOR $prefixed_id -> $self->{ids_to_main_id}->{$prefixed_id}\n";
+      print STDERR "LOOKING FOR $prefixed_id -> ",($self->{ids_to_main_id}->{$prefixed_id}//''),"\n";
       return $self->{listPerson}->{$self->{ids_to_main_id}->{$prefixed_id}} if defined $self->{ids_to_main_id}->{$prefixed_id};
     }
   }
@@ -710,10 +710,7 @@ sub init {
 sub addLink {
   my $self = shift;
   my ($link,$type) = (@_,'guest');
-  print STDERR "======================================\n";
-  print STDERR Dumper($self->{idno});
   $self->{idno}->{$type}->{$link} = 1;
-  print STDERR Dumper($self->{idno});
 }
 
 sub affiliate {
