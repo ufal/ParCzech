@@ -270,7 +270,7 @@ for my $person_node ($xpc->findnodes('//tei:person',$personlist->{dom})) {
                                     );
   print STDERR "PERSON $forename $surname " ,join(' ',values %data)," = $person_id\n";
   my $person = $new_personlist->findPerson(id => $person_id);
-  for my $link ($xpc->findvalue('normalize-space(./tei:idno[@type="URI"]/text())',$person_node)) {
+  for my $link (grep {$_} $xpc->findvalue('normalize-space(./tei:idno[@type="URI"]/text())',$person_node)) {
     my $type = 'guest';
     $type = 'gov' if $link =~ m/vlada.cz/;
     $type = 'psp' if $link =~ m/psp.cz/;
