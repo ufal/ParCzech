@@ -470,7 +470,7 @@ sub add_token {
   #$token->setAttribute('tag', $opts{xpos}) if(defined($opts{xpos}));
   $token->setAttribute('pos', $opts{upos}) if(defined($opts{upos}) and !$self->{no_lemma_tag});
   if(defined($opts{upos}) and defined($opts{feat}) and !$self->{no_lemma_tag}) {
-    $opts{msd} = "UposTag=$opts{upos}|$opts{feat}";
+    $opts{msd} = "UPosTag=$opts{upos}|$opts{feat}";
     $opts{msd} =~ s/\|\_$//;
     $token->setAttribute('msd', $opts{msd});
   }
