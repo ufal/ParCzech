@@ -131,10 +131,13 @@ sub cnec2connl {
   my $node = shift;
   my %mapping = (
     g  => 'LOC',
+    A  => 'LOC',
     i  => 'ORG',
     p  => 'PER',
+    P  => 'PER',
     ms => 'ORG',
     mn => 'ORG',
+    C  => 'MISC',
     o  => 'MISC',
     or => 'MISC',
     op => 'MISC',
@@ -149,13 +152,14 @@ sub cnec2connl {
   if($xpc->exists('./ancestor::*[local-name()="name"]',$node)){
     return;
   }
-  my $nametype = $mapping{$cat} // $mapping{substr(lc $cat,0,1)};
+  my $nametype = $mapping{$cat} // $mapping{substr($cat,0,1)};
   $node->setAttribute('type',$nametype) if $nametype;
 }
 
 sub variedTEI {
   my $node = shift;
   my %names = (
+    T  => 'date',
     t  => 'date',
     th => 'time',
     me => 'email',
@@ -167,7 +171,7 @@ sub variedTEI {
   );
   my $cat = $node->getAttribute('ana');
   $cat =~ s/^.*://;
-  my $elemName = $names{$cat} // $names{substr(lc $cat,0,1)};
+  my $elemName = $names{$cat} // $names{substr($cat,0,1)};
   return unless $elemName;
   $node->setNodeName($elemName);
 }
@@ -241,7 +245,7 @@ sub cover_tokens_with_name {
   }
 
   my $name_elem = XML::LibXML::Element->new('name');
-  $name_elem->setAttribute('ana',lc "ne:$type");
+  $name_elem->setAttribute('ana',"ne:$type");
   $name_elem->setAttributeNS($xmlNS, 'id', sprintf("%s%d",$self->{id_prefix},$id));
   # append <name> element to ancestor before first_child
   $anc->{ancestor}->insertBefore($name_elem, $anc->{first_child});
