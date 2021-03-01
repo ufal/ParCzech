@@ -735,6 +735,18 @@
       <pcz:tei>
         <taxonomy xml:id="NER.cnec2.0">
           <desc xml:lang="en"><term> CNEC 2.0 Named Entities</term></desc>
+          <category xml:id="NER.cnec2.0.P">
+            <catDesc xml:lang="en"><term>person name</term></catDesc>
+          </category>
+          <category xml:id="NER.cnec2.0.T">
+            <catDesc xml:lang="en"><term>temporal expression</term></catDesc>
+          </category>
+          <category xml:id="NER.cnec2.0.A">
+            <catDesc xml:lang="en"><term>address</term></catDesc>
+          </category>
+          <category xml:id="NER.cnec2.0.C">
+            <catDesc xml:lang="en"><term>bibliographic</term>: Bibliographic item</catDesc>
+          </category>
           <category xml:id="NER.cnec2.0.t">
             <catDesc xml:lang="en"><term>time</term>: Time expression</catDesc>
             <category xml:id="NER.cnec2.0.ty">
