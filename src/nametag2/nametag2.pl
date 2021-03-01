@@ -114,9 +114,15 @@ sub fill_vertical_data_doc {
   my $nodeTagger = NodeTagger->new(@node_list);
   $nodeTagger->set_id_prefix($name_id_prefix);
   my @lines = split /\n/, $vertical_text;
+  my $lastLine = '';
   while(my $line = shift @lines){
 #    print STDERR "LINE:$line\n";
     my ($range, $type, $text) = split(/\t/, $line);
+    if($lastLine eq $line){
+      print STDERR "NameTag: ERROR duplicite line skipping - '$line'\n";
+      next;
+    }
+    $lastLine=$line;
     unless($type){
       print STDERR "NameTag: ERROR missing type - '$line'\n";
       next;
