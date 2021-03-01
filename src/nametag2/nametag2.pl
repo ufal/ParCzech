@@ -115,10 +115,14 @@ sub fill_vertical_data_doc {
   $nodeTagger->set_id_prefix($name_id_prefix);
   my @lines = split /\n/, $vertical_text;
   while(my $line = shift @lines){
-    $name_cnt++;
 #    print STDERR "LINE:$line\n";
     my ($range, $type, $text) = split(/\t/, $line);
+    unless($type){
+      print STDERR "NameTag: ERROR missing type - '$line'\n";
+      next;
+    }
     my @linenumbers = split(",",$range);
+    $name_cnt++;
     my $nm = $nodeTagger->add_name_entity($type, $linenumbers[0], $linenumbers[$#linenumbers], $name_cnt);
     $nm->setAttribute('LABEL',$text) if $nm and $debug;
   }
