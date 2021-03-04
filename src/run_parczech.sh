@@ -509,8 +509,8 @@ fi
 #    annotated-tei-meta/$ID
 ###############################
 
-export ANNOTATED_TEI_META=$DATA_DIR/annotated-tei-meta/${ID}
-VAR_LOG_ANN="$ANNOTATED_TEI_META/variables.log"
+export ANNOTATED_TEI_META=$DATA_DIR/parczech.tei.ana/${ID}
+VAR_LOG_ANN="$DATA_DIR/parczech.tei.ana/variables.${ID}.log"
 
 if skip_process "metadater.ann" "$ANNOTATED_TEI_META" "$EXISTING_FILELIST" ; then # BEGIN METADATER.TEI.ann CONDITION
 
@@ -556,23 +556,41 @@ fi; # END METADATER.teiCorpus.ann CONDITION
 ### add number of words to downloader-tei-meta/*   ###
 ######################################################
 
+export PARCZECH_TEI_RAW=$DATA_DIR/parczech.tei.raw/${ID}
+
+if skip_process "parczech.tei.raw" "$PARCZECH_TEI_RAW" "$EXISTING_FILELIST" ; then # BEGIN PARCZECH.TEI.raw CONDITION
+
+mkdir -p $PARCZECH_TEI_RAW
+
+# copy data
+cp "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" "$PARCZECH_TEI_RAW/$FILENAME"
+
+cat $TEI_FILELIST | while read F
+do
+  mkdir -p "$PARCZECH_TEI_RAW/${F%%/*}"
+  cp "$DOWNLOADER_TEI_META/$F" "$PARCZECH_TEI_RAW/$F"
+done
+
+
+
+# patch # of words
 grep "XPATH:count.*w.*:XPATH" "$VAR_LOG_ANN"| while read cnt_line
 do
-  echo "LINE:$cnt_line"
   fullpath=${cnt_line%|*}
   if [ $fullpath == 'AGGREGATED' ] ; then
     FILENAME=$TEICORPUS_FILENAME
   else
     FILENAME=`echo "$fullpath"| sed "s/^.*$ID\///;s/$INTERFIX.xml$/xml/"`
   fi
-  echo "patching: #words=${cnt_line##*|} $DOWNLOADER_TEI_META/$FILENAME"
+  echo "patching: #words=${cnt_line##*|} $PARCZECH_TEI_RAW/$FILENAME"
   perl -I lib metadater/metadater.pl --metadata-name "ParCzech-extent.ann" \
                                    --metadata-file metadater/tei_parczech.xml \
-                                   --input-file "$DOWNLOADER_TEI_META/$FILENAME"  \
-                                   --output-file "$DOWNLOADER_TEI_META/$FILENAME" \
+                                   --input-file "$PARCZECH_TEI_RAW/$FILENAME"  \
+                                   --output-file "$PARCZECH_TEI_RAW/$FILENAME" \
                                    --variables "${cnt_line##*|}"
 done
 
+fi;
 
 if [ "$EXIT_CONDITION" == "ann-meta" ] ; then
   echo "EXITTING: $EXIT_CONDITION"
