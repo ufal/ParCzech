@@ -105,12 +105,10 @@
 
   <pcz:meta pcz:name="ParCzech-extent.ann">
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:extent">
-      <pcz:test>
-        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:extent/tei:measure[@unit='words']" />
-      </pcz:test>
+      <pcz:remove-node pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:extent/tei:measure[@unit='words']" />
       <pcz:tei>
-        <measure unit="words" quantity="[[ELEMCNT:w]]" xml:lang="cs">[[ELEMCNT:w]] slov</measure>
-        <measure unit="words" quantity="[[ELEMCNT:w]]" xml:lang="en">[[ELEMCNT:w]] words</measure>
+        <measure unit="words" quantity="[[XPATH:count(/*/*[local-name(.) = 'text']/descendant-or-self::*[local-name(.) = 'w'][./text()][not(@join = 'right' and following-sibling::*[1][local-name(.) = 'w'])]):XPATH]]" xml:lang="cs">[[XPATH:count(/*/*[local-name(.) = 'text']/descendant-or-self::*[local-name(.) = 'w'][./text()][not(@join = 'right' and following-sibling::*[1][local-name(.) = 'w'])]):XPATH]] slov</measure>
+        <measure unit="words" quantity="[[XPATH:count(/*/*[local-name(.) = 'text']/descendant-or-self::*[local-name(.) = 'w'][./text()][not(@join = 'right' and following-sibling::*[1][local-name(.) = 'w'])]):XPATH]]" xml:lang="en">[[XPATH:count(/*/*[local-name(.) = 'text']/descendant-or-self::*[local-name(.) = 'w'][./text()][not(@join = 'right' and following-sibling::*[1][local-name(.) = 'w'])]):XPATH]] words</measure>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>

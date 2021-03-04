@@ -404,7 +404,7 @@ sub evaluate_vars {
   my $log = shift // [];
   my %vars = @_;
   for my $k (keys %vars) {
-    push @$log,[$k,$vars{$k}] if $$rawxml_ref =~ s/\[\[$k\]\]/$vars{$k}/g;
+    push @$log,[$k,$vars{$k}] if $$rawxml_ref =~ s/\[\[\Q$k\E\]\]/$vars{$k}/g;
   }
 }
 
@@ -449,7 +449,7 @@ sub save_to_file {
 
 sub find_variables {
   my $text = shift;
-  my @var_names = ( ($text//'') =~ m/\[\[([A-Za-z:]+)\]\]/g );
+  my @var_names = ( ($text//'') =~ m/\[\[([A-Za-z:]+|XPATH:.+?:XPATH)\]\]/g );
   my %vars = map {$_ => undef} @var_names;
   return keys %vars;
 }
@@ -461,6 +461,11 @@ sub assign_cnt_vars {
   for my $var (@cntvars) {
     my ($elem) = ($var =~ m/:(.*)$/);
     $vars{$var} = $doc->findvalue("count(/*/*[local-name(.) = 'text']/descendant-or-self::*[local-name(.) = '$elem'])");
+  }
+  my @xpathvars = grep {m/^XPATH:.*:XPATH$/} @_;
+  for my $var (@xpathvars) {
+    my ($xpath) = ($var =~ m/XPATH:(.*):XPATH$/);
+    $vars{$var} = $doc->findvalue("$xpath");
   }
   return \%vars;
 }

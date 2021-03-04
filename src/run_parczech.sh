@@ -556,8 +556,9 @@ fi; # END METADATER.teiCorpus.ann CONDITION
 ### add number of words to downloader-tei-meta/*   ###
 ######################################################
 
-for cnt_line in  `grep "|ELEMCNT:w=" "$VAR_LOG_ANN"`
+grep "XPATH:count.*w.*:XPATH" "$VAR_LOG_ANN"| while read cnt_line
 do
+  echo "LINE:$cnt_line"
   fullpath=${cnt_line%|*}
   if [ $fullpath == 'AGGREGATED' ] ; then
     FILENAME=$TEICORPUS_FILENAME

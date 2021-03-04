@@ -40,7 +40,10 @@ my $current_file;
 
 if($vars) {
   for my $record (split('\|', $vars)) {
-    my ($key,$val) = $record =~ m/^(..*?)=(.*)$/;
+    my ($key,$val) = $record =~ m/^(XPATH:..*?:XPATH)=(.*)$/;
+    unless (defined $key) {
+      ($key,$val) = $record =~ m/^(..*?)=(.*)$/;
+    }
     if($key) {
       if($val =~ m/\[\[|\]\]|[<>]/) {
         print STDERR "not safe value $val\n";
@@ -77,7 +80,7 @@ if($vars_logfile){
   my %cumulative;
   for my $v (@used_vars) {
     print FILE "$v->[0]|$v->[1]=$v->[2]\n";
-    $cumulative{$v->[1]} = ($cumulative{$v->[1]} // 0) + $v->[2] if $v->[1] =~ m/^ELEMCNT:/;
+    $cumulative{$v->[1]} = ($cumulative{$v->[1]} // 0) + $v->[2] if $v->[1] =~ m/^ELEMCNT:|XPATH:count/;
   }
   for my $var (keys %cumulative) {
     print FILE "AGGREGATED|$var=$cumulative{$var}\n";
