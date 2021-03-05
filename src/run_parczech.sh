@@ -84,6 +84,18 @@ function skip_process_single_file {
   return  1;
 }
 
+function patch_invalid_characters {
+  if [ ! -s  "$1" ]; then
+    log "file does not exists or is empty: $1"
+    return 0;
+  fi
+  # \x{200B} = [ZERO WIDTH SPACE]
+  # \x{202F} = [NARROW NO-BREAK SPACE]
+  # \x{00A0} = [NO-BREAK SPACE]
+  # \x{00AD} = [SOFT HYPHEN]
+  perl -CSD -pi -e '$_ =~ tr/\x{200B}\x{00AD}//d;$_ =~ tr/\x{202F}\x{00A0}/  /;' $1
+}
+
 log "STARTED: $pid ========================$EXIT_CONDITION"
 log "CONFIG FILE: $CONFIG_FILE"
 
@@ -182,7 +194,7 @@ do
 done
 
 find "$DOWNLOADER_TEI" -type f -name '*.xml' ! -name "person.xml" ! -name "$TEICORPUS_FILENAME" -printf '%P\n' > $TEI_FILELIST
-
+find "$DOWNLOADER_TEI" -type f -name '*.xml' | while read FILE ; do patch_invalid_characters "$FILE" ; done
 
 ### cache to html
 log "backup html $CL_OUTDIR_HTML/$ID"
@@ -399,6 +411,7 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus" \
                                    --input-file "$DOWNLOADER_TEI_META/sorted.$TEICORPUS_FILENAME"  \
                                    --output-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" \
                                    --variables "$CORPUS_VARS"
+patch_invalid_characters "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"
 
 
 
