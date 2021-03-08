@@ -49,24 +49,29 @@ sub usage {
 
 sub process_opts {
   return unless ( $input_file  || $filelist );
-
+  my @files_list = ();
   if ( $input_file ) {
   	$output_file //= $input_file;
-    push @files, {inpath => $input_file, outpath => $output_file}
+    push @files_list, {inpath => $input_file, outpath => $output_file}
   }
 
   if ( $filelist ) {
     open my $fl, $filelist or die "Could not open $filelist: $!";
     while(my $fn = <$fl>) {
       $fn =~ s/\n$//;
-      push @files, {inpath => File::Spec->catfile($input_dir,$fn), outpath => File::Spec->catfile($output_dir,$fn)} if $fn ;
+      push @files_list, {inpath => File::Spec->catfile($input_dir,$fn), outpath => File::Spec->catfile($output_dir,$fn)} if $fn ;
     }
     close $fl;
   }
 
-  for my $f (@files) {
-    file_does_not_exist($f->{inpath}) unless -e $f->{inpath}
+  for my $f (@files_list) {
+    unless(-e $f->{inpath}) {
+      file_does_not_exist($f->{inpath})
+    } else {
+      push @files, $f
+    }
   }
+
   return 1;
 }
 
