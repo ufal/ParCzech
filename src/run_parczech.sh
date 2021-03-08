@@ -571,7 +571,7 @@ fi; # END METADATER.teiCorpus.ann CONDITION
 
 export PARCZECH_TEI_RAW=$DATA_DIR/parczech.tei.raw/${ID}
 
-if skip_process "parczech.tei.raw" "$PARCZECH_TEI_RAW" "$EXISTING_FILELIST" ; then # BEGIN PARCZECH.TEI.raw CONDITION
+#if skip_process "parczech.tei.raw" "$PARCZECH_TEI_RAW" "$EXISTING_FILELIST" ; then # BEGIN PARCZECH.TEI.raw CONDITION
 
 mkdir -p $PARCZECH_TEI_RAW
 
@@ -603,7 +603,7 @@ do
                                    --variables "${cnt_line##*|}"
 done
 
-fi;
+#fi;
 
 if [ "$EXIT_CONDITION" == "ann-meta" ] ; then
   echo "EXITTING: $EXIT_CONDITION"
