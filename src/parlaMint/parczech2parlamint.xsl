@@ -102,7 +102,7 @@
             </publisher>
             <xsl:choose>
               <xsl:when test="$handler">
-                <idno type="handle"><xsl:value-of select="$handler" /></idno>
+                <idno type="URI" subtype="handle"><xsl:value-of select="$handler" /></idno>
                 <pubPlace>
                   <xsl:element name="ref">
                     <xsl:attribute name="target"><xsl:value-of select="$handler" /></xsl:attribute>

@@ -18,7 +18,7 @@ usage() {
   exit 1
 }
 
-while getopts  ':t:a:O:c:h:v'  opt; do
+while getopts  ':t:a:O:c:hv'  opt; do
   case "$opt" in
     'c')
       CONFIG_FILE=$OPTARG
@@ -33,7 +33,7 @@ while getopts  ':t:a:O:c:h:v'  opt; do
       OUTPUT_DIR=$OPTARG
       ;;
     'h')
-      PARAMS+=(handler="$OPTARG" )
+      HANDLER=1
       ;;
     'v')
       VALIDATE=1
@@ -113,12 +113,23 @@ rename_xml_file () {
   done
 }
 
+set_handler () {
+  FLAG=$1
+  if [ "$HANDLER" -eq "1"  ]; then
+    if [ "$FLAG" == "-t"  ]; then
+      PARAMS=(handler="http://hdl.handle.net/11356/1388" )
+    elif [ "$FLAG" == "-a"  ]; then
+      PARAMS=(handler="http://hdl.handle.net/11356/1405" )
+    fi
+  fi
+}
 
 create_parlaMint() {
   IN_DIR=$1
   OUT_DIR=$2
   LOG=$3
   FLAG=$4
+  set_handler $FLAG
   mkdir -p OUT_DIR
   if [ ! -s "$IN_DIR" ]; then
     echo "warning: missing input directory"
@@ -148,8 +159,8 @@ create_parlaMint() {
   cat $LOG | rename_xml_file $OUT_DIR
 }
 
-create_parlaMint $INPUT_RAW_DIR $OUTPUT_RAW_DIR "$RENAME_LOG.raw" -t
-create_parlaMint $INPUT_ANA_DIR $OUTPUT_ANA_DIR "$RENAME_LOG.ana" -a
+create_parlaMint "$INPUT_RAW_DIR" "$OUTPUT_RAW_DIR" "$RENAME_LOG.raw" -t
+create_parlaMint "$INPUT_ANA_DIR" "$OUTPUT_ANA_DIR" "$RENAME_LOG.ana" -a
 
 
 if [ "$VALIDATE" -eq "1"  ]; then
