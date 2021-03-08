@@ -743,9 +743,9 @@ sub addToXML {
     $sex->setAttribute('value',$self->{sex} eq 'M' ? 'M' : 'F') ;
   }
   for my $life_event (qw/birth death/) {
-    if($self->{life_event}){
+    if($self->{$life_event}){
       my $event = $pers->addNewChild( undef, $life_event);
-      $event->setAttribute('when',$self->{life_event}) ;
+      $event->setAttribute('when',$self->{$life_event}) ;
     }
   }
   # links
