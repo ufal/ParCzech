@@ -16,8 +16,9 @@
 
   <xsl:template match="@xml:id">
     <xsl:variable name="new-id" select="pcz:patch-id(.)" />
+    <xsl:variable name="new-dir" select="pcz:get-directory()" />
     <xsl:if test="not(./parent::*/ancestor::*)" >
-      <xsl:message><xsl:value-of select="concat('RENAME: ',.,' ',$new-id)" /></xsl:message> <!-- DO NOT REMOVE !!! -->
+      <xsl:message><xsl:value-of select="concat('RENAME: ',.,' ',$new-dir,$new-id)" /></xsl:message> <!-- DO NOT REMOVE !!! -->
     </xsl:if>
     <xsl:attribute name="xml:id">
       <xsl:value-of select="$new-id" />

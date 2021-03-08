@@ -55,6 +55,10 @@
     <xsl:value-of select="concat($id-prefix-extended, $id)" />
   </xsl:function>
 
+  <xsl:function name="pcz:get-directory">
+    <xsl:value-of select="concat(substring-before($set-date, '-'),'/')" />
+  </xsl:function>
+
   <xsl:template name="add-only-childnodes">
     <xsl:if test="./self::*[preceding-sibling::node()[1][self::text()][ends-with(., ' ')]] ">
       <xsl:message><xsl:value-of select="concat('|',./preceding-sibling::text()[1],'|')" /></xsl:message>

@@ -110,6 +110,7 @@ rename_xml_file () {
     FROM=`echo "$LINE" | cut -d' ' -f 2`
     TO=`echo "$LINE" | cut -d' ' -f 3`
     echo "$FROM.xml -> $TO.xml"
+    mkdir -p "$DIR/${TO%%/*}"
     mv "$DIR/$FROM.xml" "$DIR/$TO.xml"
   done
 }
