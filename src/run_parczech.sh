@@ -571,12 +571,12 @@ fi; # END METADATER.teiCorpus.ann CONDITION
 
 export PARCZECH_TEI_RAW=$DATA_DIR/parczech.tei.raw/${ID}
 
-#if skip_process "parczech.tei.raw" "$PARCZECH_TEI_RAW" "$EXISTING_FILELIST" ; then # BEGIN PARCZECH.TEI.raw CONDITION
+if skip_process_single_file "parczech.tei.raw" "$PARCZECH_TEI_RAW/$TEICORPUS_FILENAME" ; then # BEGIN PARCZECH.TEI.raw CONDITION
 
 mkdir -p $PARCZECH_TEI_RAW
 
 # copy data
-cp "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" "$PARCZECH_TEI_RAW/$FILENAME"
+cp "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" "$PARCZECH_TEI_RAW/$TEICORPUS_FILENAME"
 
 cat $TEI_FILELIST | while read F
 do
@@ -603,7 +603,7 @@ do
                                    --variables "${cnt_line##*|}"
 done
 
-#fi;
+fi;
 
 if [ "$EXIT_CONDITION" == "ann-meta" ] ; then
   echo "EXITTING: $EXIT_CONDITION"
@@ -619,7 +619,7 @@ fi
 #
 ###############################
 
-export TEITOK_TEI=$DATA_DIR/teitok-tei/${ID}
+export TEITOK_TEI=$DATA_DIR/parczech.tt/${ID}
 
 if skip_process "tei2teitok" "$TEITOK_TEI" "$EXISTING_FILELIST" ; then # BEGIN tei2teitok CONDITION
 
