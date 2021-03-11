@@ -241,7 +241,7 @@ for my $sch_link (@steno_voleb_obd) {
       $sitting_id = sprintf("%02d",$sitting_id);
       debug_print( "\tnew sitting ".join('-', $term_id, $meeting_id, $sitting_id)."\t$sitting_link", __LINE__);
 
-      push @steno_sittings, [$sitting_link, $term_id, $meeting_id, $sitting_id] if is_new($sitting_link,1) || exists $unauthorized->{$term_id}->{$meeting_id}->{$sitting_id};
+      push @steno_sittings, [$sitting_link, $term_id, $meeting_id, $sitting_id] if defined($prune_regex) || is_new($sitting_link,1) || exists $unauthorized->{$term_id}->{$meeting_id}->{$sitting_id};
     }
   }
 }
