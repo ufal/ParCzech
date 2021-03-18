@@ -37,14 +37,11 @@ sub merge_node {
   my $self = shift;
   my %opts = @_;
   if ($opts{res}->nodeType == XML_TEXT_NODE) {
-    print STDERR "text node \t$opts{res}\t$opts{in}\n";
     return;
   }
 
   # nodes $res and $ins corresponds, only attributes and childnodes colisious should be solved
   my $path = $opts{path}.$opts{res}->nodeName.'/';
-  print STDERR "\t\t\t\t\t\tNEW MERGE PERSON\n" if $path =~ m/person\/$/;
-  print STDERR $opts{res}->cloneNode(),"\n" if $path =~ m/person/;
 
   return if $self->try_merge($path,$opts{res},$opts{in});
 
@@ -60,23 +57,18 @@ sub merge_node {
   #$_->unbindNode() for @res_chn;
   $opts{res}->removeChildNodes();
 
-  # otestovat jestli element přímo obsahuje text
-
   while($res_i < scalar(@res_chn) or $in_i < scalar(@in_chn)) {
     my $cmp = $self->compare($path, $res_chn[$res_i]//undef, $in_chn[$in_i]//undef);
     if($cmp < 0) {
       $opts{res}->appendChild($self->sortNode($path,$res_chn[$res_i]));
-      print STDERR "($cmp)\t",$res_chn[$res_i]->cloneNode(),"\n" if $path =~ m/person/;
       $res_i++;
     } elsif ($cmp > 0) {
       $opts{res}->appendChild($self->sortNode($path,$in_chn[$in_i]->cloneNode(1)));
-      print STDERR "( $cmp)\t",$in_chn[$in_i]->cloneNode(),"\n" if $path =~ m/person/;
       $in_i++;
     } else {
       # merge node into res
       $self->merge_node(path => $path, res => $res_chn[$res_i], in => $in_chn[$in_i]);
       $opts{res}->appendChild($res_chn[$res_i]);
-      ## print STDERR "( $cmp)\t",$res_chn[$res_i]->cloneNode()," ##\n" if $path =~ m/person/;
       $res_i++;
       $in_i++;
     }
@@ -90,8 +82,6 @@ sub sortNode {
 
   return $node unless $node->nodeType == XML_ELEMENT_NODE;
   $path = $path.$node->nodeName.'/';
-  print STDERR "\t\t\t\t\t\tNEW ===NEW=== PERSON\n" if $path =~ m/person\/$/;
-  print STDERR $node->cloneNode(),"\n" if $path =~ m/person/;
 
   my @chnodes = $node->nonBlankChildNodes;
   @chnodes = $self->sort($path, @chnodes);
@@ -231,6 +221,7 @@ sub merge_attributes {
                                         in_val=>$in_attr{$attr_name}
                                       );
     } else { # adding new attribute
+      print STDERR "Adding attribute $opts{path}\@$attr_name = $in_attr{$attr_name}\n";
       $res_attr{$attr_name} = $in_attr{$attr_name};
     }
   }
