@@ -45,6 +45,16 @@ sub compare_idno { # compare
   return $v[0] cmp $v[1];
 }
 
+sub compare_include { # compare
+  my ($path,@nodes) = @_;
+  for my $i (0, 1){
+    return unless $nodes[$i]->nodeType == XML_ELEMENT_NODE;
+    return unless $nodes[$i]->nodeName =~ m/^(.*:)?include$/;
+  }
+  my @v = map {$_->getAttribute('href')} @nodes;
+  return $v[0] cmp $v[1] ? -1 : 0; # return 0 if equal, else keep order (-1)
+}
+
 sub merge_intervals_date {
   my ($path,@nodes) = @_;
   return unless
@@ -135,6 +145,10 @@ sub add_settings_to_merger {
   $merger->add_comparator(
                     terminate => 1,
                     func => \&compare_idno,
+                    );
+  $merger->add_comparator(
+                    terminate => 1,
+                    func => \&compare_include,
                     );
   return $merger
 }
