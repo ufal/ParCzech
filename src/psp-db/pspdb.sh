@@ -56,5 +56,5 @@ wget -O "$OUTPUT_DIRECTORY/poslanci.zip"  https://www.psp.cz/eknih/cdrom/opendat
 unzip -o "$OUTPUT_DIRECTORY/poslanci.zip" -d "$OUTPUT_DIRECTORY/poslanci"
 
 
-perl -I $D/../lib $D/pspdb-generate-xml.pl --flat --person-list "$PERSONLIST" "${PARAMS[@]}" --translations "$D/translations.unl" --patches "$D/patches.unl" --output-dir "$OUTPUT_DIRECTORY" --input-db-dir "$OUTPUT_DIRECTORY" --debug
+perl -I $D/../lib $D/pspdb-generate-xml.pl --flat --person-list "$PERSONLIST" "${PARAMS[@]}" --translations "$D/translations.unl" --patches "$D/patches.unl" --output-dir "$OUTPUT_DIRECTORY" --input-db-dir "$OUTPUT_DIRECTORY"
 

@@ -212,7 +212,7 @@ my %allterm_persons;
 for my $term (split(/,/,$term_list//'')){
   # find corresponding Chamber of Deputies organization id (id_organ)
 
-  print STDERR "$term\n";
+  print STDERR "ADDING ALL PERSONS FROM TERM $term\n";
   my $sth = $pspdb->prepare(sprintf(
          'SELECT
             posl.id_osoba AS id_osoba,
@@ -268,7 +268,7 @@ for my $person_node ($xpc->findnodes('//tei:person',$personlist->{dom})) {
                                     surname  => $surname,
                                     %data
                                     );
-  print STDERR "PERSON $forename $surname " ,join(' ',values %data)," = $person_id\n";
+  print STDERR "\tPERSON $forename $surname " ,join(' ',values %data)," = $person_id\n";
   my $person = $new_personlist->findPerson(id => $person_id);
   for my $link (grep {$_} $xpc->findvalue('normalize-space(./tei:idno[@type="URI"]/text())',$person_node)) {
     my $type = 'guest';
@@ -340,6 +340,7 @@ sub fill_table {
   return unless exists $dbfile_structure{"$prefix$tablename"};
   open(my $fh,"<:encoding($encoding)",  $dbfile_structure{"$prefix$tablename"}) or die "Cannot open:$!\n";
   $pspdb->begin_work;
+  print STDERR "filling table: $prefix$tablename\n";
   while(my $line = <$fh>) {
     $line =~ s/\N{U+00A0}/ /g;
     my @fields = map {s/^\s*$//;$_} split('\|',$line);
@@ -361,7 +362,8 @@ sub fill_table {
     }
     my $dbstring = sprintf("INSERT INTO %s (%s) VALUES (%s)", "$prefix$tablename", join(',',@dbname),join(',',@dbval));
     print STDERR "$dbstring\n" if $debug;
-    $pspdb->do($dbstring);
+
+    print STDERR "ERROR: $dbstring\n" unless $pspdb->do($dbstring);
   }
   $pspdb->commit;
 }
@@ -425,7 +427,6 @@ sub addPerson { # create new person or use existing based on passed data
   my $self = shift;
   my %opts = @_;
   my $person = $self->findPerson(%opts);
-  print STDERR join(' ',@_),"\n";
   my $sth;
   unless ($person){
     if(defined $opts{guest_id}){ # try to find id in government persons
@@ -471,7 +472,7 @@ sub addPerson { # create new person or use existing based on passed data
       $sth = $pspdb->prepare(sprintf('SELECT * FROM osoby WHERE id_osoba=%s', $opts{psp_id}));
       $sth->execute;
       if(my $psp_pers = $sth->fetchrow_hashref) {
-        print STDERR "found REG:$psp_pers->{id_osoba} '$psp_pers->{jmeno} $psp_pers->{prijmeni} (",($psp_pers->{narozeni}//'???'),")'\n";
+        print STDERR "found REG:$psp_pers->{id_osoba} '$psp_pers->{jmeno} $psp_pers->{prijmeni} (",($psp_pers->{narozeni}//'???'),")'";
       } else {
         print STDERR "INVALID DATA: No record in PSP database for $opts{psp_id}\n";
       }
@@ -480,7 +481,7 @@ sub addPerson { # create new person or use existing based on passed data
     $person = $self->createPerson(%opts);
 
   } else {
-    print STDERR "person already exists: ", $person->toString(),"\n";
+    print STDERR "person already exists: ", $person->toString(),"";
   }
 
   # add links to ids_to_main_id
@@ -501,7 +502,7 @@ sub findPerson {
   for my $type (qw/psp gov guest/){
     if(defined $opts{"${type}_id"}){
       my $prefixed_id = $type.':'.$opts{"${type}_id"};
-      print STDERR "LOOKING FOR $prefixed_id -> ",($self->{ids_to_main_id}->{$prefixed_id}//''),"\n";
+      print STDERR "LOOKING FOR $prefixed_id -> ",($self->{ids_to_main_id}->{$prefixed_id}//''),"\t";
       return $self->{listPerson}->{$self->{ids_to_main_id}->{$prefixed_id}} if defined $self->{ids_to_main_id}->{$prefixed_id};
     }
   }
