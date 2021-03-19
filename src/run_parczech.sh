@@ -175,6 +175,9 @@ log "downloading $CL_OUTDIR_TEI"
 
 perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$CL_SCRIPT --tei $CL_OUTDIR_TEI --yaml $CL_OUTDIR_YAML  --cache $CL_OUTDIR_CACHE --id $ID  "${DOWN_PARAMS[@]}"
 
+# backup downloader database file
+cp "$CL_WORKDIR/${CL_SCRIPT%.pl}.sq3" "$CL_WORKDIR/${CL_SCRIPT%.pl}.$ID.sq3"
+
 # remove duplicities:
 # calculate hashes for new files
 export DOWNLOADER_TEI_HASHES=$DATA_DIR/downloader-tei/sha1sum.list
