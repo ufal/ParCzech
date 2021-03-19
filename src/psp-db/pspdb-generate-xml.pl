@@ -357,7 +357,7 @@ sub fill_table {
       undef $fields[$i] if $fields[$i] eq '';
       if(defined $fields[$i] ){
         push @dbname, $name;
-        push @dbval,($tabledef->{def}->[$i]->{type} eq 'INTEGER') ? $fields[$i] : "'$fields[$i]'";
+        push @dbval,($tabledef->{def}->[$i]->{type} eq 'INTEGER') ? $fields[$i] : "'".escape($fields[$i])."'";
       }
     }
     my $dbstring = sprintf("INSERT INTO %s (%s) VALUES (%s)", "$prefix$tablename", join(',',@dbname),join(',',@dbval));
@@ -368,6 +368,11 @@ sub fill_table {
   $pspdb->commit;
 }
 
+sub escape {
+  my $str = shift;
+  $str =~ s/(['])/$1$1/g;
+  return $str;
+}
 
 sub add_data_link {
   my ($reg,$gov,$govperson) = @_;
