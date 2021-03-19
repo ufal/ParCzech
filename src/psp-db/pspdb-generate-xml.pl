@@ -881,6 +881,8 @@ sub addOrg {
       my $role = $self->getRole($orgrow->{type});
       my $parent;
       $parent = $self->addOrg($orgrow->{parent}) unless $flat;
+      $orgrow->{name_en} ||= $self->{translator}->translate_static($orgrow->{name_cz});
+      $orgrow->{name_en} = $self->{patcher}->translate_static($orgrow->{name_en});
       my $org = listOrg::org->new(%$orgrow, abbr_sd => create_ID($orgrow->{abbr},keep_case => 1, keep_dash => 1), role => $role,  $parent ? (parent_org_id => $parent->id()):() );
       $self->{org}->{$dbid} = $org;
       ($parent//$self)->addChild($org);
