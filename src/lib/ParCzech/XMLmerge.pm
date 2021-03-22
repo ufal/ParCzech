@@ -98,7 +98,7 @@ sub sort {
   my $path = shift;
   my @array = @_;
   @array = sort sort_id_nodes @array;
-  for my $comp ($self->comparators) {
+  for my $comp (grep {!$_->{no_sort}} $self->comparators) {
     @array = sort {return $comp->{func}($path,$a,$b)//0} @array;
   }
   @array;
@@ -167,7 +167,7 @@ sub trim {
 sub add_comparator {
   my $self = shift;
   my %opts = @_;
-  push @{$self->{comparators}}, {terminate=> !!$opts{terminate}, func => $opts{func}};
+  push @{$self->{comparators}}, {terminate=> !!$opts{terminate},no_sort=> !!$opts{no_sort}, func => $opts{func}};
   return $self;
 }
 

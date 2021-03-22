@@ -52,7 +52,8 @@ sub compare_include { # compare
     return unless $nodes[$i]->nodeName =~ m/^(.*:)?include$/;
   }
   my @v = map {$_->getAttribute('href')} @nodes;
-  return $v[0] cmp $v[1] ? -1 : 0; # return 0 if equal, else keep order (-1)
+  print STDERR "COMPARING INCLUDE: $v[0] (",($v[0] cmp $v[1]),") $v[1]\n";
+  return $v[0] eq $v[1] ? 0 : -1; # return 0 if equal, else keep order (-1)
 }
 
 sub merge_intervals_date {
@@ -105,6 +106,31 @@ sub merge_tagsDecl_namespace_tagUsage {
   return 1;
 }
 
+sub merge_extent_measure {
+  my ($path,@nodes) = @_;
+  return unless $path =~ m/\/extent\/measure\//;
+  return unless $nodes[0]->getAttribute('unit') eq $nodes[1]->getAttribute('unit');
+  return unless $nodes[0]->getAttributeNS($XMLNS,'lang') eq $nodes[1]->getAttributeNS($XMLNS,'lang');
+
+  my $sum = 0;
+  $sum += $nodes[$_]->getAttribute('quantity')//0 for (0,1);
+  my $text = $nodes[0]->textContent();
+  $nodes[0]->removeChildNodes;
+  $text =~ s/\s*[0-9]* /$sum /;
+  $nodes[0]->appendText($text);
+  $nodes[0]->setAttribute('quantity', $sum);
+
+  return 1;
+}
+
+sub merge_include {
+  my ($path,@nodes) = @_;
+  return unless $path =~ m/\/include\//;
+
+  print STDERR "TODO merge include !!!\n";
+
+  return 1;
+}
 
 sub merge_bibl_idno {
   my ($path,@nodes) = @_;
@@ -139,6 +165,8 @@ sub add_settings_to_merger {
   $merger->add_merger(\&merge_intervals_date);
   $merger->add_merger(\&merge_tagsDecl_namespace_tagUsage);
   $merger->add_merger(\&merge_bibl_idno);
+  $merger->add_merger(\&merge_extent_measure);
+  $merger->add_merger(\&merge_include);
   $merger->add_comparator(
                     func => \&compare_affiliation,
                     );
@@ -148,6 +176,7 @@ sub add_settings_to_merger {
                     );
   $merger->add_comparator(
                     terminate => 1,
+                    no_sort => 1,
                     func => \&compare_include,
                     );
   return $merger
