@@ -71,10 +71,12 @@ sub merge_intervals_date {
         $to = $nodes[$i]->getAttribute($a) unless defined $to;
         if(($from cmp $nodes[$i]->getAttribute($a)) >= 0){
           $from = $nodes[$i]->getAttribute($a);
-          ($from_text) = ($nodes[$i]->textContent()) =~ m/^\s*(.*)\s*(?: - )?/;
+          ($from_text) = ($nodes[$i]->textContent()) =~ m/^\s*([^-]*)\s*(?: - )?[^-]*?$/;
         }
-        $to = $nodes[$i]->getAttribute($a) if ($to cmp $nodes[$i]->getAttribute($a)) <= 0;
-        ($to_text) = ($nodes[$i]->textContent()) =~ m/(?: - )?\s*(.*)\s*$/;
+        if(($to cmp $nodes[$i]->getAttribute($a)) <= 0){
+          $to = $nodes[$i]->getAttribute($a);
+          ($to_text) = ($nodes[$i]->textContent()) =~ m/^[^-]*?(?: - )?\s*([^-]*)\s*$/;
+        }
       }
     }
   }
@@ -86,6 +88,7 @@ sub merge_intervals_date {
   } else {
     $nodes[0]->setAttribute('from', $from);
     $nodes[0]->setAttribute('to', $to);
+    print STDERR "FROM: '$from_text'\nTO:   '$to_text'\n";
     $nodes[0]->appendText($from_text
                     . ' - '
                     . $to_text);
