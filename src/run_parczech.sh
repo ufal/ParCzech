@@ -613,6 +613,54 @@ if [ "$EXIT_CONDITION" == "ann-meta" ] ; then
   exit
 fi
 
+#####################################
+###     CONSOLIDATE               ###
+### merging new data to corpus    ###
+#  input:
+#    parczech.tei.raw/$ID
+#    parczech.tei.ana/$ID
+#  output:
+#    parczech.tei.raw/consolidated
+#    parczech.tei.ana/consolidated
+#
+#####################################
+CONSOLIDATED_FOLDER=consolidated
+export PARCZECH_TEI_RAW_CONS=$DATA_DIR/parczech.tei.raw/${CONSOLIDATED_FOLDER}
+export PARCZECH_TEI_ANA_CONS=$DATA_DIR/parczech.tei.ana/${CONSOLIDATED_FOLDER}
+
+function consolidate() {
+  echo -en "TODO CONSOLIDATE \n\t$1 \n\t$2 \n\t$3 \n\t$4\n"
+  # test if exist consolidated data
+  find $2
+  echo
+  if skip_process_single_file "new_data $3" "$2/${4}.xml" ; then
+
+    echo "Copy all data to $2"
+    cp -r $1 $2
+    mv "$2/$3" "$2/${4}.xml"
+    xmlstarlet edit --inplace \
+                    --update "/_:teiCorpus/@_:id" \
+                    --value "${4}" \
+                    "$2/${4}.xml"
+    find $2
+
+  else
+    echo "Consolidating new data $1 to $2"
+    rsync -a --backup --suffix=".${ID}" --exclude "$3"  "$1/" "$2"
+    perl -I lib lib/ParCzech/XMLmerge.pm  "$2/${4}.xml" "$1/$3" "$2/${4}.xml"
+    echo "TODO: add tei files (backup old?) !!!"
+  fi
+  echo "TODO: CHANGE_ID !!!"
+}
+
+consolidate $PARCZECH_TEI_RAW $PARCZECH_TEI_RAW_CONS $TEICORPUS_FILENAME ParCzech
+consolidate $ANNOTATED_TEI_META $PARCZECH_TEI_ANA_CONS $ANATEICORPUS_FILENAME ParCzech.ana
+
+if [ "$EXIT_CONDITION" == "consolidate" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+
 ###############################
 ###     FINALIZE            ###
 ### converting to teitok    ###
