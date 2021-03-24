@@ -639,18 +639,15 @@ function consolidate() {
     cp -r $1 $2
     mv "$2/$3" "$2/${4}.xml"
     xmlstarlet edit --inplace \
-                    --update "/_:teiCorpus/@_:id" \
+                    --update "/_:teiCorpus/@xml:id" \
                     --value "${4}" \
                     "$2/${4}.xml"
-    find $2
-
   else
     echo "Consolidating new data $1 to $2"
     rsync -a --backup --suffix=".${ID}" --exclude "$3"  "$1/" "$2"
-    perl -I lib lib/ParCzech/XMLmerge.pm  "$2/${4}.xml" "$1/$3" "$2/${4}.xml"
-    echo "TODO: add tei files (backup old?) !!!"
+    mv "$2/${4}.xml" "$2/${4}.xml.${ID}"
+    perl -I lib lib/ParCzech/XMLmerge.pm  "$2/${4}.xml.${ID}" "$1/$3" "$2/${4}.xml"
   fi
-  echo "TODO: CHANGE_ID !!!"
 }
 
 consolidate $PARCZECH_TEI_RAW $PARCZECH_TEI_RAW_CONS $TEICORPUS_FILENAME ParCzech

@@ -244,6 +244,7 @@ sub solve_conflict {
   my %opts = @_;
   if( $opts{'type'}//'' eq 'attribute') {
     print STDERR "Attribue conflict $opts{path}/".'@'."$opts{name} :  $opts{res_val} <> $opts{in_val}\n" unless $opts{res_val} eq $opts{in_val};
+    return $opts{res_val} if $opts{name} =~ m/\}id$/ and $opts{path} =~ m/^\/[^\/]*\/$/; # keep document id
     my $ret = $opts{in_val};
     return $ret;
   } else {
