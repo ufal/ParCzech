@@ -21,6 +21,7 @@ sub new {
   bless $self, $class;
   $self->{comparators} = [];
   $self->{mergers} = [];
+  $self->{constants} = {%opts};
   return $self
 }
 
@@ -29,7 +30,9 @@ sub merge {
   my ($base,$in) = @_;
   my $res = XML::LibXML::Document->new("1.0", "utf-8");
   $res->setDocumentElement($base->documentElement()->cloneNode(1));
-  $self->merge_node(path=>'/', res=>$res->documentElement(), in=>$in->documentElement());
+  $self->{constants}->{doc} = $res->documentElement();
+  $self->merge_node(path=>'/', res=>$self->{constants}->{doc}, in=>$in->documentElement());
+  undef $self->{constants}->{doc};
   return $res;
 }
 
@@ -196,7 +199,7 @@ sub try_merge {
   my $self = shift;
   my ($path,@nodes) = @_;
   for my $merger ($self->mergers) {
-    return 1 if $merger->($path,@nodes);
+    return 1 if $merger->($path,$self->{constants},@nodes);
   }
 }
 sub mergers {
@@ -255,12 +258,18 @@ sub cli {
   my $old = shift;
   my $new = shift;
   my $result = shift;
-  my $merger = ParCzech::XMLmerge->new();
+  my ($id) = $result =~ m/([^\/]*)\.xml$/;
+  my ($backup_suff) = $new =~ m/([T\d]+)(\.ana)?\.xml$/;
+  my ($base) = $result =~ m/^(.*\/)/;
+  $base = "" unless $base;
+
+  my $merger = ParCzech::XMLmerge->new( id => $id, backup_suff => ".$backup_suff", base => $base);
 
   ParCzech::XMLmerge::teiCorpus::add_settings_to_merger($merger);
   my $old_xml = ParCzech::PipeLine::FileManager::XML::open_xml($old);
   my $new_xml = ParCzech::PipeLine::FileManager::XML::open_xml($new);
   exit 0 unless $old_xml && $new_xml;
+
   my $result_dom = $merger->merge($old_xml->{dom}, $new_xml->{dom});
   ParCzech::PipeLine::FileManager::XML::save_to_file($result_dom, $result);
 

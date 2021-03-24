@@ -57,7 +57,7 @@ sub compare_include { # compare
 }
 
 sub merge_intervals_date {
-  my ($path,@nodes) = @_;
+  my ($path,$config,@nodes) = @_;
   return unless
          $path =~ m/\/settingDesc\/setting\/date\//
       || $path =~ m/\/sourceDesc\/bibl\/date\//;
@@ -99,7 +99,7 @@ sub merge_intervals_date {
 }
 
 sub merge_tagsDecl_namespace_tagUsage {
-  my ($path,@nodes) = @_;
+  my ($path,$config,@nodes) = @_;
   return unless $path =~ m/\/tagsDecl\/namespace\/tagUsage\//;
   return unless $nodes[0]->getAttribute('gi') eq $nodes[1]->getAttribute('gi');
 
@@ -110,7 +110,7 @@ sub merge_tagsDecl_namespace_tagUsage {
 }
 
 sub merge_extent_measure {
-  my ($path,@nodes) = @_;
+  my ($path,$config,@nodes) = @_;
   return unless $path =~ m/\/extent\/measure\//;
   return unless $nodes[0]->getAttribute('unit') eq $nodes[1]->getAttribute('unit');
   return unless $nodes[0]->getAttributeNS($XMLNS,'lang') eq $nodes[1]->getAttributeNS($XMLNS,'lang');
@@ -127,16 +127,47 @@ sub merge_extent_measure {
 }
 
 sub merge_include {
-  my ($path,@nodes) = @_;
-  return unless $path =~ m/\/include\//;
+  my ($path,$config,@nodes) = @_;
+  return unless $path =~ m/include\//;
+  my $file_path = $nodes[0]->getAttribute('href');
+  my $old_file_path = "$config->{base}/$file_path$config->{backup_suff}";
+  print STDERR "updating measures for $file_path\n";
+  # newly added data are counted - measures of removed files should be added(removed):
+  my $xml = ParCzech::PipeLine::FileManager::XML::open_xml("$old_file_path");
+  if ($xml) {
+    for my $pattern ({elem=>'tagUsage', compare=>'gi', value=>'occurs'},{elem=>'measure', compare=>'unit', value=>'quantity', text=>1}){
+      my %seen_pair;
+      my $xpath = '//*[local-name(.) = "'.$pattern->{elem}.'" and @'.$pattern->{compare}.' and @'.$pattern->{value}.']';
+      for my $old_node ($xml->{dom}->findnodes($xpath)){
+        my $comp = $old_node->getAttribute($pattern->{compare});
+        next if defined $seen_pair{$old_node->nodeName.' '.$comp};
+        $seen_pair{$old_node->nodeName.' '.$comp} = 1;
+        my $decrement_val = $old_node->getAttribute($pattern->{value});
+        for my $node ($config->{doc}->findnodes($xpath.'[ @'.$pattern->{compare}.' = "'.$comp.'"]')){
+          my $old_val = $node->getAttribute($pattern->{value});
+          my $new_val = $old_val - $decrement_val;
+          $node->setAttribute($pattern->{value}, $new_val);
+          print STDERR "\t//",$node->nodeName,"/@",$pattern->{compare}," = '$comp'\t$new_val = $old_val - $decrement_val\n";
+          if(defined $pattern->{text}){
+            my $text = $node->textContent;
+            print STDERR "pattern not found in $node" unless $text =~ s/$old_val/$new_val/;
+            $node->removeChildNodes();
+            $node->appendText($text);
+          }
+        }
 
-  print STDERR "TODO merge include !!!\n";
+      }
+    }
+
+  } else {
+    print STDERR "File does not exist or is not xml: $old_file_path\n";
+  }
 
   return 1;
 }
 
 sub merge_bibl_idno {
-  my ($path,@nodes) = @_;
+  my ($path,$config,@nodes) = @_;
   return unless $path =~ m/\/sourceDesc\/bibl\/idno\//;
   my @uri;
   push @uri, $nodes[$_]->textContent() for (0,1);
