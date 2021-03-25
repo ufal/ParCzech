@@ -6,8 +6,93 @@ use utf8;
 use File::Spec;
 use File::Copy;
 use XML::LibXML qw(:libxml);
+use Data::Dumper;
+
 
 my $XMLNS = 'http://www.w3.org/XML/1998/namespace';
+my %config = (
+      # parent => {
+      #   node_names => {
+      #     first => [first, second]
+      #     unknown sort alphabetically
+      #     last => [penultimate,ultimate]
+      #   },
+      #   attributes => {
+      #     node_name => [unique-mandatory-attributes]
+      #   },
+      # }
+      org => {
+        node_names => {
+          first => [qw/orgName event listEvent/],
+        },
+        attributes => {
+          orgName => [qw/full=yes full=init lang=cs lang=en/]
+        }
+      }
+    );
+
+my %config_ord = (
+    map {
+      my $parent = $_;
+      $parent => {
+        node_names => {
+          first => array_to_index($config{$parent}->{node_names}->{first}),
+          last  => array_to_index($config{$parent}->{node_names}->{last})
+        },
+        attributes => {
+          map {
+            $_ => array_to_index($config{$parent}->{attributes}->{$_})
+          } keys %{$config{$parent}->{attributes}//{}}
+        }
+      }
+    } keys %config
+  );
+
+sub array_to_index {
+  my @arr = @{shift//[]};
+  my %hash;
+  @hash{@arr} = 0..$#arr;
+  return {%hash};
+}
+
+sub compare_node_names {
+  my ($path,@nodes) = @_;
+  my ($parent) = $path =~ m/([^\/]*)\/$/;
+  return unless defined $config_ord{$parent};
+  for my $i (0, 1){
+    return unless $nodes[$i]->nodeType == XML_ELEMENT_NODE;
+  }
+  my $cmp;
+  unless ($nodes[0]->nodeName eq $nodes[1]->nodeName) {
+    $cmp = compare_idx($config_ord{$parent}->{node_names}->{first},1000,map {$_->nodeName} @nodes);
+    return $cmp if $cmp;
+    $cmp = compare_idx($config_ord{$parent}->{node_names}->{last},-1000,map {$_->nodeName} @nodes);
+    return $cmp if $cmp;
+    return $nodes[0]->nodeName eq $nodes[1]->nodeName
+  }
+
+  my ($a,$b) = map {
+      my $n=$_;
+      [sort map {
+          my ($a,$v)=($_,$n->{$_});
+          $a=~s/^.*}//;
+          $config_ord{$parent}->{attributes}->{$n->nodeName}->{"$a=$v"}//1000
+          } keys %$n]
+      } map {$nodes[$_]} (0,1);
+
+  my $i=0;
+  while($i < scalar(@$a)
+    && $i < scalar(@$b)
+    && !($a->[$i] == $b->[$i])){
+    $i++
+  }
+  return ($a->[$i]//1000) cmp ($b->[$i]//1000);
+}
+
+sub compare_idx {
+  my ($conf,$def,$a,$b) = @_;
+  return ($conf->{$a}//$def) cmp ($conf->{$b}//$def);
+}
 
 sub compare_attribute_n { # compare
   my ($path,@nodes) = @_;
@@ -212,6 +297,10 @@ sub add_settings_to_merger {
                     terminate => 1,
                     no_sort => 1,
                     func => \&compare_include,
+                    );
+  $merger->add_comparator(
+                    terminate => 1,
+                    func => \&compare_node_names,
                     );
   return $merger
 }
