@@ -150,8 +150,6 @@ sub compare {
   ###$cmp = $self->compare_custom($path,@nodes);
   ###  return $cmp if defined $cmp;
 
-  # keep order if different nodenames (this can break thinks !!!)
-### return $nodes[0]->nodeName cmp $nodes[1]->nodeName unless $nodes[0]->nodeName eq $nodes[1]->nodeName;
 
   # equal nodenames, compare @corresp and then then attributes in given order (parametrize this !!!)
   # print STDERR "TODO - equal nodeNames: $path",$nodes[0]->nodeName,"\n";#, "\n\t",$nodes[0]->cloneNode(),"\n\t",$nodes[1]->cloneNode(),"\n";
@@ -160,7 +158,11 @@ sub compare {
 
   $cmp = $self->compare_custom($path,@nodes);
 
-  return $cmp;
+  return $cmp if defined $cmp;
+
+ # keep order if different nodenames (this can break thinks !!!)
+  return $nodes[0]->nodeName cmp $nodes[1]->nodeName unless $nodes[0]->nodeName eq $nodes[1]->nodeName;
+
 }
 
 

@@ -39,7 +39,15 @@ my %config = (
           idno => [qw/type=URI/]
         },
         text => [qw/idno/]
-      }
+      },
+      titleStmt => {
+        node_names => {
+          first => [qw/title meeting respStmt funder/],
+        },
+        attributes => {
+          title => [qw/type=main type=sub lang=cs lang=en/]
+        }
+      },
     );
 
 my %config_ord = (
