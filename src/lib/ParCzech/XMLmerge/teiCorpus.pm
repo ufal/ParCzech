@@ -48,6 +48,15 @@ my %config = (
           title => [qw/type=main type=sub lang=cs lang=en/]
         }
       },
+      bibl => {
+        node_names => {
+          first => [qw/title idno date/],
+        },
+        attributes => {
+          title => [qw/type=main type=sub lang=cs lang=en/]
+        }
+      },
+
     );
 
 my %config_ord = (
