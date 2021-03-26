@@ -40,6 +40,7 @@ sub merge_node {
   my $self = shift;
   my %opts = @_;
   if ($opts{res}->nodeType == XML_TEXT_NODE) {
+    $opts{res}->setData($opts{in}->data);
     return;
   }
 
@@ -127,7 +128,8 @@ sub compare {
   return -1 unless defined $nodes[1];
   return  1 unless defined $nodes[0];
   if ($nodes[0]->nodeType == XML_TEXT_NODE && $nodes[1]->nodeType == XML_TEXT_NODE) {
-    return trim($nodes[0]->data) cmp trim($nodes[1]->data);
+    #return trim($nodes[0]->data) cmp trim($nodes[1]->data);
+    return 0; # texts should be equal
   } elsif ($nodes[0]->nodeType == XML_TEXT_NODE || $nodes[1]->nodeType == XML_TEXT_NODE) {
     return -1;
   }
