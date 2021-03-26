@@ -20,6 +20,7 @@ my %config = (
       #   attributes => {
       #     node_name => [unique-mandatory-attributes]
       #   },
+      #   text => [node_name...] # if everythink else fails(is equal) compare texts, if different, sort...
       # }
       org => {
         node_names => {
@@ -28,6 +29,16 @@ my %config = (
         attributes => {
           orgName => [qw/full=yes full=init lang=cs lang=en/]
         }
+      },
+      person => {
+        node_names => {
+          first => [qw/persName sex birth death idno figure/],
+          last => [qw/affiliation/]
+        },
+        attributes => {
+          idno => [qw/type=URI/]
+        },
+        text => [qw/idno/]
       }
     );
 
@@ -43,7 +54,12 @@ my %config_ord = (
           map {
             $_ => array_to_index($config{$parent}->{attributes}->{$_})
           } keys %{$config{$parent}->{attributes}//{}}
-        }
+        },
+        text => {
+          map {
+            $_ => 1
+          } @{$config{$parent}->{text}//[]}
+        },
       }
     } keys %config
   );
@@ -86,12 +102,18 @@ sub compare_node_names {
     && $a->[$i] == $b->[$i]){
     $i++
   }
-  return ($a->[$i]//1000) cmp ($b->[$i]//1000);
+  $cmp = ($a->[$i]//1000) <=> ($b->[$i]//1000);
+  return $cmp if $cmp;
+  if(defined $config_ord{$parent}->{text}->{$nodes[0]->nodeName}){
+    return $nodes[0]->textContent cmp $nodes[1]->textContent;
+  }
+
+  return 0;
 }
 
 sub compare_idx {
   my ($conf,$def,$a,$b) = @_;
-  return ($conf->{$a}//$def) cmp ($conf->{$b}//$def);
+  return ($conf->{$a}//$def) <=> ($conf->{$b}//$def);
 }
 
 sub compare_attribute_n { # compare
@@ -291,16 +313,16 @@ sub add_settings_to_merger {
                     );
   $merger->add_comparator(
                     terminate => 1,
+                    func => \&compare_node_names,
+                    );
+  $merger->add_comparator(
+                    terminate => 1,
                     func => \&compare_idno,
                     );
   $merger->add_comparator(
                     terminate => 1,
                     no_sort => 1,
                     func => \&compare_include,
-                    );
-  $merger->add_comparator(
-                    terminate => 1,
-                    func => \&compare_node_names,
                     );
   return $merger
 }

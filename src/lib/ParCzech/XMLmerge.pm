@@ -128,7 +128,10 @@ sub compare {
   return  1 unless defined $nodes[0];
   if ($nodes[0]->nodeType == XML_TEXT_NODE && $nodes[1]->nodeType == XML_TEXT_NODE) {
     return trim($nodes[0]->data) cmp trim($nodes[1]->data);
+  } elsif ($nodes[0]->nodeType == XML_TEXT_NODE || $nodes[1]->nodeType == XML_TEXT_NODE) {
+    return -1;
   }
+
 
   ##  print STDERR "Comparing nodes\t",$nodes[0]->cloneNode(),"\n             \t",$nodes[1]->cloneNode(),"\n";
   my @nodes_ids = map {$_->hasAttributeNS($XMLNS, 'id') ? $_->getAttributeNS($XMLNS, 'id') : undef } @nodes;
@@ -148,7 +151,7 @@ sub compare {
   ###  return $cmp if defined $cmp;
 
   # keep order if different nodenames (this can break thinks !!!)
-  return $nodes[0]->nodeName cmp $nodes[1]->nodeName unless $nodes[0]->nodeName eq $nodes[1]->nodeName;
+### return $nodes[0]->nodeName cmp $nodes[1]->nodeName unless $nodes[0]->nodeName eq $nodes[1]->nodeName;
 
   # equal nodenames, compare @corresp and then then attributes in given order (parametrize this !!!)
   # print STDERR "TODO - equal nodeNames: $path",$nodes[0]->nodeName,"\n";#, "\n\t",$nodes[0]->cloneNode(),"\n\t",$nodes[1]->cloneNode(),"\n";
