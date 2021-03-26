@@ -68,7 +68,7 @@ sub compare_node_names {
     return $cmp if $cmp;
     $cmp = compare_idx($config_ord{$parent}->{node_names}->{last},-1000,map {$_->nodeName} @nodes);
     return $cmp if $cmp;
-    return $nodes[0]->nodeName eq $nodes[1]->nodeName
+    return $nodes[0]->nodeName cmp $nodes[1]->nodeName
   }
 
   my ($a,$b) = map {
@@ -83,7 +83,7 @@ sub compare_node_names {
   my $i=0;
   while($i < scalar(@$a)
     && $i < scalar(@$b)
-    && !($a->[$i] == $b->[$i])){
+    && $a->[$i] == $b->[$i]){
     $i++
   }
   return ($a->[$i]//1000) cmp ($b->[$i]//1000);
