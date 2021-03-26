@@ -527,8 +527,16 @@ fi
 
 export ANNOTATED_TEI_META=$DATA_DIR/parczech.tei.ana/${ID}
 VAR_LOG_ANN="$DATA_DIR/parczech.tei.ana/variables.${ID}.log"
+RENAME_TEMPLATE="\\.xml\$|.${INTERFIX}.xml"
 
-if skip_process "metadater.ann" "$ANNOTATED_TEI_META" "$EXISTING_FILELIST" ; then # BEGIN METADATER.TEI.ann CONDITION
+if [ -f "$EXISTING_FILELIST" ]; then
+  cat "$EXISTING_FILELIST"|sed "s|$RENAME_TEMPLATE|" > "$EXISTING_FILELIST.ana"
+  EXISTING_FILELIST_ANA="$EXISTING_FILELIST.ana"
+fi
+
+if skip_process "metadater.ann" "$ANNOTATED_TEI_META" "$EXISTING_FILELIST_ANA" ; then # BEGIN METADATER.TEI.ann CONDITION
+
+log "adding metadata and renaming TEI files:  $ANNOTATED_TEI_META"
 
 mkdir -p $ANNOTATED_TEI_META
 
@@ -539,7 +547,7 @@ perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" \
                                    --filelist $TEI_FILELIST \
                                    --input-dir $NAMETAG_TEI \
                                    --output-dir $ANNOTATED_TEI_META \
-                                   --rename "\\.xml\$|.${INTERFIX}.xml" \
+                                   --rename "$RENAME_TEMPLATE" \
                                    --variables-log "$VAR_LOG_ANN"
 
 
