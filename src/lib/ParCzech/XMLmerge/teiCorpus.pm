@@ -134,12 +134,12 @@ sub compare_affiliation { # compare
     return unless $nodes[$i]->nodeName eq 'affiliation';
   }
   #print STDERR "compare_affiliation: ",join("\t",@nodes),"\n";
-  for my $a (qw/ref role from to/){
+  for my $a (qw/ref role from/){
     my @v = map {$_->getAttribute($a)//''} @nodes;
     my $cmp = $v[0] cmp $v[1];
     return $cmp if $cmp;
   }
-  return;
+  return 0;
 }
 
 sub compare_idno { # compare
