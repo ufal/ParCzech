@@ -25,12 +25,18 @@
   </xsl:template>
   <xsl:template match="/tei:teiCorpus/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@ident='pdt']" /><!-- removing pdt prefix definition -->
 
+  <xsl:template match="/tei:teiCorpus"> <!-- needed to remove unused namespaces -->
+    <xsl:element name="{name()}">
+      <xsl:apply-templates select="@*"/>
+      <xsl:apply-templates select="element()"/>
+    </xsl:element>
+  </xsl:template>
   <xsl:template match="/tei:teiCorpus/xi:include">
-    <xsl:element name="xi:include">
+    <xsl:element name="xi:include" namespace="http://www.w3.org/2001/XInclude">
+      <xsl:namespace name="xi" select="'http://www.w3.org/2001/XInclude'"/>
       <xsl:attribute name="href">
         <xsl:value-of select=" key('rename-list',@href,$rename-files-doc)/@to"/>
       </xsl:attribute>
-
     </xsl:element>
   </xsl:template>
 
