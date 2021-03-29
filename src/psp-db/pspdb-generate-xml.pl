@@ -428,6 +428,15 @@ sub new {
   return $self;
 }
 
+sub getPhotoUrl {
+  my $self = shift;
+  my ($pers_id,$dt,$obd) = @_;
+  return unless $obd =~ m/^PSP/;
+  $dt =~ s/-.*$//;
+  my $url = "https://www.psp.cz/eknih/cdrom/${dt}ps/eknih/${dt}ps/poslanci/i${pers_id}.jpg";
+  return $url;
+}
+
 sub addPerson { # create new person or use existing based on passed data
   my $self = shift;
   my %opts = @_;
@@ -544,6 +553,31 @@ sub createPerson {
   if(defined $self->{listPerson}->{$person_id}){ # test if person exists
     undef $person;
     return $self->{listPerson}->{$person_id};
+  }
+
+  if($person->isInPSP){ # add aditional personal info (web, facebook, photo(from newest period))
+    $sth = $pspdb->prepare(sprintf(
+         'SELECT
+            posl.id_osoba AS id_osoba,
+            kand.id_organ AS kand_id_organ,
+            kand.zkratka AS kand_zkratka,
+            obd.id_organ AS obd_id_organ,
+            obd.zkratka AS obd_zkratka,
+            obd.od_organ AS od_obd,
+            obd.do_organ AS do_obd,
+            posl.foto AS foto,
+            posl.web AS web,
+            posl.facebook AS facebook
+          FROM poslanec AS posl
+            JOIN organy AS obd ON posl.id_obdobi = obd.id_organ
+            JOIN organy AS kand ON posl.id_kandidatka = kand.id_organ
+          WHERE posl.id_osoba=%s',$pers->{id_osoba}));
+    $sth->execute;
+    while(my $pm = $sth->fetchrow_hashref ) {
+      $person->addLink($pm->{facebook}, 'facebook') if defined $pm->{facebook};
+      $person->addLink($pm->{web}, 'personal') if defined $pm->{web};
+      $person->addPhoto($self->getPhotoUrl($pm->{id_osoba},$pm->{od_obd},$pm->{obd_zkratka}), $pm->{od_obd})  if defined $pm->{foto};
+    }
   }
 
   # add affiliations
@@ -713,6 +747,19 @@ sub init {
   }
 }
 
+sub addPhoto {
+  my $self = shift;
+  my ($url,$date) = @_;
+  $self->{photo}->{$date} = $url;
+}
+
+sub getNewestPhoto {
+  my $self = shift;
+  my ($date) = sort {$b cmp $a} keys %{$self->{photo} // {} };
+  return unless $date;
+  return $self->{photo}->{$date};
+}
+
 sub addLink {
   my $self = shift;
   my ($link,$type) = (@_,'guest');
@@ -755,14 +802,22 @@ sub addToXML {
     }
   }
   # links
-  for my $type (qw/psp gov guest/){
+  my %subtypes = map {$_=>1} qw/facebook twitter personal/;
+  for my $type (qw/psp gov guest/, keys %subtypes){
     if(defined $self->{idno}->{$type}){
       for my $link (keys %{$self->{idno}->{$type}}){
         my $idno = $pers->addNewChild( undef, 'idno');
         $idno->setAttribute('type','URI');
+        $idno->setAttribute('subtype',$type) if defined $subtypes{$type};
         $idno->appendText($link);
       }
     }
+  }
+  my $photo = $self->getNewestPhoto();
+  if(defined $photo) {
+    my $figure = $pers->addNewChild( undef, 'figure');
+    my $graphic = $figure->addNewChild( undef, 'graphic');
+    $graphic->setAttribute('url',$photo);
   }
   # affiliations
   for my $pers_aff (sort { $b->{from} cmp $a->{from} } @{$self->{affiliation} // []}){
