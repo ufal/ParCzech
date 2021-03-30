@@ -415,9 +415,9 @@ sub record_exporter {
       print STDERR "THIS SHOULD NOT HAPPEN: AUDIO: ",URI->new_abs($mp3,$link),"\n";
       # $teiFile->addAudioNote(url => URI->new_abs($mp3,$link));
       next;
-    } elsif (xpath_string('./text()',$cnt) =~ /\s*\*\*\*\s*/) {
+    } elsif (xpath_string('./text()',$cnt) =~ /^\s*\*\*\*\s*$/) {
       next;
-    } elsif ($cnt_html =~ m/\s*<br\s*\/?>\s*$/) {
+    } elsif ($cnt_html =~ m/^\s*<br\s*\/?>\s*$/) {
       next;
     } elsif ($cnt_html =~ m/\([Pp]okračuje\s+\b.*?\b\)/) {
       next;
@@ -675,6 +675,7 @@ sub export_text {
         $segm = $teiFile->addToUtterance($text,$segm);
         $text = '';
       }
+      debug_print("TEXT: $text",__LINE__,10);
       while($text){
         if($text =~ s/^\s+//) {
           $teiFile->addToElemsQueue($&);
