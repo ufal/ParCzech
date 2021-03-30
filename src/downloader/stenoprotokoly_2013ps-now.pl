@@ -669,6 +669,7 @@ sub export_text {
       my $text = ScrapperUfal::html2text($childnode); # returns empty string if it contains only spaces !!!
       $text =~ s/\N{NO-BREAK SPACE}/ /g;
       $text = ' ' if ($text eq '') and ! ($childnode->toString() eq '');
+      $text =~ s/\s*\*\*\*\s*$//; # remove triple asterisk from the end of paragraph
       $text =~ s/\s*:?\s*// if $is_first; # remove initial : and spaces
       $text =~ s/\s\s+/ /g ; # squeeze spaces
       if(defined $opts{no_note}){
