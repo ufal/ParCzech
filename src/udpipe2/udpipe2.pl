@@ -162,11 +162,14 @@ sub fill_conllu_data_doc {
       } elsif ($line =~ /^# sent_id = (\d+)/) { # sentence beginning
         $nodeFeeder->new_sentence();
       } elsif ($line =~ /^# text = (.*)/) {
-        $nodeFeeder->add_xml_comment($1); # TEMPORARY !!!
+        my $text = $1;
+        $nodeFeeder->add_sentence_text($text);
+        $nodeFeeder->add_xml_comment($text); # TEMPORARY !!!
       } elsif ($line =~ /^(\d+)\t([^\t]+)\t/) {
         my ($ti,$tt,$tl,$tp,$tg,$tf,$th,$tr, undef ,$tsp) = split(/\t/, $line);
         $tr =~ s/:/_/g if $replace_colons_with_underscores;
         $nodeFeeder->add_token(
+            line => $line,
             i=>$ti,
             form => $tt,
             lemma => $tl,
@@ -182,6 +185,7 @@ sub fill_conllu_data_doc {
       } elsif ($line =~ /^(\d+)-(\d+)\t/) {
         my (undef,$tt,undef,undef,undef,undef,undef,undef, undef ,$tsp) = split(/\t/, $line);
         my $token = $nodeFeeder->add_token(
+            line => $line,
             form => $tt,
             spacing => $tsp,
           );
@@ -394,6 +398,34 @@ sub print_queue {
   }
 }
 
+sub add_sentence_text {
+  my $self = shift;
+  my $text = shift;
+  return unless $text;
+  $self->{current_text} = [1, $text];
+}
+
+sub add_line_text {
+  my $self = shift;
+  my $line = shift;
+  return unless $line;
+  $self->{current_line} = [1, $line];
+}
+
+sub logger {
+  my $self = shift;
+  my $text = shift;
+  if(defined $self->{current_text} && $self->{current_text}->[0]){
+    $self->{current_text}->[0] = 0;
+    $ParCzech::PipeLine::FileManager::logger->log_line($self->{current_text}->[1]);
+  }
+  if(defined $self->{current_line} && $self->{current_line}->[0]){
+    $self->{current_line}->[0] = 0;
+    $ParCzech::PipeLine::FileManager::logger->log_line($self->{current_line}->[1]);
+  }
+  $ParCzech::PipeLine::FileManager::logger->log_line($text) if defined $text;
+}
+
 sub add_xml_comment {
   my $self = shift;
   my $comment = shift;
@@ -454,6 +486,7 @@ sub add_token {
   my $self = shift;
   my %opts = @_;
   warn "Not in sentence!!! $opts{forn}\n" unless $self->{sentence};
+  $self->add_line_text($opts{line}) if $opts{line};
 
   my $token = XML::LibXML::Element->new(($opts{upos}//'') eq 'PUNCT' ? $punct_element_name : $word_element_name );
 
@@ -463,7 +496,12 @@ sub add_token {
 
   if(defined($opts{head}) and !$self->{no_parse}){
     $self->{deprel_id_number}->{$opts{i}} = $id;
+    if($opts{deprel} eq 'root' && $opts{head} != 0) {
+      $self->logger("ERROR: root deprel inside tree (replacing with dep) $id");
+      $opts{deprel} = 'dep';
+    }
     push @{$self->{deprel}}, {src => $opts{i}, head => $opts{head}, deprel => $opts{deprel}};
+
   }
 
   $token->setAttribute('lemma', $opts{lemma}) if(defined($opts{lemma}) and !$self->{no_lemma_tag});
