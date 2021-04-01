@@ -500,6 +500,10 @@ sub add_token {
       $self->logger("ERROR: root deprel inside tree (replacing with dep) $id");
       $opts{deprel} = 'dep';
     }
+    if($opts{deprel} =~ m/[^a-zA-Z_:]/) {
+      $self->logger("ERROR: invalid character in deprel '$opts{deprel}' (replacing with dep) $id");
+      $opts{deprel} = 'dep';
+    }
     push @{$self->{deprel}}, {src => $opts{i}, head => $opts{head}, deprel => $opts{deprel}};
 
   }
