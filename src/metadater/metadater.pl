@@ -8,7 +8,7 @@ use File::Basename;
 use File::Spec;
 
 
-use ParCzech::PipeLine::FileManager;
+use ParCzech::PipeLine::FileManager "metadater";
 
 my $scriptname = $0;
 my $dirname = dirname($scriptname);

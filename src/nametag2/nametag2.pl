@@ -9,7 +9,7 @@ use LWP::Simple;
 use LWP::UserAgent;
 use JSON;
 
-use ParCzech::PipeLine::FileManager;
+use ParCzech::PipeLine::FileManager "nametag";
 
 my $scriptname = $0;
 

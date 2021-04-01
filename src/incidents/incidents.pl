@@ -8,7 +8,7 @@ use File::Basename;
 use File::Spec;
 
 
-use ParCzech::PipeLine::FileManager;
+use ParCzech::PipeLine::FileManager "incidents";
 use ParCzech::NoteClassifier;
 
 my $scriptname = $0;

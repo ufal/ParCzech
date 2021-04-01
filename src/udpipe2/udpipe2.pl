@@ -12,7 +12,7 @@ use File::Basename;
 use File::Spec;
 
 
-use ParCzech::PipeLine::FileManager;
+use ParCzech::PipeLine::FileManager "udpipe";
 
 my $scriptname = $0;
 my $dirname = dirname($scriptname);

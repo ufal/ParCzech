@@ -5,6 +5,9 @@ use strict;
 use open qw(:std :utf8);
 use utf8;
 use File::Spec;
+use ParCzech::PipeLine::Logger;
+
+our $logger;
 
 my ($lock_result,$input_file,$output_file,$filelist);
 my $input_dir = './';
@@ -12,6 +15,12 @@ my $output_dir = './';
 
 
 my @files;
+
+
+sub import {
+  my ($package, $msg) = @_;
+  $logger  = ParCzech::PipeLine::Logger->new(prefix => $msg // __PACKAGE__);
+}
 
 sub opts {(
     'lock-result' => \$lock_result,
@@ -381,6 +390,7 @@ sub open_xml {
   my %vars = @_;
   my $xml;
   local $/;
+  $ParCzech::PipeLine::FileManager::logger->log_line('opening',$file);
   open FILE, $file;
   binmode ( FILE, ":utf8" );
   my $rawxml = <FILE>;
@@ -449,6 +459,7 @@ sub save_to_file {
   evaluate_vars(\$raw,$log,%vars);
   print FILE $raw;
   close FILE;
+  $ParCzech::PipeLine::FileManager::logger->log_line('saved to',$filename);
   return [map {[$filename,@$_]} @$log];
 }
 

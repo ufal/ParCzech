@@ -7,7 +7,7 @@ use utf8;
 use File::Spec;
 use File::Copy;
 use XML::LibXML qw(:libxml);
-use ParCzech::PipeLine::FileManager;
+use ParCzech::PipeLine::FileManager __PACKAGE__;
 use ParCzech::XMLmerge::teiCorpus;
 use sort 'stable';          # guarantee stability
 

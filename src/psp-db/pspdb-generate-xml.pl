@@ -5,7 +5,7 @@ use utf8;
 use Getopt::Long;
 use File::Spec;
 use DateTime::Format::Strptime;
-use ParCzech::PipeLine::FileManager;
+use ParCzech::PipeLine::FileManager "psp-db";
 use ParCzech::Translation;
 use DBI;
 use Unicode::Diacritic::Strip;

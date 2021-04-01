@@ -2,7 +2,7 @@ package ParCzech::NER::CNEC;
 
 use warnings;
 use strict;
-use ParCzech::PipeLine::FileManager;
+use ParCzech::PipeLine::FileManager __PACKAGE__;
 
 my $namedEntities = {
   valuesname => 'class',
