@@ -17,7 +17,9 @@
         <xsl:text>&#xA;</xsl:text>
     </xsl:template>
     <xsl:template match="*[local-name(.) = 'w' or local-name(.) = 'pc' ]">
-        <xsl:value-of select="concat(text(),'&#x9;',@*[local-name(.) = 'id'],'&#xA;')"/>
+        <xsl:value-of select="concat(text(),'&#x9;',@*[local-name(.) = 'id'])"/>
+        <xsl:value-of select="concat('&#x9;',substring-after(ancestor::tei:u/@who,'#'))"/><!-- speaker ID -->
+        <xsl:value-of select="string('&#xA;')"/>
     </xsl:template>
     <xsl:template match="text()" />
 </xsl:stylesheet>
