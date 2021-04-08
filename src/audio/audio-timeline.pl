@@ -52,10 +52,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
       $ParCzech::PipeLine::FileManager::logger->log_line("Missing or not readable word file $audio_id: $words_file");
       next;
     }
-    open my $fh, "<:encoding(utf8)", "$words_file" or {
-      $ParCzech::PipeLine::FileManager::logger->log_line("unable to open $words_file");
-      next;
-    };
+    open my $fh, "<:encoding(utf8)", "$words_file" or next;
 
     # initialize timeline
     my $origin_id = "$audio_id.origin";
