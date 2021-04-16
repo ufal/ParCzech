@@ -56,7 +56,7 @@ log "CONFIG FILE: $CONFIG_FILE"
 update_tagUsage() {
   CORPFILE=$1
   METADATA=$2
-  log "running update on $CORPFILE"
+  log "running update ($PREFIX$METADATA) on $CORPFILE"
   if [ ! -s "$CORPFILE" ]; then
     return 0
   fi

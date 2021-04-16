@@ -157,7 +157,7 @@ create_parlaMint() {
         | filter_rename $LOG
 
   echo;echo "UPDATING tagUsage:"
-  $D/metadater/update_tagUsage.sh -M -c config.sh $FLAG "$CORPFILE"
+  $D/metadater/update_tagUsage.sh -M -c `realpath $CONFIG_FILE` $FLAG "$CORPFILE"
   cat $LOG | rename_xml_file $OUT_DIR
 }
 
