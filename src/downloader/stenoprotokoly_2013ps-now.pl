@@ -20,7 +20,7 @@ This scrapping script works only for terms from 2013
 
 
 my $URL = 'https://www.psp.cz';
-my $URL_start = "$URL/eknih/";
+my $URL_start = "$URL/eknih/index.htm";
 
 my $tei_dir = 'out_tei';
 my $yaml_dir = 'out_tei';
