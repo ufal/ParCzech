@@ -519,10 +519,38 @@ if [ "$EXIT_CONDITION" == "nametag" ] ; then
   exit
 fi
 
+######################################
+###     Audio Timeline tei         ###
+#  input:
+#    nametag-tei/$ID
+#  output:
+#    audio-tei/$ID
+######################################
+
+export AUDIO_TEI=$DATA_DIR/audio-tei/${ID}
+export AUDIO_VERT_OUTDIR=$DATA_DIR/audio-vert-out/${ID}
+
+if skip_process "audio-timeline" "$AUDIO_TEI" "$EXISTING_FILELIST" ; then # BEGIN AUDIO TIMELINE CONDITION
+
+mkdir -p $AUDIO_TEI
+log "adding audio timeline  $AUDIO_TEI"
+
+perl -I lib audio/audio-timeline.pl --sync-dir $AUDIO_VERT_OUTDIR \
+                                    --filelist $TEI_FILELIST \
+                                    --input-dir $NAMETAG_TEI \
+                                    --output-dir $AUDIO_TEI
+
+fi; # END AUDIO TIMELINE CONDITION
+
+if [ "$EXIT_CONDITION" == "audio-timeline" ] ; then
+  echo "EXITTING: $EXIT_CONDITION"
+  exit
+fi
+
 ################################
 ### Metadata to annotated    ###
 #  input:
-#    nametag-tei/$ID
+#    audio-tei/$ID
 #  output:
 #    annotated-tei-meta/$ID
 ###############################
@@ -547,7 +575,7 @@ log "adding metadata $METADATA_NAME.ann $ANNOTATED_TEI_META"
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME.ann" \
                                    --metadata-file metadater/tei_parczech.xml \
                                    --filelist $TEI_FILELIST \
-                                   --input-dir $NAMETAG_TEI \
+                                   --input-dir $AUDIO_TEI \
                                    --output-dir $ANNOTATED_TEI_META \
                                    --rename "$RENAME_TEMPLATE" \
                                    --variables-log "$VAR_LOG_ANN"
