@@ -466,11 +466,13 @@ fi
 ###############################
 export AUDIO_VERT_DIR=$DATA_DIR/audio-vert-in/${ID}
 export AUDIO_VERT_LIST=$AUDIO_VERT_DIR/vertical.fl
+export AUDIO_VERT_SPEAKERS=$AUDIO_VERT_DIR/speakers.tsv
 
 mkdir -p $AUDIO_VERT_DIR
 
 if skip_process_single_file "audio-vert" "$AUDIO_VERT_LIST" ; then # BEGIN AUDIO-VERT-IN CONDITION
 
+$XSL_TRANSFORM audio/persons_tsv.xsl "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" "$AUDIO_VERT_SPEAKERS"
 
 for FILE in `cat $TEI_FILELIST`;
 do
