@@ -7,7 +7,7 @@ use File::Spec;
 use File::Copy;
 use XML::LibXML qw(:libxml);
 use Data::Dumper;
-
+use ParCzech::Common;
 
 my $XMLNS = 'http://www.w3.org/XML/1998/namespace';
 my %config = (
@@ -295,18 +295,10 @@ sub merge_bibl_idno {
   return unless $path =~ m/\/sourceDesc\/bibl\/idno\//;
   my @uri;
   push @uri, $nodes[$_]->textContent() for (0,1);
-  my $i=0;
-  while(    $i < length($uri[1])
-         && $i < length($uri[0])
-         && substr($uri[1], $i, 1) eq substr($uri[0], $i, 1)){
-    $i++;
-  }
-  if ($i < length($uri[0]) || $i < length($uri[0])) {
-    $uri[0] = substr($uri[0], 0, $i);
-    $uri[0] =~ s/[^\/]*$//;
-  }
+  my $common_uri = ParCzech::Common::common_uri_part(@uri);
+
   $nodes[0]->removeChildNodes();
-  $nodes[0]->appendText($uri[0]);
+  $nodes[0]->appendText($common_uri);
 
   return 1;
 }
