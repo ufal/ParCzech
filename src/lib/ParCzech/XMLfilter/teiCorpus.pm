@@ -183,9 +183,6 @@ sub process_included_files {
       }
     }
   }
-    # get term for each file
-    # get list of terms for each person
-    # get min and max date for each term
 }
 
 
