@@ -16,7 +16,9 @@
     <define name="body">
       <element name="body">
         <ref name="body-text-content" />
-        <ref name="timeline" />
+        <zeroOrMore>
+          <ref name="timeline" />
+        </zeroOrMore>
       </element>
     </define>
     <define name="seg">
