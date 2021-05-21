@@ -111,11 +111,11 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
 }
 
 sub add_timeline_point {
-  my ($timeline,$origin,$id,$since) = @_;
+  my ($timeline,$since,$id,$interval) = @_;
   my $when = XML::LibXML::Element->new('when');
   $when->setAttributeNS(ParCzech::PipeLine::FileManager::TeiFile::get_NS_from_prefix('xml'),'id',$id);
-  $when->setAttribute('since',$since);
-  $when->setAttribute('origin',"#$origin");
+  $when->setAttribute('interval',$interval);
+  $when->setAttribute('since',"#$since");
   $timeline->appendChild($when);
   my $anchor = XML::LibXML::Element->new('anchor');
   $anchor->setAttribute('synch',"#$id");
