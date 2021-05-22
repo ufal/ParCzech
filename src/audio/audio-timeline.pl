@@ -26,7 +26,7 @@ my %cert = ( # normalized character mismatch is lower than
   );
 my @cert_order = sort {$cert{$a} <=> $cert{$b}} keys %cert;
 
-my ($debug, $test, $sync_dir);
+my ($debug, $test, $sync_dir, $cert_text);
 my %variables = ();
 
 my $xpc = ParCzech::PipeLine::FileManager::TeiFile::new_XPathContext();
@@ -36,6 +36,7 @@ GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # do not change the database
             'sync-dir=s' => \$sync_dir,
+            'cert-text' => \$cert_text,
             ParCzech::PipeLine::FileManager::opts()
             );
 
@@ -139,8 +140,12 @@ sub get_cert {
   my $row = $tsv->getline_hr($statfh);
   close $statfh;
   if ($row){
-    for my $c (@cert_order){
-      return $c if $row->{$cert_column} <= $cert{$c};
+    if($cert_text){
+      for my $c (@cert_order){
+        return $c if $row->{$cert_column} <= $cert{$c};
+      }
+    } else {
+      return 1 - $row->{$cert_column}
     }
   }
 }
