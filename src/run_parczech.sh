@@ -535,6 +535,16 @@ if skip_process "audio-timeline" "$AUDIO_TEI" "$EXISTING_FILELIST" ; then # BEGI
 mkdir -p $AUDIO_TEI
 log "adding audio timeline  $AUDIO_TEI"
 
+if [ -s  "$AUDIO_VERT_OUTDIR/outliers_continuous_gaps_cnt_normalized1.txt" ]; then
+  log "adding outliers_continuous_gaps to audio stats from $AUDIO_VERT_OUTDIR/outliers_continuous_gaps_cnt_normalized1.txt"
+  sed -i'.bak' '1s/$/\toutliers_continuous_gaps/;2s/$/\t0/' $AUDIO_VERT_OUTDIR/stats_*.tsv
+  for PAGEFILE in `sed 's/^.*sentences_//;s/\/.*$//' "$AUDIO_VERT_OUTDIR/outliers_continuous_gaps_cnt_normalized1.txt"`;
+  do
+    sed -i '2s/\t0$/\t1/' $AUDIO_VERT_OUTDIR/stats_$PAGEFILE.tsv
+  done
+
+fi
+
 perl -I lib audio/audio-timeline.pl --sync-dir $AUDIO_VERT_OUTDIR \
                                     --filelist $TEI_FILELIST \
                                     --input-dir $NAMETAG_TEI \

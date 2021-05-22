@@ -18,7 +18,8 @@ my %filename_template = (
   words => 'words_%s.tsv',
   stats => 'stats_%s.tsv',
   );
-my $cert_column = 'normalized_dist_with_gaps_75';
+my $cert_column = 'normalized_dist_with_gaps_80';
+my $invalid_label = 'outliers_continuous_gaps';
 my %cert = ( # normalized character mismatch is lower than
     high => 0.3,
     medium => 0.75,
@@ -145,6 +146,7 @@ sub get_cert {
         return $c if $row->{$cert_column} <= $cert{$c};
       }
     } else {
+      return 0 if defined($row->{$invalid_label}) && $row->{$invalid_label} eq 1;
       return 1 - $row->{$cert_column}
     }
   }
