@@ -68,6 +68,28 @@
   <pcz:meta pcz:name="ParCzech-3.0-corpus">
     <pcz:item pcz:dep="ParCzech-3.0-CLEAN" />
     <pcz:item pcz:dep="ParCzech-edition-3.0" />
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:editorialDecl">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:editorialDecl/tei:correction" />
+      </pcz:test>
+      <pcz:tei>
+            <correction>
+               <p xml:lang="en">No correction of source texts was performed.</p>
+            </correction>
+            <normalization>
+               <p xml:lang="en">Text has not been normalised, except for spacing.</p>
+            </normalization>
+            <hyphenation>
+               <p xml:lang="en">No end-of-line hyphens were present in the source.</p>
+            </hyphenation>
+            <quotation>
+               <p xml:lang="en">Quotation marks have been left in the text and are not explicitly marked up.</p>
+            </quotation>
+            <segmentation>
+               <p xml:lang="en">The texts are segmented into utterances (speeches) and segments (corresponding to paragraphs in the source transcription).</p>
+            </segmentation>
+      </pcz:tei>
+    </pcz:item>
     <pcz:item pcz:dep="ParCzech-publ-live" />
     <pcz:item pcz:dep="respKopp" />
     <pcz:item pcz:dep="funderLINDAT" />
@@ -91,7 +113,7 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc">
       <pcz:remove-node pcz:xpath="./tei:editionStmt/tei:edition" /><!-- remove live edition -->
       <pcz:remove-node pcz:xpath="./tei:titleStmt/tei:funder" /><!-- remove funders -->
-      <pcz:remove-node pcz:xpath="./tei:publicationStmt/tei:date" />
+      <pcz:remove-node pcz:xpath="./tei:publicationStmt/tei:*" />
     </pcz:item>
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc">
       <pcz:remove-node pcz:xpath="./tei:listPrefixDef/tei:prefixDef[@ident='pdt']" />
@@ -153,11 +175,25 @@
         <edition>3.0</edition>
       </pcz:tei>
     </pcz:item>
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:projectDesc">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:projectDesc/tei:p" />
+      </pcz:test>
+      <pcz:tei>
+        <p><ref target="https://ufal.mff.cuni.cz/parczech">ParCzech</ref> is a project on compiling Czech parliamentary data into annotated corpora</p>
+      </pcz:tei>
+    </pcz:item>
+    <pcz:item pcz:dep="publisherLINDAT" />
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:publicationStmt">
       <pcz:test>
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:fileDesc/tei:publicationStmt/tei:date" />
       </pcz:test>
       <pcz:tei>
+        <idno type="URI" subtype="handle">http://hdl.handle.net/11234/1-3631</idno>
+        <availability status="free">
+          <licence>https://creativecommons.org/publicdomain/zero/1.0/</licence>
+          <p xml:lang="en">This work is licensed under the <ref target="https://creativecommons.org/publicdomain/zero/1.0/">CC0 1.0 Universal (CC0 1.0) Public Domain Dedication</ref>.</p>
+        </availability>
         <date when="2021-05-31">2021-05-31</date>
       </pcz:tei>
     </pcz:item>
@@ -207,7 +243,7 @@
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc" />
       </pcz:test>
       <pcz:tei>
-        <projectDesc></projectDesc>
+        <projectDesc><p><ref target="https://ufal.mff.cuni.cz/parczech">ParCzech</ref> is a project on compiling Czech parliamentary data into annotated corpora</p></projectDesc>
          <tagsDecl>
             <namespace name="http://www.tei-c.org/ns/1.0">
             </namespace>
