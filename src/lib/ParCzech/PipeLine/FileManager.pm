@@ -123,7 +123,13 @@ my %appendConditions = (
     ],
   teiHeader => [
       [qr/^encodingDesc$/, './*[local-name() = "profileDesc"]'], # put encoding before profile
-    ]
+    ],
+  encodingDesc => [
+      [qr/^editorialDecl$/, './*[contains(" tagsDecl classDecl ",local-name() )]'], # put editorialDecl before tagDecl and classDecl
+    ],
+  titleStmt => [
+      [qr/^respStmt$/, './*[contains(" funder ",local-name() )]'], # put editorialDecl before tagDecl
+    ],
   );
 
 sub new {
@@ -273,7 +279,12 @@ sub _add_static_data_items {
       my ($teiNodes) = $self->{xpc}->findnodes('./pcz:tei', $item);
       if (defined $teiNodes) {
         for my $content ($teiNodes->childNodes()) {
-          $baseNode->appendChild($content->cloneNode(1));
+          if($content->nodeType != XML_TEXT_NODE){
+            my $node = nodeConditionalAppender($self->{xpc}, $baseNode, $self->{xpc}->lookupNs('tei'), $content->nodeName);
+            $node->replaceNode($content->cloneNode(1));
+          } else {
+            $baseNode->appendChild($content->cloneNode(1));
+          }
         }
       }
     } elsif ($dep_name) {
