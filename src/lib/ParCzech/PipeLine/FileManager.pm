@@ -148,6 +148,14 @@ sub new {
   if($xml) {
     $self->{raw} = $xml->{raw};
     $self->{dom} = $xml->{dom};
+    if(defined $opts{ids_hash}){
+      $self->{ids} = {};
+      for my $node ($self->{xpc}->findnodes('//*[@xml:id]',$self->{dom})){
+        my $id = $node->getAttributeNS($xmlNs{xml}, 'id');
+        $logger->log_line("duplicit id ($id): $opts{inpath}") if defined $self->{ids}->{$id};
+        $self->{ids}->{$id} = $node;
+      }
+    }
   }
 
   return $self

@@ -48,7 +48,7 @@ $ParCzech::PipeLine::FileManager::logger->log_line("aligned vertical data: $sync
 my $current_file;
 my $tsv = Text::CSV->new ({ binary => 1, auto_diag => 1, sep_char=> "\t"});
 
-while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $xpc)) {
+while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $xpc, ids_hash => 1)) {
   next unless defined($current_file->{dom});
 
   my ($body) = $xpc->findnodes('//tei:body',$current_file->{dom});
@@ -88,7 +88,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
     my $cntr = 0;
     while (my $row = $tsv->getline_hr($fh)) {
       next if $row->{recognized} eq 'False';
-      my ($node) = $xpc->findnodes('//tei:*[@xml:id="'.$row->{id}.'"]',$current_file->{dom});
+      my $node = $current_file->{ids}->{$row->{id}};
       next unless $node;
       my ($wb_id,$we_id) = map {"$row->{id}.a$_"} qw/b e/;
       my $anchor = add_timeline_point($timeline,$origin_id,$wb_id,$row->{start});
