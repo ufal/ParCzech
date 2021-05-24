@@ -206,12 +206,7 @@
       <data type="anyURI"/>
     </attribute>
     <attribute name="cert">
-      <choice>
-        <value>high</value>
-        <value>medium</value>
-        <value>low</value>
-        <value>unknown</value>
-      </choice>
+      <data type="double"/>
     </attribute>
     <oneOrMore>
       <element name="when">
