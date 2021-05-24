@@ -91,12 +91,18 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
       my $node = $current_file->{ids}->{$row->{id}};
       next unless $node;
       my ($wb_id,$we_id) = map {"$row->{id}.a$_"} qw/b e/;
-      my $anchor = add_timeline_point($timeline,$origin_id,$wb_id,$row->{start});
-      $node->parentNode->insertBefore($anchor, $node);
-      $anchor = add_timeline_point($timeline,$origin_id,$we_id,$row->{end});
-      $node->parentNode->insertAfter($anchor, $node);
-      $cntr += 2;
-      $w_synced++;
+      unless(defined $current_file->{ids}->{$wb_id}){
+        my $anchor = add_timeline_point($timeline,$origin_id,$wb_id,$row->{start});
+        $current_file->{ids}->{$wb_id} = $anchor;
+        $node->parentNode->insertBefore($anchor, $node);
+        $anchor = add_timeline_point($timeline,$origin_id,$we_id,$row->{end});
+        $current_file->{ids}->{$we_id} = $anchor;
+        $node->parentNode->insertAfter($anchor, $node);
+        $cntr += 2;
+        $w_synced++;
+      } else {
+        $ParCzech::PipeLine::FileManager::logger->log_line("duplicit id in aligned data: $row->{id}");
+      }
     }
     $ParCzech::PipeLine::FileManager::logger->log_line("$cntr anchors added ($origin_date) source: $words_file");
 
