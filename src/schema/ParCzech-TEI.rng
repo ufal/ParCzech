@@ -289,7 +289,8 @@
 	<a:documentation>@type is here obligatory.</a:documentation>
 	<choice>
 	  <value>main</value>
-	  <value>sub</value>
+    <value>sub</value>
+    <value>short</value>
 	</choice>
       </attribute>
       <text/>
