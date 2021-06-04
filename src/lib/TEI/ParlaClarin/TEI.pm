@@ -92,6 +92,7 @@ sub toFile {
   $self->addMeetingFromId();
 
   my $filename = $params{outputfile} // File::Spec->catfile(join("-",@id_parts[0,1]),$self->{ID}.'.xml');
+  $self->updateSubTitle();
   $self->SUPER::toFile(%params,($params{outputfile} ? () : (outputfile => File::Spec->catfile($self->{output}->{dir},$filename))));
   # save personlist
   my $pp = XML::LibXML::PrettyPrint->new(
@@ -359,8 +360,10 @@ sub addHead {
   my $titlenode = XML::LibXML::Element->new("title");
   $titlenode->appendText($text);
   $titlenode->setAttributeNS($self->{NS}->{xml}, 'lang', $lang);
-  $titlenode->setAttribute( 'type', 'sub');
-
+  $titlenode->setAttribute( 'type', 'short');
+  $self->{short_title} = {
+    $lang => $text
+  };
   if($node) { # titlenodes should be at the begining !!!
     $self->{TITLESTMT}->insertAfter($titlenode,$node)
   } elsif ($self->{TITLESTMT}->firstChild()) {
@@ -370,6 +373,19 @@ sub addHead {
   }
   return $self;
 }
+
+sub updateSubTitle {
+  my $self = shift;
+  print STDERR 'TODO: update //titleStmt/title[@type="sub"]',"\n";
+  for my $titlenode (  $self->{TITLESTMT}->findnodes('./title[@type="sub"]') ){
+    my $lang = $titlenode->getAttributeNS($self->{NS}->{xml}, 'lang');
+    my $when = $self->getFromDate();
+    $titlenode->appendText(", ".$when->strftime('%Y-%m-%d')) if defined $when;
+    $titlenode->appendText(", ".$self->{short_title}->{$lang}) if defined $self->{short_title}->{$lang};
+  }
+  return $self;
+}
+
 
 sub setUnauthorizedFlag {
   my $self = shift;
