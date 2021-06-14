@@ -33,7 +33,7 @@
       <xsl:attribute name="ana">
         <xsl:if test="./@ana"><xsl:value-of select="concat(./@ana,' ')" /></xsl:if>
         <xsl:choose>
-          <xsl:when test="$date &lt; 20191000 ">
+          <xsl:when test="$date &lt; 20191100 ">
             <xsl:text>#reference</xsl:text>
           </xsl:when>
           <xsl:otherwise>
