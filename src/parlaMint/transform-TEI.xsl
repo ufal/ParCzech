@@ -25,6 +25,13 @@
     <xsl:call-template name="add-only-childnodes" />
   </xsl:template>
 
+  <xsl:template match="/tei:TEI/tei:text/tei:body/tei:timeline">
+    <xsl:message>REMOVING timeline for <xsl:value-of select="./@corresp" /> audio</xsl:message>
+  </xsl:template>
+  <xsl:template match="//tei:div//tei:anchor"><!-- removing anchors -->
+    <!-- <xsl:message>REMOVING anchor <xsl:value-of select="./@synch" /></xsl:message> -->
+  </xsl:template>
+
   <xsl:template match="tei:s"><xsl:copy><xsl:apply-templates select="@*|element()"/></xsl:copy></xsl:template>
   <!--
   <xsl:template match="//tei:seg//tei:*[not(local-name(..) = 'node') and starts-with(@ana,'ne:') and contains(' ref email num age unit measure time date ',concat(' ',local-name(),' ') ) ]">
