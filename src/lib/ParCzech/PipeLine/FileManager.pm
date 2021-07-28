@@ -275,9 +275,13 @@ sub _add_static_data_items {
       for my $remNode (@remNodes) {
         my $remXpath = $remNode->getAttributeNS($xmlNs{pcz}, 'xpath') // './self::*';
         if(defined $remXpath) {
+          $ParCzech::PipeLine::FileManager::logger->log_line('find nodes to remove',$remXpath);
+          my $cntr = 0;
           for my $node ($self->{xpc}->findnodes($remXpath,$baseNode)){
             $node->unbindNode();
+            $cntr++;
           }
+          $ParCzech::PipeLine::FileManager::logger->log_line('removed',$cntr, 'nodes');
         } else {
           print STDERR "ERROR in configuration remove-node: $name\n";
         }
