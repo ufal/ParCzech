@@ -82,7 +82,7 @@ fi
 
 export OUTPUT_ANA_DIR="$OUTPUT_DIR/$DATA_PREFIX.ana/$DATA_PREFIX.TEI.ana"
 export OUTPUT_RAW_DIR="$OUTPUT_DIR/$DATA_PREFIX/$DATA_PREFIX.TEI"
-export RENAME_LOG="$OUTPUT_DIR/parczech2parlemint.rename"
+export RENAME_LOG="$OUTPUT_DIR/parczech2parlamint.rename"
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -131,6 +131,7 @@ create_parlaMint() {
   OUT_DIR=$2
   LOG=$3
   FLAG=$4
+  SUFF=$5
   set_handler $FLAG
   mkdir -p OUT_DIR
   if [ ! -s "$IN_DIR" ]; then
@@ -144,7 +145,8 @@ create_parlaMint() {
     less $CORPFILE
     usage
   fi
-  for TEIFILE in `grep -o '[^<>]*include [^<>]*' "$CORPFILE"|sed 's/^.*href="//;s/".*$//'`
+
+  for TEIFILE in `$XPATH_QUERY "$CORPFILE" "declare option saxon:output 'omit-xml-declaration=yes'; string-join( for \\$i in /*/*[local-name() = 'include' and @href] return \\$i/@href,',')"|tr "," "\n"` #`grep -o '[^<>]*include [^<>]*' "$CORPFILE"|sed 's/^.*href="//;s/".*$//'`
   do
     echo "$TEIFILE $DATA_PREFIX"
     $XSL_TRANSFORM parlaMint/transform-TEI.xsl "$IN_DIR/$TEIFILE" "$OUT_DIR/${TEIFILE##*/}" id-prefix="$DATA_PREFIX" "${PARAMS[@]}" 2>&1 \
@@ -156,13 +158,16 @@ create_parlaMint() {
   $XSL_TRANSFORM parlaMint/transform-teiCorpus.xsl "$CORPFILE" "$OUT_DIR/${CORPFILE##*/}" id-prefix="$DATA_PREFIX" outdir="$OUT_DIR" rename="$LOG.xml" "${PARAMS[@]}" 2>&1 \
         | filter_rename $LOG
 
-  echo;echo "UPDATING tagUsage:"
-  $D/metadater/update_tagUsage.sh -M -c `realpath $CONFIG_FILE` $FLAG "$CORPFILE"
+
   cat $LOG | rename_xml_file $OUT_DIR
+
+  echo;echo "UPDATING tagUsage: $OUT_DIR/${DATA_PREFIX}${SUFF}.xml"
+  $D/metadater/update_tagUsage.sh -M -c `realpath $CONFIG_FILE` $FLAG "$OUT_DIR/${DATA_PREFIX}${SUFF}.xml"
+
 }
 
-create_parlaMint "$INPUT_RAW_DIR" "$OUTPUT_RAW_DIR" "$RENAME_LOG.raw" -t
-create_parlaMint "$INPUT_ANA_DIR" "$OUTPUT_ANA_DIR" "$RENAME_LOG.ana" -a
+create_parlaMint "$INPUT_RAW_DIR" "$OUTPUT_RAW_DIR" "$RENAME_LOG.raw" -t ""
+create_parlaMint "$INPUT_ANA_DIR" "$OUTPUT_ANA_DIR" "$RENAME_LOG.ana" -a ".ana"
 
 
 if [ "$VALIDATE" -eq "1"  ]; then

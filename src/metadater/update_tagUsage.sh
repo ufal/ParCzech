@@ -18,7 +18,7 @@ usage() {
 while getopts  ':Mt:a:c:'  opt; do
   case "$opt" in
     'M')
-      PREFIX=ParlaMint.
+      PREFIX="ParlaMint."
       ;;
     'c')
       CONFIG_FILE=$OPTARG
@@ -66,7 +66,10 @@ update_tagUsage() {
   FILELIST=`mktemp -t "$(basename $0).fl.XXXXXXXXXX"`
   VARIABLES_LOG=`mktemp -t "$(basename $0).var.XXXXXXXXXX"`
   ls -l $FILELIST $VARIABLES_LOG
-  grep -o '[^<>]*include [^<>]*' "$CORPFILE"|sed 's/^.*href="//;s/".*$//' >> $FILELIST
+  $XPATH_QUERY "$CORPFILE" \
+               "declare option saxon:output 'omit-xml-declaration=yes';
+                string-join( for \$i in /*/*[local-name() = 'include' and @href] return \$i/@href,',')" \
+               | tr "," "\n" >> $FILELIST
 
   perl -I $D/../lib $D/metadater.pl --metadata-name "$PREFIX$METADATA" \
                                    --metadata-file $D/tei_parczech.xml \
@@ -86,8 +89,8 @@ update_tagUsage() {
   rm $VARIABLES_LOG $FILELIST
 }
 
-update_tagUsage $INPUT_RAW_CORPUS "tagsDecl"
-update_tagUsage $INPUT_ANA_CORPUS "tagsDecl.ana"
+update_tagUsage "$INPUT_RAW_CORPUS" "tagsDecl"
+update_tagUsage "$INPUT_ANA_CORPUS" "tagsDecl.ana"
 
 
 
