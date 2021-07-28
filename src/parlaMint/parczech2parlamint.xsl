@@ -86,11 +86,12 @@
     </xsl:if>
   </xsl:template>
 
-  <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:funder">
-    <xsl:copy>
+  <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:funder[1]">
+    <xsl:element name="funder">
       <orgName xml:lang="en">CLARIN research infrastructure</orgName>
       <orgName xml:lang="cs">Výzkumná infrastruktura CLARIN</orgName>
-    </xsl:copy>
+    </xsl:element>
+    <xsl:copy-of select="."/>
   </xsl:template>
 
   <xsl:template match="//tei:fileDesc/tei:editionStmt/tei:edition">
