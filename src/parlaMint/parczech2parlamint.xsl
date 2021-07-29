@@ -80,6 +80,9 @@
   <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:title[@type='main' and @xml:lang='en']">
     <xsl:copy><xsl:apply-templates select="@*"/>Czech parliamentary corpus ParlaMint-CZ<xsl:call-template name="teiHeaderInterfix" /> [ParlaMint<xsl:value-of select="substring-after(.,'[ParCzech')" /></xsl:copy>
   </xsl:template>
+  <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:title[@type='short' and @xml:lang='cs']">
+    <xsl:message>Removing short title: <xsl:value-of select="./text()" /></xsl:message>
+  </xsl:template>
   <xsl:template name="teiHeaderInterfix">
     <xsl:if test="/tei:TEI">
       <xsl:value-of select="concat(', ',//tei:sourceDesc/tei:bibl[1]/tei:date/@when,' ',/*/@xml:id)" />
