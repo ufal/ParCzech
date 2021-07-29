@@ -162,6 +162,7 @@ create_parlaMint() {
   cat $LOG | rename_xml_file $OUT_DIR
 
   echo;echo "UPDATING tagUsage: $OUT_DIR/${DATA_PREFIX}${SUFF}.xml"
+  sed -i 's/teiHeader xmlns:xi="[^"]*XInclude"/teiHeader/' "$OUT_DIR/${DATA_PREFIX}${SUFF}.xml"
   $D/metadater/update_tagUsage.sh -M -c `realpath $CONFIG_FILE` $FLAG "$OUT_DIR/${DATA_PREFIX}${SUFF}.xml"
 
 }
