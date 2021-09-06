@@ -12,6 +12,7 @@ use File::Basename;
 use File::Spec;
 
 
+use Data::Dumper;
 use ParCzech::PipeLine::FileManager "udpipe";
 
 my $scriptname = $0;
@@ -108,13 +109,35 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
         push @nodes,$child;
       }
       # newline between segments !!!
-      $text .= "\n\n";
+      $text .= "\r\n\r\n"; # force html4.01 endlines "CR LF" to not break tokenRanges https://github.com/libwww-perl/HTTP-Message/blob/b8a00e5b149d4a2396c88f3b00fd2f6e1386407f/lib/HTTP/Request/Common.pm#L91
       my $grandpa_a = $parent->parentNode();
       last if length($text) > $soft_max_text_length and not($grandpa == $grandpa_a);
       $grandpa = $grandpa_a;
     }
-    my $conll = run_udpipe($text);
-    fill_conllu_data_doc($conll, $text, @nodes);
+    my $nodeptr = 0;
+    while($text){
+      my $act_text = $text;
+      my $conll = run_udpipe($act_text);
+      my $text_index = 0;
+      my $space='';
+      if($text_index = find_first_merged_paragraph($conll)){
+        $act_text = substr $text, 0, $text_index, '';
+        ($space,$text) = $text =~ /^([\r\n]*)(.*)$/s;
+        $text_index += length $space;
+        $conll = run_udpipe($act_text);
+      } else {
+        $text = '';
+      }
+      $nodeptr = fill_conllu_data_doc($conll, $act_text, $nodeptr, @nodes); # return nodeptr -> number of nodes used
+      if ($text_index){
+        $ParCzech::PipeLine::FileManager::logger->log_line("UDPipe request splitted at",$nodes[$nodeptr]->{parent_id},"node");
+        for my $i ($nodeptr..$#nodes){ # patch index to text
+          $nodes[$i]->{textptr} -= $text_index;
+          $nodes[$i]->{textptr_end} -= $text_index;
+        }
+      }
+
+    }
   }
 
   $current_file->add_static_data('udpipe2.app-'.$model, $append_metadata) if $append_metadata;
@@ -146,10 +169,19 @@ sub run_udpipe {
   return $json->{'result'};
 };
 
+sub find_first_merged_paragraph {
+  my $conll = shift;
+  my ($bad_split_line) = $conll =~ m/(\d*[^\n]*SpacesAfter=(?:(?:\\r)\\n){2,}\|TokenRange=[\d:]*)\n\d/s;
+  if( $bad_split_line ){
+    my ($index) = $bad_split_line =~ m/TokenRange=\d*:(\d*)/;
+    return $index;
+  }
+  return 0;
+}
 
 sub fill_conllu_data_doc {
-  my ($conll_text, $text, @node_list) = @_;
-  my $nodeFeeder = NodeFeeder->new($text, @node_list);
+  my ($conll_text, $text,$nodesptr, @node_list) = @_;
+  my $nodeFeeder = NodeFeeder->new($text,$nodesptr, @node_list);
   $nodeFeeder->set_no_parse(1) if $no_parse;
   $nodeFeeder->set_no_lemma_tag(1) if $no_lemma_tag;
   my @lines = split /\n/, $conll_text;
@@ -197,6 +229,7 @@ sub fill_conllu_data_doc {
     $nodeFeeder->close_sentence();
   }
   $nodeFeeder->close_paragraph();
+  return $nodeFeeder->get_nodes_pointer();
 }
 
 
@@ -237,9 +270,9 @@ sub new {
   my $self  = {};
   bless $self, $class;
   $self->{text} = shift;
+  $self->{nodesptr} = shift;
   $self->{nodes} = [@_];
   $self->{textptr} = 0;
-  $self->{nodesptr} = 0;
   $self->{paragraph} = undef;
   $self->{paragraph_ptr} = undef;
   $self->{sentence} = undef;
@@ -255,6 +288,11 @@ sub new {
   $self->{sent_counter} = 0;
 
   return $self;
+}
+
+sub get_nodes_pointer {
+  my $self = shift;
+  return $self->{nodesptr};
 }
 
 sub set_no_parse {
@@ -443,9 +481,9 @@ sub add_notes_and_spaces_to_queue {
     undef $changed;
 
     # skip endlines at the beginning of paragraf
-    if( substr($self->{text},$self->{textptr},2) eq "\n\n"
+    if( substr($self->{text},$self->{textptr},4) eq "\r\n\r\n"
         && $self->{nodes}->[$self->{nodesptr}]->{textptr} > $self->{textptr}) {# I am before beggining of new paragraph
-      $self->{textptr}+=2;
+      $self->{textptr}+=4;
     }
 
     # adding spaces
