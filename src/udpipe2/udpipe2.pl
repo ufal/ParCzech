@@ -128,6 +128,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
       } else {
         $text = '';
       }
+      $ParCzech::PipeLine::FileManager::logger->log_line("Starting annotating at:",$nodes[$nodeptr]?$nodes[$nodeptr]->{parent_id}:'no node') if $debug;
       $nodeptr = fill_conllu_data_doc($conll, $act_text, $nodeptr, @nodes); # return nodeptr -> number of nodes used
       if ($text_index){
         $ParCzech::PipeLine::FileManager::logger->log_line("UDPipe request splitted at",$nodes[$nodeptr]->{parent_id},"node");
@@ -163,9 +164,18 @@ sub run_udpipe {
     "model" => $_model,
     "data" => $_text
   );
+  $ParCzech::PipeLine::FileManager::logger->log_line("sending text to udpipe:",length($_text),"chars");
   my $res = $ua->post( $_url, \%form );
   Time::HiRes::sleep(1);
   my $json = decode_json($res->decoded_content);
+  if($debug) {
+    local $/;
+    $/=undef;
+    my ($parcnt, $sentcnt) = (0,0);
+    $parcnt++ while $json->{'result'} =~ /# newpar/g;
+    $sentcnt++ while $json->{'result'} =~ /# sent_id/g;
+    $ParCzech::PipeLine::FileManager::logger->log_line("received: par=$parcnt,sent=$sentcnt");
+  }
   return $json->{'result'};
 };
 
@@ -562,7 +572,6 @@ sub add_token {
   if(defined($opts{xpos}) and !$self->{no_lemma_tag}) {
     $token->setAttribute('ana', 'pdt:'.$opts{xpos});
   }
-
   $token->setAttribute('join', 'right') if ($opts{spacing} // '') =~ /SpaceAfter=No/;
 
   if(defined($opts{parent_token})) { # contracted token parts
@@ -575,6 +584,7 @@ sub add_token {
     $self->close_subelement_if_any();
     $self->add_notes_and_spaces_to_queue();
     $self->print_queue();
+    # $self->check_text_ptr($opts{spacing});
 
     # moving into tokenizable subelement
     if($self->{nodesptr} < scalar(@{$self->{nodes}})
