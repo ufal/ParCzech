@@ -72,7 +72,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
       }
       # newlines between sentences
       $text .= "\n";
-      push @nodes, undef;
+      push @nodes, undef; # empty token between sentences
       last if $sent_cnt >= $max_sent_cnt;
     }
 #    print STDERR "TOKENS: ", scalar(@nodes),"========================================================\n";
@@ -102,8 +102,11 @@ sub run_nametag {
     "model" => $model,
     "data" => $data
   );
+  $ParCzech::PipeLine::FileManager::logger->log_line("sending vertical to nametag:",($data =~ tr/\n//),"lines");
   my $res = $ua->post( $url, \%form );
   my $json = decode_json($res->decoded_content);
+  my $res = $json->{'result'};
+  $ParCzech::PipeLine::FileManager::logger->log_line("received vertical from nametag:",($res =~ tr/\n//),"entities");
   return $json->{'result'};
 };
 
@@ -130,7 +133,10 @@ sub fill_vertical_data_doc {
     my @linenumbers = split(",",$range);
     $name_cnt++;
     my $nm = $nodeTagger->add_name_entity($type, $linenumbers[0], $linenumbers[$#linenumbers], $name_cnt);
-    $nm->setAttribute('LABEL',$text) if $nm and $debug;
+    unless($nm){
+      $ParCzech::PipeLine::FileManager::logger->log_line("unable to add named entity: $line");
+      $ParCzech::PipeLine::FileManager::logger->log_line("nodes: ",scalar(@node_list));
+    }
   }
   $nodeTagger->postprocess(\&cnec2connl) if $connl_type; # note: looking at entity names
   $nodeTagger->postprocess(\&variedTEI) if $varied_tei_elements; # change entity names
@@ -239,14 +245,22 @@ sub add_name_entity {
   $start--;
   $end--;
 
-  return undef unless $start < @{$self->{nodes}} and $start < @{$self->{nodes}} and $start <= $end and $start >= 0;
-  return $self->cover_tokens_with_name($type,$self->{nodes}->[$start], $self->{nodes}->[$end], $id)
+  return undef unless $start < @{$self->{nodes}} and $end < @{$self->{nodes}} and $start <= $end and $start >= 0;
+  return $self->cover_tokens_with_name($type, $start, $end, $id)
 }
 
 sub cover_tokens_with_name {
   my $self = shift;
-  my ($type, $start, $end, $id) = @_;
+  my ($type, $start_idx, $end_idx, $id) = @_;
+  my ($start, $end) = ( $self->{nodes}->[$start_idx], $self->{nodes}->[$end_idx] );
   # anc contains: {ancestor, first_child, last_child, depth}
+  my $full_id = sprintf("%s%d",$self->{id_prefix},$id);
+  unless(defined($start) && defined($end)){
+    $ParCzech::PipeLine::FileManager::logger->log_line("missing tokens (sentence border) (",$start//"NO START",'--',$end//"NO END",") when try to wrap tokens with named entity ($full_id: $type)");
+    $ParCzech::PipeLine::FileManager::logger->log_line("start token is followed by", $self->{nodes}->[$start_idx+1] // '??') unless defined($start);
+    $ParCzech::PipeLine::FileManager::logger->log_line("end token is preceded by", $self->{nodes}->[$end_idx-1] // '??' ) unless defined($end);
+    return;
+  }
   my $anc = get_common_ancestor($start, $end);
 
   unless($anc){
@@ -256,7 +270,7 @@ sub cover_tokens_with_name {
 
   my $name_elem = XML::LibXML::Element->new('name');
   $name_elem->setAttribute('ana',"ne:$type");
-  $name_elem->setAttributeNS($xmlNS, 'id', sprintf("%s%d",$self->{id_prefix},$id));
+  $name_elem->setAttributeNS($xmlNS, 'id', $full_id);
   # append <name> element to ancestor before first_child
   $anc->{ancestor}->insertBefore($name_elem, $anc->{first_child});
   # unbind all children between first and last child (included) and append them to <name>
