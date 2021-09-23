@@ -105,8 +105,8 @@ sub run_nametag {
   $ParCzech::PipeLine::FileManager::logger->log_line("sending vertical to nametag:",($data =~ tr/\n//),"lines");
   my $res = $ua->post( $url, \%form );
   my $json = decode_json($res->decoded_content);
-  my $res = $json->{'result'};
-  $ParCzech::PipeLine::FileManager::logger->log_line("received vertical from nametag:",($res =~ tr/\n//),"entities");
+  my $restmp = $json->{'result'};
+  $ParCzech::PipeLine::FileManager::logger->log_line("received vertical from nametag:",($restmp =~ tr/\n//),"entities");
   return $json->{'result'};
 };
 
