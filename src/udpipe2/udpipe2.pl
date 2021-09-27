@@ -20,7 +20,7 @@ my $dirname = dirname($scriptname);
 
 my $udsyn_taxonomy = File::Spec->catfile($dirname,'tei_udsyn_taxonomy.xml');
 
-my ($debug, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores);
+my ($debug, $try2continue_on_error, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -39,6 +39,7 @@ my $soft_max_text_length = 100000;
 GetOptions ( ## Command line options
             'colon2underscore' => \$replace_colons_with_underscores, # replace colons in extended syntax relations with underscore
             'debug' => \$debug, # debugging mode
+            'try2continue-on-error' => \$try2continue_on_error,
             'test' => \$test, # tokenize, tag and lemmatize and parse to stdout, do not change the database
             'append-metadata=s' => \$append_metadata, # add metadata from file (prefixes, taxonomy)
             'no-lemma-tag' => \$no_lemma_tag, # no tags and lemmas
@@ -436,6 +437,16 @@ sub print_deprel {
 sub print_queue {
   my $self = shift;
   while(my $item = shift @{$self->{no_token_elem_queue}}){
+    unless($self->{parent_stack}->[0]) { # this should not happen !!!
+      $ParCzech::PipeLine::FileManager::logger->log_line("ERROR(line ",__LINE__,", sentence ",$self->{token_id_prefix},") no parent node is defined,", scalar(@{$self->{no_token_elem_queue}}) + 1, "'no token' ITEMs should be appended");
+      $ParCzech::PipeLine::FileManager::logger->log_line("ITEM: '$_'") for ($item,@{$self->{no_token_elem_queue}});
+      if($try2continue_on_error) {
+        $ParCzech::PipeLine::FileManager::logger->log_line("WARNING try2continue-on-error option is set !!!");
+        $ParCzech::PipeLine::FileManager::logger->log_line("WARNING cleaning no_token_elem_queue !!!");
+        $self->{no_token_elem_queue} = [];
+        return;
+      }
+    }
     if(ref $item) {
       # adding element
       $self->{parent_stack}->[0]->appendChild($item);
