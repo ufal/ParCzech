@@ -100,8 +100,12 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
           $child->{text} = $chnode->textContent();
           $child->{len} = length($child->{text});
           if($chnode->nodeType != XML_TEXT_NODE) {
-            $child->{tokenize} = 1;
+            if ( $chnode->textContent =~ /^\s*$/ ) {
+              $ParCzech::PipeLine::FileManager::logger->log_line("SKIPPING element: does not contains text to be tokenized",$chnode );
+            } else {
+              $child->{tokenize} = 1;
             }
+          }
           $chnode->removeChildNodes()
           # TODO test if it does not contain element_node -> warn !!!
         }
