@@ -493,7 +493,7 @@ sub add_xml_comment {
   my $self = shift;
   my $comment = shift;
   return unless $comment;
-  $comment =~ s/--+/-/; # fix double hyphene validity error
+  $comment =~ s/--+/-/g; # fix double hyphene validity error
   $self->{parent_stack}->[0]->appendChild(XML::LibXML::Comment->new(" $comment ")) if $self->{parent_stack}->[0];
 }
 
