@@ -81,7 +81,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
     my $parent_cnt = 0;
     my $grandpa = undef;
     while(my $parent = shift @parents) {
-      # test if parent contains any text to be tokenized !!!
+      my $contain_text = undef;
       my $parent_id = $parent->getAttributeNS('http://www.w3.org/XML/1998/namespace','id');
       $parent_cnt++;
       for my $chnode ($parent->childNodes()) {
@@ -98,6 +98,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
         };
         if ( $chnode->nodeType == XML_TEXT_NODE || exists $sub_elements_names_filter{$chnode->nodeName}) {
           $child->{text} = $chnode->textContent();
+          $child->{text} =~ s/[\n\r ]+/ /g;
           $child->{len} = length($child->{text});
           if($chnode->nodeType != XML_TEXT_NODE) {
             if ( $chnode->textContent =~ /^\s*$/ ) {
@@ -112,6 +113,11 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
         $text .= $child->{text};
         $child->{textptr_end} = length($text);
         push @nodes,$child;
+        $contain_text = 1;
+      }
+      unless($contain_text){
+        $ParCzech::PipeLine::FileManager::logger->log_line("SKIPPING paragraph-like element: does not contains text to be tokenized",$parent );
+        next;
       }
       # newline between segments !!!
       $text .= "\r\n\r\n"; # force html4.01 endlines "CR LF" to not break tokenRanges https://github.com/libwww-perl/HTTP-Message/blob/b8a00e5b149d4a2396c88f3b00fd2f6e1386407f/lib/HTTP/Request/Common.pm#L91
@@ -169,8 +175,19 @@ sub run_udpipe {
     "model" => $_model,
     "data" => $_text
   );
-  $ParCzech::PipeLine::FileManager::logger->log_line("sending text to udpipe:",length($_text),"chars");
+  my $c = () = $_text =~ m/\r\n\r\n/g;
+  $c--;
+  $ParCzech::PipeLine::FileManager::logger->log_line("sending text to udpipe:",length($_text),"chars,", $c,"paragraphs");
+  my ($pref_text,$inter_text,$suf_text) = $_text =~ m/^(.{0,20})(.*?)(.{0,20})$/s;
+  $ParCzech::PipeLine::FileManager::logger->log_line("'$pref_text...SKIPPING",length($inter_text), "CHARS...$suf_text'");
+
+  #open FH, ">TMP.data.$c";
+  #binmode ( FH, ":utf8" );
+  #print FH $_text;
+  #close FH;
+
   my $res = $ua->post( $_url, \%form );
+
   Time::HiRes::sleep(1);
   my $json = decode_json($res->decoded_content);
   if($debug) {
@@ -181,6 +198,10 @@ sub run_udpipe {
     $sentcnt++ while $json->{'result'} =~ /# sent_id/g;
     $ParCzech::PipeLine::FileManager::logger->log_line("received: par=$parcnt,sent=$sentcnt");
   }
+  #open FH, ">TMP.conll.$c";
+  #binmode ( FH, ":utf8" );
+  #print FH $json->{'result'};
+  #close FH;
   return $json->{'result'};
 };
 
@@ -188,6 +209,7 @@ sub find_first_merged_paragraph {
   my $conll = shift;
   my ($bad_split_line) = $conll =~ m/(\d*[^\n]*SpacesAfter=(?:(?:\\r)\\n){2,}\|TokenRange=[\d:]*)\n\d/s;
   if( $bad_split_line ){
+    $ParCzech::PipeLine::FileManager::logger->log_line("bad split line: ",$bad_split_line);
     my ($index) = $bad_split_line =~ m/TokenRange=\d*:(\d*)/;
     return $index;
   }
