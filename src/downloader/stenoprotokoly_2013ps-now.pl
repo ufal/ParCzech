@@ -180,12 +180,12 @@ my %date_to_patch = (
 );
 
 my %link_patcher_data = (
-  'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002026.htm',
-  'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/005schuz/s005002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/005schuz/s005044.htm',
-  'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/012schuz/s012002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/012schuz/s012031.htm',
-  'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/031schuz/s031003.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/031schuz/s031032.htm',
-  'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/035schuz/s035002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/035schuz/s035040.htm',
-  'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/049schuz/s049006.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/049schuz/s049048.htm',
+  #'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/002schuz/s002026.htm',
+  #'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/005schuz/s005002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/005schuz/s005044.htm',
+  #'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/012schuz/s012002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/012schuz/s012031.htm',
+  #'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/031schuz/s031003.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/031schuz/s031032.htm',
+  #'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/035schuz/s035002.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/035schuz/s035040.htm',
+  #'start_sitting|https://www.psp.cz/eknih/2017ps/stenprot/049schuz/s049006.htm' => 'https://www.psp.cz/eknih/2017ps/stenprot/049schuz/s049048.htm',
   );
 
 my $unauthorized = JSON::from_json(ScrapperUfal::get_note('unauthorized')||'{}');
@@ -219,6 +219,7 @@ for my $ps_link (@URLs_parlament) {
 
 # get sittings
 # example input https://www.psp.cz/eknih/2013ps/stenprot/index.htm
+my @meetings_with_wrong_sitting_link;
 for my $sch_link (@steno_voleb_obd) {
   make_request($sch_link);
   debug_print( "Getting sittings from $sch_link", __LINE__);
@@ -231,10 +232,14 @@ for my $sch_link (@steno_voleb_obd) {
     my $meeting_link = URI->new_abs($meeting_node->getAttribute('href'),$sch_link);
     my ($meeting_id) = $meeting_link =~ m/(\d\d\d)schuz/;
     $meeting_id .= 'psse' if $meeting_link =~ m/psse/;
-    my @sittings_links = xpath_string('./following-sibling::a[contains(@href,"'.$meeting_id.'schuz")]/@href',$meeting_node);
+    my @sittings_links = grep {m/-(\d+)\.htm/} xpath_string('./following-sibling::a[contains(@href,"'.$meeting_id.'schuz")]/@href',$meeting_node);
 =sittings
     (<a href="001schuz/1-1.html">25.</a>, <a href="001schuz/1-2.html">27.&nbsp;listopadu&nbsp;2013</a>)
 =cut
+    unless (@sittings_links) {
+      debug_print( "Missing sitting links for $term_id-$meeting_id -> getting links from $meeting_link", __LINE__);
+      push @meetings_with_wrong_sitting_link, [$meeting_link, $term_id, $meeting_id]
+    }
     for my $sitting_link (@sittings_links) {
       $sitting_link = URI->new_abs($sitting_link,$sch_link);
       my ($sitting_id) = $sitting_link =~ m/-(\d+)\.htm/;
@@ -243,6 +248,23 @@ for my $sch_link (@steno_voleb_obd) {
 
       push @steno_sittings, [$sitting_link, $term_id, $meeting_id, $sitting_id] if defined($prune_regex) || is_new($sitting_link,1) || exists $unauthorized->{$term_id}->{$meeting_id}->{$sitting_id};
     }
+  }
+}
+
+
+# loop through meetings with wrong sitting link
+for my $meeting (@meetings_with_wrong_sitting_link){
+  my ($meeting_link, $term_id, $meeting_id) = @$meeting;
+  make_request($meeting_link);
+  next unless doc_loaded;
+  my @sittings_links = grep {m/\d+-\d+\.html?/} xpath_string('//div[@id="main-content"]/div[@class="page-title"]/following-sibling::br[1]/preceding-sibling::a/@href');
+  for my $sitting_link (@sittings_links) {
+    $sitting_link = URI->new_abs($sitting_link,$meeting_link);
+    my ($sitting_id) = $sitting_link =~ m/-(\d+)\.htm/;
+    $sitting_id = sprintf("%02d",$sitting_id);
+    debug_print( "\tnew sitting ".join('-', $term_id, $meeting_id, $sitting_id)."\t$sitting_link", __LINE__);
+
+    push @steno_sittings, [$sitting_link, $term_id, $meeting_id, $sitting_id] if defined($prune_regex) || is_new($sitting_link,1) || exists $unauthorized->{$term_id}->{$meeting_id}->{$sitting_id};
   }
 }
 
