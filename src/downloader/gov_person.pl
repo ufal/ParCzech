@@ -66,6 +66,7 @@ if(doc_loaded) {
 
 for my $gov_url (@gov_urls) {
   make_request($gov_url);
+  print STDERR "DOWNLOADING: $gov_url\n";
   next unless doc_loaded;
   for my $pers_link (grep {m/clenove-vlady.*-\d+\/?$/} xpath_string('//div[has(@class,"content-main")]//p/a/@href')) {
     push @pers_urls,"$pers_link";
@@ -108,6 +109,7 @@ sub guess_date {
   my $date = shift;
   my $format = shift // '%d.%m.%Y';
   $date = trim $date;
+  return '' unless $date;
   my $ret = undef;
   for my $pattern (@strp_patterns){
     eval {$ret = $pattern->parse_datetime($date)};
