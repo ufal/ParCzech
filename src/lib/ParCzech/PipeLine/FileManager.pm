@@ -453,8 +453,8 @@ sub to_string {
     element => {
         inline   => [qw//], # note
         block    => [qw/person/],
-        compact  => [qw/catDesc term desc label date edition title meeting idno orgName persName resp licence language sex forename surname measure head/],
-        preserves_whitespace => [qw/s seg note ref p/],
+        compact  => [qw/catDesc term label date edition title meeting idno orgName persName resp licence language sex forename surname measure head/],
+        preserves_whitespace => [qw/s seg note ref p desc/],
         }
     );
   $pp->pretty_print($doc);
