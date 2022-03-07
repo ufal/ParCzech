@@ -256,7 +256,7 @@ mkdir -p $GOV_OUTDIR_CACHE
 
 log "getting government persons"
 
-perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$GOV_SCRIPT --db $GOV_OUTDIR_DB --id $ID --debug 10
+perl -I downloader/lib -I lib -I ${SHARED}/lib downloader/$GOV_SCRIPT --db $GOV_OUTDIR_DB --cache $GOV_OUTDIR_CACHE --id $ID --debug 10
 
 fi # END GOV-DB download CONDITION
 
@@ -717,6 +717,17 @@ fi
 #
 #
 ###############################
+
+
+
+
+
+
+### TODO FIX THIS:
+
+
+
+
 
 export TEITOK_TEI=$DATA_DIR/parczech.tt/${ID}
 
