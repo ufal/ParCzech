@@ -449,7 +449,7 @@ sub evaluate_vars {
 sub to_string {
   my $doc = shift;
   my $pp = XML::LibXML::PrettyPrint->new(
-    indent_string => "  ",
+    indent_string => "   ",
     element => {
         inline   => [qw//], # note
         block    => [qw/person/],

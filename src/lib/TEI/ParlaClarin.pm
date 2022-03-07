@@ -94,7 +94,7 @@ sub toFile {
   my $dir = dirname($filename);
   File::Path::mkpath($dir) unless -d $dir;
   my $pp = XML::LibXML::PrettyPrint->new(
-    indent_string => "  ",
+    indent_string => "   ",
     element => {
         inline   => [qw/note/],
         #block    => [qw//],

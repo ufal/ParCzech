@@ -96,7 +96,7 @@ sub toFile {
   $self->SUPER::toFile(%params,($params{outputfile} ? () : (outputfile => File::Spec->catfile($self->{output}->{dir},$filename))));
   # save personlist
   my $pp = XML::LibXML::PrettyPrint->new(
-    indent_string => "  ",
+    indent_string => "   ",
     element => {
         inline   => [qw/note/],
         #block    => [qw//],
