@@ -26,7 +26,9 @@ task 'test_connection', group => 'all', sub {
 };
 
 task 'deploy', group => 'all', sub {
-
+  LOCAL {
+    run "git archive -o $deploy_package HEAD";
+  };
   unless(is_writeable($deploy_to)) {
     Rex::Logger::info("No write permission to $deploy_to");
     exit 1;
@@ -59,6 +61,7 @@ task 'deploy', group => 'all', sub {
 
   my $config_file = "$shared_dir/config.sh";
   run "ln -snf $config_file $deploy_to/current/config.sh";
+  run "ln -snf $shared_dir/Makefile $deploy_to/current/Makefile";
 
   # Server cleanup
   my @releases = reverse sort glob("$deploy_to/releases/*");
@@ -81,4 +84,8 @@ after_task_finished 'deploy', sub {
   LOCAL {
     run "rm $deploy_package";
   }
+};
+
+before_task_start 'test_connection', sub {
+  print STDERR "TEST CONNECTION:"
 };
