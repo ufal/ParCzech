@@ -118,7 +118,7 @@
                 </pubPlace>
               </xsl:when>
               <xsl:otherwise>
-                <idno type="URL">https://github.com/clarin-eric/ParlaMint</idno>
+                <idno type="URI">https://github.com/clarin-eric/ParlaMint</idno>
                 <pubPlace><ref target="https://github.com/clarin-eric/ParlaMint">https://github.com/clarin-eric/ParlaMint</ref></pubPlace>
               </xsl:otherwise>
             </xsl:choose>
