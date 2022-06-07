@@ -186,10 +186,23 @@ sub run_udpipe {
   #print FH $_text;
   #close FH;
 
-  my $res = $ua->post( $_url, \%form );
+  my $res;
+  my $json;
+  my $req_cnt = 0;
+  while($req_cnt < 10){
+    do {
+      $req_cnt++;
+      last if $req_cnt >= 10;
+      $ParCzech::PipeLine::FileManager::logger->log_line("request counter: $req_cnt");
+      $res = $ua->post( $_url, \%form );
+    } until ($res->is_success);
+    last if eval {$json = decode_json($res->decoded_content)}
+  }
+  unless($json){
+    $ParCzech::PipeLine::FileManager::logger->log_line("server error - no result");
+    return '';
+  }
 
-  Time::HiRes::sleep(1);
-  my $json = decode_json($res->decoded_content);
   if($debug) {
     local $/;
     $/=undef;
@@ -198,6 +211,8 @@ sub run_udpipe {
     $sentcnt++ while $json->{'result'} =~ /# sent_id/g;
     $ParCzech::PipeLine::FileManager::logger->log_line("received: par=$parcnt,sent=$sentcnt");
   }
+
+  Time::HiRes::sleep(1);
   #open FH, ">TMP.conll.$c";
   #binmode ( FH, ":utf8" );
   #print FH $json->{'result'};
