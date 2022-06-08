@@ -119,6 +119,8 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
         $ParCzech::PipeLine::FileManager::logger->log_line("SKIPPING paragraph-like element: does not contains text to be tokenized",$parent );
         next;
       }
+      # do not append next paragraph when punctation is not at the end of current paragraph:
+      last unless $text =~ m/[\.!?|)}\]"']\s*/;
       # newline between segments !!!
       $text .= "\r\n\r\n"; # force html4.01 endlines "CR LF" to not break tokenRanges https://github.com/libwww-perl/HTTP-Message/blob/b8a00e5b149d4a2396c88f3b00fd2f6e1386407f/lib/HTTP/Request/Common.pm#L91
       my $grandpa_a = $parent->parentNode();
