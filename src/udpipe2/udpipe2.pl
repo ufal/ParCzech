@@ -191,12 +191,16 @@ sub run_udpipe {
   my $res;
   my $json;
   my $req_cnt = 0;
+  my $t0;
+  my $dur;
   while($req_cnt < 10){
     do {
       $req_cnt++;
       last if $req_cnt >= 10;
       $ParCzech::PipeLine::FileManager::logger->log_line("request counter: $req_cnt");
+      $t0 = [Time::HiRes::gettimeofday];
       $res = $ua->post( $_url, \%form );
+      $dur = Time::HiRes::tv_interval($t0);
     } until ($res->is_success);
     last if eval {$json = decode_json($res->decoded_content)}
   }
@@ -208,10 +212,11 @@ sub run_udpipe {
   if($debug) {
     local $/;
     $/=undef;
-    my ($parcnt, $sentcnt) = (0,0);
+    my ($parcnt, $sentcnt,$tokcnt) = (0,0,0);
     $parcnt++ while $json->{'result'} =~ /# newpar/g;
     $sentcnt++ while $json->{'result'} =~ /# sent_id/g;
-    $ParCzech::PipeLine::FileManager::logger->log_line("received: par=$parcnt,sent=$sentcnt");
+    $tokcnt++ while $json->{'result'} =~ /[\r\n]\d+\t/g;
+    $ParCzech::PipeLine::FileManager::logger->log_line(sprintf("received: par=%d, sent=%d, tokens=%d, duration=%.2f s, speed=%.2f tok/s",$parcnt,$sentcnt,$tokcnt,$dur,$tokcnt/$dur));
   }
 
   Time::HiRes::sleep(1);
