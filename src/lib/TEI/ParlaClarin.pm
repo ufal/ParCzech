@@ -117,6 +117,7 @@ sub addSourceDesc {
     $self->{sourceDesc_bib}->appendChild($ed);
   }
   $idno->setAttribute('type','URI');
+  $idno->setAttribute('subtype','parliament');
   $idno->appendText($self->getSourceURI());
   $self->{sourceDesc_bib}->appendChild($idno);
   my $dt = $self->getPeriodDateNode(attr => '%Y-%m-%d',text => '%d.%m.%Y');

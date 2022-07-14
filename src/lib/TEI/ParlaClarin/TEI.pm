@@ -335,15 +335,26 @@ sub addAuthor {
   $persname->appendTextChild('forename',$forename);
 
   for my $link (
-      ['https://www.psp.cz/sqw/detail.sqw?id=',$params{id}],
-      ['https://www.vlada.cz/cz/clenove-vlady/',$params{govern_id},'/'],
-      ['',$params{link}]
+      {
+        subtype => 'parliament',
+        template => 'https://www.psp.cz/sqw/detail.sqw?id=%s',
+        param => $params{id}
+      },
+      {
+        subtype => 'government',
+        template => 'https://www.vlada.cz/cz/clenove-vlady/%s/',
+        param => $params{govern_id}
+      },
+      {
+        param => $params{link}
+      }
       ) {
-    next unless $link->[1];
+    next unless $link->{param};
     my $idno =  XML::LibXML::Element->new("idno");
     $person->appendChild($idno);
-    $idno->appendText( join('', @$link));
+    $idno->appendText( sprintf($link->{template}//'%s',$link->{param}));
     $idno->setAttribute('type', 'URI');
+    $idno->setAttribute('subtype', $link->{subtype}) if $link->{subtype} ;
   }
   $self->{PERSON_IDS}->{$xmlid} = $person;
   $self->{THIS_TEI_PERSON_IDS}->{$xmlid} = 1;
