@@ -27,7 +27,7 @@ my %config = (
           first => [qw/orgName event listEvent/],
         },
         attributes => {
-          orgName => [qw/full=yes full=init lang=cs lang=en/]
+          orgName => [qw/full=yes full=abb lang=cs lang=en/]
         }
       },
       person => {

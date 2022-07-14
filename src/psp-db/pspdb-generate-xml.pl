@@ -1033,7 +1033,7 @@ sub addToXML {
   }
   my $name = $org->addNewChild(undef,'orgName');
   $name->appendText($self->{abbr});
-  $name->setAttribute('full', 'init');
+  $name->setAttribute('full', 'abb');
   my $existence;
   for my $dt (qw/from to/) {
     if(defined $self->{$dt}){
