@@ -792,7 +792,7 @@ sub addToXML {
   $pname->appendTextChild($_,$self->{$_}) for qw/surname forename/;
   if($self->{sex}){
     my $sex = $pers->addNewChild( undef, 'sex');
-    $sex->appendTextNode($self->{sex} eq 'M' ? 'mužské' : 'ženské');
+    # $sex->appendTextNode($self->{sex} eq 'M' ? 'mužské' : 'ženské');
     $sex->setAttribute('value',$self->{sex} eq 'M' ? 'M' : 'F') ;
   }
   for my $life_event (qw/birth death/) {
