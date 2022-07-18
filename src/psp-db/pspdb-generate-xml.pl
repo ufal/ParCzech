@@ -187,9 +187,9 @@ if($use_existing_db) {
 
 
 my $regex_translations = [
-  [qr/ministr/i,'minister'],
-  [qr/místopředseda/i,'vice chairman'],
-  [qr/^.+$/,'member']
+  [qr/ministr/i,'Minister'],
+  [qr/místopředseda/i,'Deputy Head'],
+  [qr/^.+$/,'Member']
 ];
 
 my $personlist = ParCzech::PipeLine::FileManager::XML::open_xml($personlist_in);
@@ -601,7 +601,7 @@ sub createPerson {
 
     while(my $pm = $sth->fetchrow_hashref ) {
       # addAffiliation($person,$pm->{obd_id_organ}, 'MP', $pm->{od_obd}, $pm->{do_obd}); # duplicite
-      $self->addAffiliation($person,$pm->{kand_id_organ}, 'candidateMP', $pm->{od_obd}, $pm->{do_obd});
+      $self->addAffiliation($person,$pm->{kand_id_organ}, 'representative', $pm->{od_obd}, $pm->{do_obd}, "Reprezentant", "Representative");
     }
 
     ###########
@@ -623,7 +623,7 @@ sub createPerson {
                 AND zaraz.cl_funkce = 1',$pers->{id_osoba}));
     $sth->execute;
     while(my $func = $sth->fetchrow_hashref ) {
-      $self->addAffiliation($person,$func->{id_organ}, $func->{typ_funkce_en}//$translator->translate_static($func->{typ_funkce_cz}), $func->{od_o}, $func->{do_o});
+      $self->addAffiliation($person,$func->{id_organ},  $func->{typ_funkce_en}//$translator->translate_static($func->{typ_funkce_cz})//$func->{typ_funkce_en}, $func->{od_o}, $func->{do_o}, $func->{typ_funkce_cz}, $translator->translate_static($func->{typ_funkce_cz})//$func->{typ_funkce_en});
     }
     ###########
     # members
@@ -639,7 +639,7 @@ sub createPerson {
                 AND zaraz.cl_funkce = 0',$pers->{id_osoba}));
     $sth->execute;
     while(my $incl = $sth->fetchrow_hashref ) {
-      $self->addAffiliation($person,$incl->{id_organ}, 'member', $incl->{od_o}, $incl->{do_o});
+      $self->addAffiliation($person,$incl->{id_organ}, 'member', $incl->{od_o}, $incl->{do_o}, "Člen", "Member");
     }
   }
   $self->{listPerson}->{$person->id} = $person;
@@ -648,13 +648,17 @@ sub createPerson {
 
 sub addAffiliation {
   my $self = shift;
-  my ($person,$org_db_id,$role,$from,$to) = @_;
+  my ($person,$org_db_id,$role,$from,$to,$roleNameCZ,$roleNameEN) = @_;
   my $org = $self->{org_list}->addOrg($org_db_id);
-  $role='MP' if $org->role() eq 'parliament' && ($role//'') eq 'member';
-  $role = listOrg::create_ID($patcher->translate_static($role)) if $role;
+  if(($org->{name_cz}//'') =~ /Poslanecká Sněmovna/ && ($role//'') eq 'member'){
+    $roleNameCZ = ($person->{sex} eq 'F') ? "Poslankyně" : "Poslanec";
+    $roleNameEN = "Member of Parliament";
+  }
+  $role=$patcher->translate_static($role);
+  $role = listOrg::create_ID($role) if $role;
   $from =~ s/ /T/ if $from;
   $to =~ s/ /T/ if $to;
-  $person->affiliate(ref => '#'.$org->id(), role => $role, from => $from, to => $to);
+  $person->affiliate(ref => '#'.$org->id(), role => $role, from => $from, to => $to, lang_cs => $roleNameCZ, lang_en => $roleNameEN);
 }
 
 sub addPersonXMLID {
@@ -770,7 +774,7 @@ sub affiliate {
   my $self = shift;
   my %opts = @_;
   my $aff = {};
-  for $a (qw/ref role from to/){
+  for $a (qw/ref role from to lang_cs lang_en/){
     $aff->{$a} = $opts{$a} if $opts{$a}
   }
   push @{$self->{affiliation}},$aff;
@@ -824,6 +828,13 @@ sub addToXML {
     my $aff = $pers->addNewChild( undef, 'affiliation');
     for my $a (qw/ref role from to/){
       $aff->setAttribute($a,$pers_aff->{$a}) if $pers_aff->{$a};
+    }
+    for my $a (qw/lang_cs lang_en/){
+      if($pers_aff->{$a}){
+        my $roleName = $aff->addNewChild(undef,'roleName');
+        $roleName->setAttributeNS($XMLNS,'lang',$a =~ m/lang_(.*)/);
+        $roleName->appendText($pers_aff->{$a});
+      }
     }
   }
 }

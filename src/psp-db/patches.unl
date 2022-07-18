@@ -1,9 +1,12 @@
 party|political party
 president (speaker)|president
-pm|MP
+pm|member
 verifier of committee|verifier
 verifier of commission|verifier
-vice-chairperson|vice chairman
-chairperson|chairman
-vicepresident|vice president
+vice-chairperson|deputy head
+chairperson|head
+vicepresident|deputy head
 Government of Czech Republic|Government of the Czech Republic
+chairman|head
+vice-chairman|deputy head
+speaker|head
