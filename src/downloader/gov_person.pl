@@ -69,7 +69,7 @@ for my $gov_url (@gov_urls) {
   print STDERR "DOWNLOADING: $gov_url\n";
   next unless doc_loaded;
   for my $pers_link (grep {m/clenove-vlady.*-\d+\/?$/} xpath_string('//div[has(@class,"content-main")]//p/a/@href')) {
-    push @pers_urls,"$pers_link";
+    push @pers_urls,"$pers_link" if is_new($pers_link);
   }
 }
 
@@ -82,6 +82,7 @@ for my $pers_link (@pers_urls) {
   print STDERR "DOWNLOADING: $pers_link\n";
   next unless doc_loaded;
   my ($id) = $pers_link =~ m/[^\/]*-([0-9]*)\/?$/;
+  next unless is_new("PERSON-$id");
   my $main = xpath_node('//*[has(@class,"content-main")]');
   next unless $main;
   my $persName = xpath_string('./h1[1]',$main);
