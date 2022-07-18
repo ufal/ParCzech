@@ -29,6 +29,7 @@
     <pcz:item pcz:dep="tagsDecl" />
     <pcz:item pcz:dep="encodingDesc-corpus" />
     <pcz:item pcz:dep="profileDesc-corpus" />
+    <pcz:item pcz:dep="textClass" />
   </pcz:meta>
 
   <pcz:meta pcz:name="ParCzech-live-corpus.ann">
@@ -679,6 +680,16 @@
     </pcz:item>
   </pcz:meta>
 
+  <pcz:meta pcz:name="textClass">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:profileDesc/tei:textClass">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:profileDesc/tei:textClass/tei:catRef" />
+      </pcz:test>
+      <pcz:tei>
+        <catRef scheme="#parla.legislature" target="#parla.bi #parla.lower"/>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
 
 <!--
   <pcz:meta pcz:name="ParCzechPS-2.0-taxonomy">

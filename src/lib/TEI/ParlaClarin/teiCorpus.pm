@@ -20,6 +20,7 @@ sub new {
   my $self = $class->SUPER::new('teiCorpus',%params);
   bless($self,$class);
   $self->addNamespaces($self->{ROOT}, 'xi' => 'http://www.w3.org/2001/XInclude');
+  $self->{TEXTCLASS} = _get_child_node_or_create($self->{XPC},$self->{HEADER},qw/profileDesc textClass/);
   $self->{tei_file_list} = [];
   $self->{seen_person_id} = {};
   $self->{TERMS} = {};
