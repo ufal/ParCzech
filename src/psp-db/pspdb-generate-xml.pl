@@ -14,7 +14,7 @@ use Data::Dumper;
 
 
 
-my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations,$patches, $flat, $term_list, $allterm_person_filepath);
+my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations,$patches, $roles_patches, $flat, $term_list, $allterm_person_filepath);
 
 =note
 
@@ -144,6 +144,7 @@ GetOptions ( ## Command line options
             'input-db-dir=s' => \$indbdir,
             'translations=s' => \$translations,
             'patches=s' => \$patches,
+            'roles-patches=s' => \$roles_patches,
             );
 
 
@@ -196,6 +197,7 @@ my $personlist = ParCzech::PipeLine::FileManager::XML::open_xml($personlist_in);
 my $patcher = ParCzech::Translation->new(single_direction => 1, keep_if_no_match => 1 ,$patches ? (tran_files => $patches) : ());
 my $translator = ParCzech::Translation->new($translations ? (tran_files => $translations) : (),
                                             tran_regex => $regex_translations);
+my $roles_patcher = ParCzech::Translation->new(single_direction => 1, keep_if_no_match => 1 ,$roles_patches ? (tran_files => $roles_patches) : ());
 
 my $org_translator = ParCzech::Translation->new($translations ? (tran_files => $translations) : ());
 my $orglist = listOrg->new(db => $pspdb, translator => $org_translator,
@@ -994,6 +996,7 @@ sub new {
     type => $opts{type}
   };
   $self->buildID();
+  #$self->{role} = $roles_patcher->translate_static($self->{role}) if $self->{role};
   $self->{child} = {};
 
   return $self;
@@ -1033,7 +1036,7 @@ sub addToXML {
   my $XMLNS='http://www.w3.org/XML/1998/namespace';
   my $org = $parent->addNewChild( undef, 'org');
   $org->setAttributeNS($XMLNS, 'id', $self->id);
-  $org->setAttribute('role',$self->{role}) if $self->{role};
+  $org->setAttribute('role',$roles_patcher->translate_static($self->{role})) if $self->{role};
   for my $n ([qw/name_cz cs/],[qw/name_en en/])  {
     if(defined $self->{$n->[0]}) {
       my $name = $org->addNewChild(undef,'orgName');
