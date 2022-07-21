@@ -28,7 +28,7 @@ sub load_files {
   while(my $file = shift @files) {
     open(my $fh,"<:encoding(utf-8)",  $file) or die "Cannot open:$!\n";
     while(my $line = <$fh>) {
-      my ($from, $to) = map {s/^\s*$//;$_} split('\|',$line);
+      my ($from, $to) = map {s/^\s*$//; s/^\s*//; s/\s*$//; $_} split('\|',$line);
       $self->add_translation($from,$to);
       $self->add_translation($to, $from) if $bothdirections;
     }
