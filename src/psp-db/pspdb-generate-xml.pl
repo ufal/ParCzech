@@ -1037,10 +1037,10 @@ sub addIdenticalOrgs{
                OR org.nazev_organu_en = org_ref.nazev_organu_en
               )
               AND org.id_typ_org = org_ref.id_typ_org
-          WHERE org.id_organ=%s',$dbid));
+          WHERE org_ref.id_organ=%s',$dbid));
   $sth->execute;
   while(my $orgrow = $sth->fetchrow_hashref){
-    $self->addOrg($orgrow->{id_organ},$prefix)
+    $self->addOrg($orgrow->{id_organ},$prefix);
   }
 }
 
@@ -1060,6 +1060,8 @@ sub new {
   $self->buildID();
 
   $self->{role} = $roles_patcher->translate_static($self->{role}) if $self->{role};
+
+  print STDERR "IDENTICAL ORG ADDING: ",$self->id(),"\t",$self->{prefix},"\n" if $self->{prefix};
 
   my $prefix = $self->{id};
   $prefix =~ s/\.[0-9]*$//;
