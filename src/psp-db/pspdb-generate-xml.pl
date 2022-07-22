@@ -666,7 +666,7 @@ sub addAffiliation {
   $to =~ s/ /T/ if $to;
   $person->affiliate(
                ($merge_to_events && $self->{org_list}->isEvent($org))
-                   ? (ref => '#'.$org->prefId(), ana => '#'.$org->id())
+                   ? (ref => '#'.$org->prefix(), ana => '#'.$org->id())
                    : (ref => '#'.$org->id()),
                role => $role,
                from => $from,
@@ -962,6 +962,7 @@ sub getRole {
 sub addOrg {
   my $self = shift;
   my $dbid = shift;
+  my $prefix = shift;
   return unless defined $dbid;
   unless(defined $self->{org}->{$dbid}) {
     my $sth = $pspdb->prepare(sprintf(
@@ -983,13 +984,13 @@ sub addOrg {
       $parent = $self->addOrg($orgrow->{parent}) unless $flat;
       $orgrow->{name_en} ||= $self->{translator}->translate_static($orgrow->{name_cz});
       $orgrow->{name_en} = $self->{patcher}->translate_static($orgrow->{name_en});
-      my $org = listOrg::org->new(%$orgrow, abbr_sd => create_ID($orgrow->{abbr},keep_case => 1, keep_dash => 1), role => $role,  $parent ? (parent_org_id => $parent->id()):() );
+      my $org = listOrg::org->new(%$orgrow, prefix=>$prefix, abbr_sd => create_ID($orgrow->{abbr},keep_case => 1, keep_dash => 1), role => $role,  $parent ? (parent_org_id => $parent->id()):() );
       $self->{org}->{$dbid} = $org;
       $self->{org_prefix}->{$org->prefix()}//={};
       $self->{org_prefix}->{$org->prefix()}->{$dbid} = $org;
       ($parent//$self)->addChild($org);
       if($merge_to_events){# add all organizations with same prefix
-        $self->addIdenticalOrgs($dbid);
+        $self->addIdenticalOrgs($dbid, $org->prefix());
       }
     } else {
       return undef;
@@ -1022,19 +1023,24 @@ sub create_ID {
 sub addIdenticalOrgs{
   my $self = shift;
   my $dbid = shift;
+  my $prefix = shift;
   return unless $dbid;
   my $sth = $pspdb->prepare(sprintf(
          'SELECT
             org.id_organ AS id_organ
           FROM organy AS org
           JOIN organy AS org_ref
-            ON org.zkratka = org_ref.zkratka
-              AND org.id_typ_org = org_ref.id_typ_org
+            ON
+             (
+               org.zkratka = org_ref.zkratka
+               OR org.nazev_organu_cz = org_ref.nazev_organu_cz
+               OR org.nazev_organu_en = org_ref.nazev_organu_en
+              )
               AND org.id_typ_org = org_ref.id_typ_org
           WHERE org.id_organ=%s',$dbid));
   $sth->execute;
   while(my $orgrow = $sth->fetchrow_hashref){
-    $self->addOrg($orgrow->{id_organ})
+    $self->addOrg($orgrow->{id_organ},$prefix)
   }
 }
 
@@ -1044,7 +1050,7 @@ sub new {
   my $this  = shift;
   my $class = ref($this) || $this;
   my %opts = @_;
-  my $self  = { map { $_ => $opts{$_} } qw/abbr name_cz name_en from to role abbr_sd id_organ/ };
+  my $self  = { map { $_ => $opts{$_} } qw/abbr name_cz name_en from to role abbr_sd id_organ prefix/ };
   bless $self, $class;
   $self->{iddb} = {
     id => $opts{id_organ},
@@ -1052,10 +1058,18 @@ sub new {
     type => $opts{type}
   };
   $self->buildID();
+
   $self->{role} = $roles_patcher->translate_static($self->{role}) if $self->{role};
+
+  my $prefix = $self->{id};
+  $prefix =~ s/\.[0-9]*$//;
+  $prefix =~ s/[0-9]*$// if $self->{role} eq 'parliament';
+  $self->{prefix} = $prefix unless $self->{prefix};
+
+
   $self->{child} = {};
   $self->{events} = {};
-
+  print STDERR "ORG:",$self->id(),"\t",$self->{name_cz},"\t",$self->prefix(),"\n";
   return $self;
 }
 
@@ -1074,7 +1088,7 @@ sub new_from_list{
                          name_cz => _newest_text(map {[$_->{name_cz},$_->{from}]} @orgs),
                          name_en => _newest_text(map {[$_->{name_en},$_->{from}]} @orgs),
                       );
-  ($self->{id}) = $prefix =~ m/^(.*?)\.?$/;
+  $self->{id} = $prefix;
   bless $self, $class;
   for my $org (@orgs){
     $self->{events} //= {};
@@ -1097,7 +1111,6 @@ sub buildID {
     push @parts, $self->{id_organ} if defined $self->{id_organ};
   }
   $self->{id} = join('.', @parts);
-  ($self->{prefix}) = $self->{id} =~ /^(.*\.).*?$/;
 }
 
 sub id {
@@ -1110,11 +1123,6 @@ sub role {
 
 sub prefix {
   return shift->{prefix}
-}
-
-sub prefId {
-  my ($orgId) = shift->prefix() =~ m/^(.*)\.$/;
-  return $orgId;
 }
 
 sub addChild {
@@ -1164,7 +1172,7 @@ sub addToXML {
   }
   if(%{$self->{events}}) {
     my $list = $org->addNewChild( undef, 'listEvent');
-    for my $ch_id (sort {$self->{events}->{$a}->{from} <=> $self->{events}->{$b}->{from}} keys %{$self->{events}}){
+    for my $ch_id (sort {$self->{events}->{$a}->{from} cmp $self->{events}->{$b}->{from}} keys %{$self->{events}}){
       $self->{events}->{$ch_id}->addToXML($list);
     }
   }
