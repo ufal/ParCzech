@@ -14,7 +14,7 @@ use Data::Dumper;
 
 
 
-my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations,$patches, $roles_patches, $flat, $term_list, $allterm_person_filepath);
+my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations,$patches, $roles_patches, $flat, $merge_to_events, $term_list, $allterm_person_filepath);
 
 =note
 
@@ -136,6 +136,7 @@ my %tabledef = (
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'flat' => \$flat,
+            'merge-to-events' => \$merge_to_events,
             'term-list=s' => \$term_list,
             'allterm-person-outfile=s' => \$allterm_person_filepath,
             'person-list=s' => \$personlist_in,
@@ -152,6 +153,8 @@ GetOptions ( ## Command line options
 usage_exit() unless $indbdir;
 usage_exit() unless $personlist_in;
 usage_exit() unless $outdir;
+
+$flat = 1 if $merge_to_events;
 
 my %dbfile_structure = (
   (map {($_ => File::Spec->catfile($indbdir,'poslanci',"$_.unl"))} keys %{$tabledef{poslanci}}),
@@ -396,12 +399,13 @@ sub usage_exit {
   print
 "$pref
 
-Usage: pspdb-generate-xml.pl  --person-list <STRING> --output-dir <STRING> --input-db-dir <STRING> [--debug] [--flat]
+Usage: pspdb-generate-xml.pl  --person-list <STRING> --output-dir <STRING> --input-db-dir <STRING> [--debug] [--flat] [--merge-to-events]
 
 \t--person-list=s\tfile containing list of persons that should be enriched and linked
 \t--output-dir=s\tfolder where will be result stored (person.xml, org.xml) and database file psp.db
 \t--input-db-dir=s\tdirectory with downloaded and unpacked database dump files
 \t--flat\tprint flat organization structure (no sub organization)
+\t--merge-to-events\tmerges organizations with same prefix into one organization (produce flat structure)
 ";
    exit;
 }
@@ -660,7 +664,16 @@ sub addAffiliation {
   $role = listOrg::create_ID($role) if $role;
   $from =~ s/ /T/ if $from;
   $to =~ s/ /T/ if $to;
-  $person->affiliate(ref => '#'.$org->id(), role => $role, from => $from, to => $to, lang_cs => $roleNameCZ, lang_en => $roleNameEN);
+  $person->affiliate(
+               ($merge_to_events && $self->{org_list}->isEvent($org))
+                   ? (ref => '#'.$org->prefId(), ana => '#'.$org->id())
+                   : (ref => '#'.$org->id()),
+               role => $role,
+               from => $from,
+               to => $to,
+               lang_cs => $roleNameCZ,
+               lang_en => $roleNameEN
+               );
 }
 
 sub addPersonXMLID {
@@ -776,7 +789,7 @@ sub affiliate {
   my $self = shift;
   my %opts = @_;
   my $aff = {};
-  for $a (qw/ref role from to lang_cs lang_en/){
+  for $a (qw/ref ana role from to lang_cs lang_en/){
     $aff->{$a} = $opts{$a} if $opts{$a}
   }
   push @{$self->{affiliation}},$aff;
@@ -828,7 +841,7 @@ sub addToXML {
   # affiliations
   for my $pers_aff (sort { $b->{from} cmp $a->{from} } @{$self->{affiliation} // []}){
     my $aff = $pers->addNewChild( undef, 'affiliation');
-    for my $a (qw/ref role from to/){
+    for my $a (qw/ref role ana from to/){
       $aff->setAttribute($a,$pers_aff->{$a}) if $pers_aff->{$a};
     }
     for my $a (qw/lang_cs lang_en/){
@@ -858,6 +871,7 @@ sub new {
   $self->{child} = {}; # list of child orgs
   $self->{list_org} = {}; # list of all descendant orgs
   $self->{org} = {}; # list of all orgs
+  $self->{org_prefix} = {}; # list of orgs by prefix
   $self->{roles} = {};
   $self->{translator} = $opts{translator};
   $self->{patcher} = $opts{patcher};
@@ -881,12 +895,31 @@ sub addToXML {
   my $self = shift;
   my $parent = shift;
   return unless $parent;
-  for my $ch_id (keys %{$self->{child}}){
-    $self->{child}->{$ch_id}->addToXML($parent);
+  if($merge_to_events){
+
+    for my $prefix (sort keys %{$self->{org_prefix}}){
+      my @orgs = values %{$self->{org_prefix}->{$prefix}};
+      if (@orgs == 1){
+        print STDERR "==== NO EVENT NEEDED -> existence \n";
+        for my $org (values %{$self->{org_prefix}->{$prefix}}){
+          $org->addToXML($parent);
+        }
+      } else {
+        listOrg::org->new_from_list($prefix,@orgs)->addToXML($parent);
+      }
+    }
+  } else {
+    for my $ch_id (keys %{$self->{child}}){
+      $self->{child}->{$ch_id}->addToXML($parent);
+    }
   }
 }
 
-
+sub isEvent {
+  my $self = shift;
+  my $org = shift;
+  return (scalar(keys %{$self->{org_prefix}->{$org->prefix()}}) > 1)
+}
 
 
 sub addChild {
@@ -953,7 +986,12 @@ sub addOrg {
       $orgrow->{name_en} = $self->{patcher}->translate_static($orgrow->{name_en});
       my $org = listOrg::org->new(%$orgrow, abbr_sd => create_ID($orgrow->{abbr},keep_case => 1, keep_dash => 1), role => $role,  $parent ? (parent_org_id => $parent->id()):() );
       $self->{org}->{$dbid} = $org;
+      $self->{org_prefix}->{$org->prefix()}//={};
+      $self->{org_prefix}->{$org->prefix()}->{$dbid} = $org;
       ($parent//$self)->addChild($org);
+      if($merge_to_events){# add all organizations with same prefix
+        $self->addIdenticalOrgs($dbid);
+      }
     } else {
       return undef;
     }
@@ -982,6 +1020,26 @@ sub create_ID {
   return $str;
 }
 
+sub addIdenticalOrgs{
+  my $self = shift;
+  my $dbid = shift;
+  return unless $dbid;
+  print STDERR "\n=== === ===\n=== === ===\n=== === ===\n=== === ===\n=== === === TODO add identical orgs\n";
+  my $sth = $pspdb->prepare(sprintf(
+         'SELECT
+            org.id_organ AS id_organ
+          FROM organy AS org
+          JOIN organy AS org_ref
+            ON org.zkratka = org_ref.zkratka
+              AND org.id_typ_org = org_ref.id_typ_org
+              AND org.id_typ_org = org_ref.id_typ_org
+          WHERE org.id_organ=%s',$dbid));
+  $sth->execute;
+  while(my $orgrow = $sth->fetchrow_hashref){
+    $self->addOrg($orgrow->{id_organ})
+  }
+}
+
 package listOrg::org;
 
 sub new {
@@ -996,10 +1054,40 @@ sub new {
     type => $opts{type}
   };
   $self->buildID();
-  #$self->{role} = $roles_patcher->translate_static($self->{role}) if $self->{role};
+  $self->{role} = $roles_patcher->translate_static($self->{role}) if $self->{role};
   $self->{child} = {};
+  $self->{events} = {};
 
   return $self;
+}
+
+sub new_from_list{
+  my $this  = shift;
+  my $class = ref($this) || $this;
+  my $prefix = shift;
+  my @orgs = @_;
+  my $abbr = _newest_text(map {[$_->{abbr},$_->{from}]} @orgs);
+  my $role = $orgs[0]->{role};
+  $abbr =~ s/[0-9]*$// if $role eq 'parliament';
+  my $self  = $class->new(
+                         abbr => $abbr,
+                         abbr_sd => $orgs[0]->{abbr_sd},
+                         role => $role,
+                         name_cz => _newest_text(map {[$_->{name_cz},$_->{from}]} @orgs),
+                         name_en => _newest_text(map {[$_->{name_en},$_->{from}]} @orgs),
+                      );
+  ($self->{id}) = $prefix =~ m/^(.*?)\.?$/;
+  bless $self, $class;
+  for my $org (@orgs){
+    $self->{events} //= {};
+    $self->{events}->{$org->id()} = event->new(org=>$org);
+  }
+
+  return $self
+}
+
+sub _newest_text{
+  return [reverse grep {$_} map {$_->[0]} sort { $a->[1] cmp $b->[1] } @_]->[0]
 }
 
 sub buildID {
@@ -1008,9 +1096,10 @@ sub buildID {
   push @parts, $self->{role} if $self->{role};
   push @parts, $self->{abbr_sd};
   unless(defined $uniqueOrgRoles{$self->{role} // ''}){
-    push @parts, $self->{id_organ};
+    push @parts, $self->{id_organ} if defined $self->{id_organ};
   }
   $self->{id} = join('.', @parts);
+  ($self->{prefix}) = $self->{id} =~ /^(.*\.).*?$/;
 }
 
 sub id {
@@ -1019,6 +1108,15 @@ sub id {
 
 sub role {
   return shift->{role}
+}
+
+sub prefix {
+  return shift->{prefix}
+}
+
+sub prefId {
+  my ($orgId) = shift->prefix() =~ m/^(.*)\.$/;
+  return $orgId;
 }
 
 sub addChild {
@@ -1036,7 +1134,7 @@ sub addToXML {
   my $XMLNS='http://www.w3.org/XML/1998/namespace';
   my $org = $parent->addNewChild( undef, 'org');
   $org->setAttributeNS($XMLNS, 'id', $self->id);
-  $org->setAttribute('role',$roles_patcher->translate_static($self->{role})) if $self->{role};
+  $org->setAttribute('role',$self->{role}) if $self->{role};
   for my $n ([qw/name_cz cs/],[qw/name_en en/])  {
     if(defined $self->{$n->[0]}) {
       my $name = $org->addNewChild(undef,'orgName');
@@ -1065,5 +1163,58 @@ sub addToXML {
     for my $ch_id (keys %{$self->{child}}){
       $self->{child}->{$ch_id}->addToXML($list);
     }
+  }
+  if(%{$self->{events}}) {
+    my $list = $org->addNewChild( undef, 'listEvent');
+    for my $ch_id (sort {$self->{events}->{$a}->{from} <=> $self->{events}->{$b}->{from}} keys %{$self->{events}}){
+      $self->{events}->{$ch_id}->addToXML($list);
+    }
+  }
+}
+
+
+package event;
+
+sub new {
+  my $this  = shift;
+  my $class = ref($this) || $this;
+  my %opts = @_;
+  my $org = $opts{org};
+  my $self  = { map { $_ => $opts{$_} } qw/abbr name_cz name_en from to role abbr_sd id_organ/ };
+  $self->{id} = $org->id();
+  $self->{from} = $org->{from} if $org->{from};
+  $self->{to} = $org->{to} if $org->{to};
+  $self->{label} = {};
+  for my $n ([qw/name_cz cs/],[qw/name_en en/])  {
+    if(defined $org->{$n->[0]}) {
+      $self->{label}->{$n->[1]} = sprintf("%s (%s - %s)",$org->{$n->[0]}, $self->{from}//'', $self->{to}//'')
+    }
+  }
+  bless $self, $class;
+
+  return $self;
+}
+
+sub id {
+  return shift->{id}
+}
+
+sub addToXML {
+  my $self = shift;
+  my $parent = shift;
+  return unless $parent;
+  my $XMLNS='http://www.w3.org/XML/1998/namespace';
+  my $event = $parent->addNewChild( undef, 'event');
+  $event->setAttributeNS($XMLNS, 'id', $self->id);
+  for my $dt (qw/from to/) {
+    if(defined $self->{$dt}){
+      $event->setAttribute($dt,$self->{$dt});
+    }
+  }
+
+  for my $lang (sort keys %{$self->{label}})  {
+    my $label = $event->addNewChild(undef,'label');
+    $label->appendText($self->{label}->{$lang});
+    $label->setAttributeNS($XMLNS, 'lang', $lang);
   }
 }

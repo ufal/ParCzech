@@ -302,12 +302,12 @@ log "travers person - looking for duplicit persons"
 echo ./psp-db/travers_person.sh -p "$PSP_DB_DIR/person.xml" -i "$DOWNLOADER_TEI" -f "$TEI_FILELIST" -o "$PSP_DB_TEI" -c `realpath $CONFIG_FILE`
 ./psp-db/travers_person.sh -p "$PSP_DB_DIR/person.xml" -i "$DOWNLOADER_TEI" -f "$TEI_FILELIST" -o "$PSP_DB_TEI" -c `realpath $CONFIG_FILE`
 
-## merge orgs with common roles to list of events
-$XSL_TRANSFORM psp-db/org_merger.xsl "$PSP_DB_DIR/org.xml" "$PSP_DB_DIR/org.merged.xml" roles="senate|parliament|government"
+## merge orgs with common roles to list of events (done inprevious step)
+##$XSL_TRANSFORM psp-db/org_merger.xsl "$PSP_DB_DIR/org.xml" "$PSP_DB_DIR/org.merged.xml" roles="senate|parliament|government"
 
 ### set parliament org to parla.term
 
-TERM_TO_PSP=`$XPATH_QUERY "$PSP_DB_DIR/org.merged.xml" "declare option saxon:output 'omit-xml-declaration=yes'; concat(string-join( for \\$i in //*[local-name() = 'org' and @role='parliament']/*[local-name() = 'listEvent']/*[local-name() = 'event'] return concat(concat('ps',substring-before(\\$i/@from, '-')),'=#',\\$i/@xml:id),' '),' ')"`
+TERM_TO_PSP=`$XPATH_QUERY "$PSP_DB_DIR/org.xml" "declare option saxon:output 'omit-xml-declaration=yes'; concat(string-join( for \\$i in //*[local-name() = 'org' and @role='parliament']/*[local-name() = 'listEvent']/*[local-name() = 'event'] return concat(concat('ps',substring-before(\\$i/@from, '-')),'=#',\\$i/@xml:id),' '),' ')"`
 echo "TERM_TO_PSP:$TERM_TO_PSP"
 
 cp "$DOWNLOADER_TEI/$TEICORPUS_FILENAME" "$PSP_DB_DIR/$TEICORPUS_FILENAME"
