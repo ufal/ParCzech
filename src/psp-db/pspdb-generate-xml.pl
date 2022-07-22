@@ -900,7 +900,6 @@ sub addToXML {
     for my $prefix (sort keys %{$self->{org_prefix}}){
       my @orgs = values %{$self->{org_prefix}->{$prefix}};
       if (@orgs == 1){
-        print STDERR "==== NO EVENT NEEDED -> existence \n";
         for my $org (values %{$self->{org_prefix}->{$prefix}}){
           $org->addToXML($parent);
         }
@@ -1024,7 +1023,6 @@ sub addIdenticalOrgs{
   my $self = shift;
   my $dbid = shift;
   return unless $dbid;
-  print STDERR "\n=== === ===\n=== === ===\n=== === ===\n=== === ===\n=== === === TODO add identical orgs\n";
   my $sth = $pspdb->prepare(sprintf(
          'SELECT
             org.id_organ AS id_organ
