@@ -1289,7 +1289,7 @@ sub addToXML {
   }
   if(%{$self->{events}}) {
     my $list = $org->addNewChild( undef, 'listEvent');
-    for my $ch_id (sort {$self->{events}->{$a}->{from} cmp $self->{events}->{$b}->{from}} keys %{$self->{events}}){
+    for my $ch_id (sort {($self->{events}->{$a}->{from} cmp $self->{events}->{$b}->{from})||($self->{events}->{$a}->{to} cmp $self->{events}->{$b}->{to})} keys %{$self->{events}}){
       $self->{events}->{$ch_id}->addToXML($list);
     }
   }
