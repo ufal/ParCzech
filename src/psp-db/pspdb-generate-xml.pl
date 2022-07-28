@@ -10,6 +10,7 @@ use ParCzech::Translation;
 use DBI;
 use Unicode::Diacritic::Strip;
 use Data::Dumper;
+use List::Util;
 
 
 
@@ -193,11 +194,17 @@ if($use_existing_db) {
 my $regex_translations = [
   [qr/ministr/i,'Minister'],
   [qr/místopředseda/i,'Deputy Head'],
-  [qr/^.+$/,'Member']
+  [qr/^.+$/,'Member'],
+];
+my $regex_patches = [
+  [qr/^Czech Republic\s*-?\s*(.*?) Inter-Parliamentary Group$/i,undef,'%s'],
 ];
 
+my %comparison_ignore_words = map {$_ => 1} qw/podvýbor subcommittee výbor committee pro on for of the a and poslanecký political klub group/;
+
+
 my $personlist = ParCzech::PipeLine::FileManager::XML::open_xml($personlist_in);
-my $patcher = ParCzech::Translation->new(single_direction => 1, keep_if_no_match => 1 ,$patches ? (tran_files => $patches) : ());
+my $patcher = ParCzech::Translation->new(single_direction => 1, keep_if_no_match => 1 ,$patches ? (tran_files => $patches) : (),tran_regex => $regex_patches);
 my $translator = ParCzech::Translation->new($translations ? (tran_files => $translations) : (),
                                             tran_regex => $regex_translations);
 my $roles_patcher = ParCzech::Translation->new(single_direction => 1, keep_if_no_match => 1 ,$roles_patches ? (tran_files => $roles_patches) : ());
@@ -858,6 +865,7 @@ sub addToXML {
 ###############################################################
 
 package listOrg;
+use Data::Dumper;
 
 
 sub new {
@@ -896,9 +904,11 @@ sub addToXML {
   my $parent = shift;
   return unless $parent;
   if($merge_to_events){
+      print STDERR "TOTAL PREF: ",scalar(keys %{$self->{org_prefix}}),"\n";
 
     for my $prefix (sort keys %{$self->{org_prefix}}){
       my @orgs = values %{$self->{org_prefix}->{$prefix}};
+      print STDERR "SAVING $prefix: ",scalar(@orgs),"\n";
       if (@orgs == 1){
         for my $org (values %{$self->{org_prefix}->{$prefix}}){
           $org->addToXML($parent);
@@ -963,6 +973,8 @@ sub addOrg {
   my $self = shift;
   my $dbid = shift;
   my $prefix = shift;
+  my $identicalDistance = shift//0;
+  $self->{tmp_prefix} = {} if $identicalDistance == 0;
   return unless defined $dbid;
   unless(defined $self->{org}->{$dbid}) {
     my $sth = $pspdb->prepare(sprintf(
@@ -986,12 +998,35 @@ sub addOrg {
       $orgrow->{name_en} = $self->{patcher}->translate_static($orgrow->{name_en});
       my $org = listOrg::org->new(%$orgrow, prefix=>$prefix, abbr_sd => create_ID($orgrow->{abbr},keep_case => 1, keep_dash => 1), role => $role,  $parent ? (parent_org_id => $parent->id()):() );
       $self->{org}->{$dbid} = $org;
-      $self->{org_prefix}->{$org->prefix()}//={};
-      $self->{org_prefix}->{$org->prefix()}->{$dbid} = $org;
-      ($parent//$self)->addChild($org);
       if($merge_to_events){# add all organizations with same prefix
-        $self->addIdenticalOrgs($dbid, $org->prefix());
+        $self->addIdenticalOrgs($dbid, $org->prefix(),$identicalDistance+1);
+
+        print STDERR "TODO: fix prefixes - use newest one (check for collisions !!)\n";
+
+        $self->{tmp_prefix}->{$dbid} = $org;
+        print STDERR "DIST '$identicalDistance'\n";
+        if($identicalDistance == 0){
+            print STDERR "=== NEW ORGANIZATION\n";
+            print STDERR Dumper($self->{tmp_prefix}),"===================================\n";
+            if(defined $self->{org_prefix}->{$org->prefix()}){
+              print  STDERR "CALCULATE UNIQUE PREFIX ",$org->prefix(),"!!!\n Colidates with: ";
+              print STDERR Dumper($self->{org_prefix}->{$org->prefix()}),"===================================\n";
+
+              new_prefixes($self->{org_prefix},values %{$self->{tmp_prefix}});
+              print STDERR Dumper($self->{tmp_prefix})," <<<===================================\n";
+
+            }
+            print STDERR "SAVING NEW PREFIX:",$org->prefix(),"\n";
+            print STDERR "ALL PREFIXES:",join(" ",sort keys %{$self->{org_prefix}}),"\n";
+
+            $self->{org_prefix}->{$org->prefix()} = $self->{tmp_prefix};
+            $self->{tmp_prefix} = {};
+        }
       }
+      #$self->{org_prefix}->{$org->prefix()}//={};
+      #$self->{org_prefix}->{$org->prefix()}->{$dbid} = $org;
+      ($parent//$self)->addChild($org);
+
     } else {
       return undef;
     }
@@ -1024,10 +1059,21 @@ sub addIdenticalOrgs{
   my $self = shift;
   my $dbid = shift;
   my $prefix = shift;
+  my $identicalDistance = shift;
   return unless $dbid;
   my $sth = $pspdb->prepare(sprintf(
          'SELECT
-            org.id_organ AS id_organ
+            org.id_organ AS id_organ,
+            org.nazev_organu_cz as name_cz,
+            org.nazev_organu_en as name_en,
+            org.zkratka as abbr,
+            org.od_organ AS `from`,
+            org.do_organ AS `to`,
+            org_ref.nazev_organu_cz as name_cz_ref,
+            org_ref.nazev_organu_en as name_en_ref,
+            org_ref.zkratka as abbr_ref,
+            org_ref.od_organ AS `from_ref`,
+            org_ref.do_organ AS `to_ref`
           FROM organy AS org
           JOIN organy AS org_ref
             ON
@@ -1036,11 +1082,90 @@ sub addIdenticalOrgs{
                OR org.nazev_organu_cz = org_ref.nazev_organu_cz
                OR org.nazev_organu_en = org_ref.nazev_organu_en
               )
-              AND org.id_typ_org = org_ref.id_typ_org
-          WHERE org_ref.id_organ=%s',$dbid));
+              -- this is not working:
+              -- AND org.id_typ_org = org_ref.id_typ_org -- labels need to be compared
+          WHERE
+            org_ref.id_organ=%s
+            AND org_ref.id_organ != org.id_organ
+            AND max(org.od_organ, org_ref.od_organ)
+                >=
+                min( COALESCE(org.do_organ,"1000-01-01"), COALESCE(org_ref.do_organ,"9999-12-12" ))
+          ',$dbid));
   $sth->execute;
+
+## test overlaps
+## sort by distance and then add
+
   while(my $orgrow = $sth->fetchrow_hashref){
-    $self->addOrg($orgrow->{id_organ},$prefix);
+    print STDERR "TODO - PRUNE IF dont make sense: fix IDENTICAL[$identicalDistance] ",$orgrow->{id_organ},"\n\t>>",
+                  join("<<\n\t>>",map {$orgrow->{$_}} qw/abbr name_cz name_en/),
+                  "<<\n\t===\n\t>>",
+                  join("<<\n\t>>",map {$orgrow->{$_.'_ref'}} qw/abbr name_cz name_en/),
+                  "<<\n";
+    $orgrow->{name_en} //= $self->{patcher}->translate_static($orgrow->{name_cz});
+    $orgrow->{name_en_ref} //= $self->{patcher}->translate_static($orgrow->{name_cz_ref});
+    $orgrow->{name_en} = $self->{patcher}->translate_static($orgrow->{name_en});
+    $orgrow->{name_en_ref} = $self->{patcher}->translate_static($orgrow->{name_en_ref});
+    my %identityLevel = map
+                        {$_ => _compare($orgrow->{$_}, $orgrow->{$_.'_ref'})}
+                        qw/abbr name_cz name_en/;
+    print STDERR "XXX ",$orgrow->{name_cz},"===",join('|',map {"$_ = $identityLevel{$_}"} qw/abbr name_cz name_en/);
+    print STDERR " = ",List::Util::sum(values %identityLevel),"\n";
+    my $identityLevelSum = List::Util::sum(values %identityLevel);
+    #porovnat, jestli se ve dvou hodnotách schodují (jedno je substring druhého),
+    #případně je malá editační vzdálenost,
+    #nebo podobná množina slov?
+
+    next unless $identityLevelSum >= 1.5;
+    next if defined $self->{org}->{$orgrow->{id_organ}};
+
+    $self->addOrg($orgrow->{id_organ}, $prefix, $identicalDistance+1);
+  }
+}
+
+sub _compare {
+  my ($a,$b) = map {s/^\s*//;s/\s*$//;s/\s\s/ /g;lc $_} @_;
+  print STDERR "COMPARE: $a ? $b\n";
+  return 0 unless $a;
+  return 0 unless $b;
+  return 1 if $a eq $b;
+  return 0.6 if index($a,$b) == 0;
+  return 0.6 if index($b,$a) == 0;
+  return 0.5 if index($a,$b) != -1;
+  return 0.5 if index($b,$a) != -1;
+  my $acnt=_word_freq($a);
+  my $bcnt=_word_freq($b);
+  my $avg = (List::Util::sum(values %$acnt) + List::Util::sum(values %$bcnt)) / 2;
+  my $common_percent = List::Util::sum(map {List::Util::min($acnt->{$_},$bcnt->{$_}||0)} keys %$acnt) / $avg;
+
+  print STDERR "TODO - count percent of common words, common prefix (persentage) --- $common_percent \n";
+  return $common_percent;
+}
+
+sub _word_freq {
+  my $str=shift // '';
+  my $cnt={};
+  for my $w (split(" ",$str)){
+    next if defined $comparison_ignore_words{$w};
+    $cnt->{$w}//=0;
+    $cnt->{$w}++;
+  }
+  return $cnt;
+}
+
+
+
+sub new_prefixes{
+  my $seen = shift;
+  my @orgs = @_;
+  my $name_en = listOrg::org::_newest_text(map {[$_->{name_en},$_->{from}]} @orgs);
+  my ($prefix) = listOrg::org::_newest_text(map {[$_->{id},$_->{from}]} @orgs) =~ m/^([^\.]*)\..*?$/;
+  $prefix .= ".".create_ID($name_en);
+  while(defined $seen->{$prefix}){
+    $prefix =~ s/(_?I*)$/$1I/;
+  }
+  for my $o (@orgs){
+    $o->fix_prefix($prefix);
   }
 }
 
@@ -1081,8 +1206,11 @@ sub new_from_list{
   my $prefix = shift;
   my @orgs = @_;
   my $abbr = _newest_text(map {[$_->{abbr},$_->{from}]} @orgs);
+  #($prefix) = _newest_text(map {[$_->{id},$_->{from}]} @orgs) =~ m/^(.*)\..*?$/;
+
   my $role = $orgs[0]->{role};
   $abbr =~ s/[0-9]*$// if $role eq 'parliament';
+  #$prefix =~ s/[0-9]*$// if $role eq 'parliament';
   my $self  = $class->new(
                          abbr => $abbr,
                          abbr_sd => $orgs[0]->{abbr_sd},
@@ -1099,6 +1227,7 @@ sub new_from_list{
 
   return $self
 }
+
 
 sub _newest_text{
   return [reverse grep {$_} map {$_->[0]} sort { $a->[1] cmp $b->[1] } @_]->[0]
@@ -1125,6 +1254,12 @@ sub role {
 
 sub prefix {
   return shift->{prefix}
+}
+
+sub fix_prefix {
+  my $self = shift;
+  my $pref = shift;
+  $self->{prefix} = $pref if $pref;
 }
 
 sub addChild {
@@ -1178,6 +1313,7 @@ sub addToXML {
       $self->{events}->{$ch_id}->addToXML($list);
     }
   }
+  print STDERR "XML:",$org,"\n";
 }
 
 
