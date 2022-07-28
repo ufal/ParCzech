@@ -1001,30 +1001,17 @@ sub addOrg {
       if($merge_to_events){# add all organizations with same prefix
         $self->addIdenticalOrgs($dbid, $org->prefix(),$identicalDistance+1);
 
-        print STDERR "TODO: fix prefixes - use newest one (check for collisions !!)\n";
-
         $self->{tmp_prefix}->{$dbid} = $org;
-        print STDERR "DIST '$identicalDistance'\n";
         if($identicalDistance == 0){
-            print STDERR "=== NEW ORGANIZATION\n";
-            print STDERR Dumper($self->{tmp_prefix}),"===================================\n";
-            if(defined $self->{org_prefix}->{$org->prefix()}){
-              print  STDERR "CALCULATE UNIQUE PREFIX ",$org->prefix(),"!!!\n Colidates with: ";
-              print STDERR Dumper($self->{org_prefix}->{$org->prefix()}),"===================================\n";
+          if(defined $self->{org_prefix}->{$org->prefix()}){
+            new_prefixes($self->{org_prefix},values %{$self->{tmp_prefix}});
+          }
+          print STDERR "ADDING NEW PREFIX:",$org->prefix(),"\n";
 
-              new_prefixes($self->{org_prefix},values %{$self->{tmp_prefix}});
-              print STDERR Dumper($self->{tmp_prefix})," <<<===================================\n";
-
-            }
-            print STDERR "SAVING NEW PREFIX:",$org->prefix(),"\n";
-            print STDERR "ALL PREFIXES:",join(" ",sort keys %{$self->{org_prefix}}),"\n";
-
-            $self->{org_prefix}->{$org->prefix()} = $self->{tmp_prefix};
-            $self->{tmp_prefix} = {};
+          $self->{org_prefix}->{$org->prefix()} = $self->{tmp_prefix};
+          $self->{tmp_prefix} = {};
         }
       }
-      #$self->{org_prefix}->{$org->prefix()}//={};
-      #$self->{org_prefix}->{$org->prefix()}->{$dbid} = $org;
       ($parent//$self)->addChild($org);
 
     } else {
@@ -1084,24 +1071,25 @@ sub addIdenticalOrgs{
               )
               -- this is not working:
               -- AND org.id_typ_org = org_ref.id_typ_org -- labels need to be compared
+          JOIN typ_organu AS type
+            ON org.id_typ_org = type.id_typ_org
+          JOIN typ_organu AS type_ref
+            ON org_ref.id_typ_org = type_ref.id_typ_org
           WHERE
             org_ref.id_organ=%s
             AND org_ref.id_organ != org.id_organ
-            AND max(org.od_organ, org_ref.od_organ)
-                >=
-                min( COALESCE(org.do_organ,"1000-01-01"), COALESCE(org_ref.do_organ,"9999-12-12" ))
+            --AND max(org.od_organ, org_ref.od_organ)
+            --    >=
+            --    min( COALESCE(org.do_organ,"1000-01-01"), COALESCE(org_ref.do_organ,"9999-12-12" ))
+            AND (
+                  type.nazev_typ_org_cz = type_ref.nazev_typ_org_cz
+                  OR
+                  type.nazev_typ_org_en = type_ref.nazev_typ_org_en
+                )
           ',$dbid));
   $sth->execute;
 
-## test overlaps
-## sort by distance and then add
-
   while(my $orgrow = $sth->fetchrow_hashref){
-    print STDERR "TODO - PRUNE IF dont make sense: fix IDENTICAL[$identicalDistance] ",$orgrow->{id_organ},"\n\t>>",
-                  join("<<\n\t>>",map {$orgrow->{$_}} qw/abbr name_cz name_en/),
-                  "<<\n\t===\n\t>>",
-                  join("<<\n\t>>",map {$orgrow->{$_.'_ref'}} qw/abbr name_cz name_en/),
-                  "<<\n";
     $orgrow->{name_en} //= $self->{patcher}->translate_static($orgrow->{name_cz});
     $orgrow->{name_en_ref} //= $self->{patcher}->translate_static($orgrow->{name_cz_ref});
     $orgrow->{name_en} = $self->{patcher}->translate_static($orgrow->{name_en});
@@ -1109,12 +1097,7 @@ sub addIdenticalOrgs{
     my %identityLevel = map
                         {$_ => _compare($orgrow->{$_}, $orgrow->{$_.'_ref'})}
                         qw/abbr name_cz name_en/;
-    print STDERR "XXX ",$orgrow->{name_cz},"===",join('|',map {"$_ = $identityLevel{$_}"} qw/abbr name_cz name_en/);
-    print STDERR " = ",List::Util::sum(values %identityLevel),"\n";
     my $identityLevelSum = List::Util::sum(values %identityLevel);
-    #porovnat, jestli se ve dvou hodnotách schodují (jedno je substring druhého),
-    #případně je malá editační vzdálenost,
-    #nebo podobná množina slov?
 
     next unless $identityLevelSum >= 1.5;
     next if defined $self->{org}->{$orgrow->{id_organ}};
@@ -1125,7 +1108,7 @@ sub addIdenticalOrgs{
 
 sub _compare {
   my ($a,$b) = map {s/^\s*//;s/\s*$//;s/\s\s/ /g;lc $_} @_;
-  print STDERR "COMPARE: $a ? $b\n";
+
   return 0 unless $a;
   return 0 unless $b;
   return 1 if $a eq $b;
@@ -1138,7 +1121,6 @@ sub _compare {
   my $avg = (List::Util::sum(values %$acnt) + List::Util::sum(values %$bcnt)) / 2;
   my $common_percent = List::Util::sum(map {List::Util::min($acnt->{$_},$bcnt->{$_}||0)} keys %$acnt) / $avg;
 
-  print STDERR "TODO - count percent of common words, common prefix (persentage) --- $common_percent \n";
   return $common_percent;
 }
 
@@ -1185,8 +1167,6 @@ sub new {
   $self->buildID();
 
   $self->{role} = $roles_patcher->translate_static($self->{role}) if $self->{role};
-
-  print STDERR "IDENTICAL ORG ADDING: ",$self->id(),"\t",$self->{prefix},"\n" if $self->{prefix};
 
   my $prefix = $self->{id};
   $prefix =~ s/\.[0-9]*$//;
@@ -1313,7 +1293,6 @@ sub addToXML {
       $self->{events}->{$ch_id}->addToXML($list);
     }
   }
-  print STDERR "XML:",$org,"\n";
 }
 
 
