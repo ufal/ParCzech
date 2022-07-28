@@ -906,7 +906,7 @@ sub addToXML {
   if($merge_to_events){
       print STDERR "TOTAL PREF: ",scalar(keys %{$self->{org_prefix}}),"\n";
 
-    for my $prefix (sort keys %{$self->{org_prefix}}){
+    for my $prefix (sort {sort_org($a,$b,$self->{org_prefix})} keys %{$self->{org_prefix}}){
       my @orgs = values %{$self->{org_prefix}->{$prefix}};
       print STDERR "SAVING $prefix: ",scalar(@orgs),"\n";
       if (@orgs == 1){
@@ -923,7 +923,19 @@ sub addToXML {
     }
   }
 }
-
+sub sort_org {
+  my ($a,$b,$l) = @_;
+  my $a_role=listOrg::org::_oldest_text(map {[$_->{role},$_->{from}]} values %{$l->{$a}});
+  my $b_role=listOrg::org::_oldest_text(map {[$_->{role},$_->{from}]} values %{$l->{$b}});
+  return -1 if $a_role eq 'government' and !($b_role eq 'government');
+  return 1 if !($a_role eq 'government') and $b_role eq 'government';
+  return -1 if $a_role eq 'parliament' and !($b_role eq 'parliament');
+  return 1 if !($a_role eq 'parliament') and $b_role eq 'parliament';
+  if($a_role eq $b_role){
+    return listOrg::org::_oldest_text(map {[$_->{from},$_->{from}]} values %{$l->{$a}}) cmp listOrg::org::_oldest_text(map {[$_->{from},$_->{from}]} values %{$l->{$b}});
+  }
+  return $a cmp $b;
+}
 sub isEvent {
   my $self = shift;
   my $org = shift;
@@ -1211,6 +1223,9 @@ sub new_from_list{
 
 sub _newest_text{
   return [reverse grep {$_} map {$_->[0]} sort { $a->[1] cmp $b->[1] } @_]->[0]
+}
+sub _oldest_text{
+  return [grep {$_} map {$_->[0]} sort { $a->[1] cmp $b->[1] } @_]->[0]
 }
 
 sub buildID {
