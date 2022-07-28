@@ -40,11 +40,13 @@ sub translate_static {
   my $self = shift;
   my $str = shift;
   return undef unless $str;
+  $str =~ s/^\s*|\s*$//g;
+  $str =~ s/  */ /g;
   return $self->{static_dict}->{$str} if defined $self->{static_dict}->{$str};
   return $self->{static_dict}->{lc $str} if defined $self->{static_dict}->{lc $str};
   for my $tr (@{$self->{regex_dict}}) {
-    my ($r,$t) = @$tr;
-    return $t if $str =~ m/$r/;
+    my ($r,$t,$templ) = @$tr;
+    return $templ ? sprintf($templ,$str =~ m/$r/) : $t if $str =~ m/$r/;
   }
   return "$str" if $self->{keep_if_no_match}; # keep no translation
   return undef;
