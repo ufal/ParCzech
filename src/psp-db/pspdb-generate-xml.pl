@@ -197,7 +197,7 @@ my $regex_translations = [
   [qr/^.+$/,'Member'],
 ];
 my $regex_patches = [
-  [qr/^Czech Republic\s*-?\s*(.*?) Inter-Parliamentary Group$/i,undef,'%s'],
+  [qr/^Czech Republic\s*-?\s*(.*?) Inter-Parliamentary Group$/i,'%s'],
 ];
 
 my %comparison_ignore_words = map {$_ => 1} qw/podvýbor subcommittee výbor committee pro on for of the a and poslanecký political klub group/;

@@ -16,7 +16,7 @@ sub new {
 
   $self->{static_dict} = {};
   $self->load_files(! defined $opts{single_direction}, ref($opts{tran_files}) eq 'ARRAY' ? (@{$opts{tran_files}}) : ($opts{tran_files})) if $opts{tran_files};
-  $self->{regex_dict} = $opts{tran_regex} // [];
+  $self->add_regex_translation(@$_) for (@{$opts{tran_regex} // []});
   $self->{keep_if_no_match} = defined $opts{keep_if_no_match};
   return $self
 }
@@ -45,8 +45,8 @@ sub translate_static {
   return $self->{static_dict}->{$str} if defined $self->{static_dict}->{$str};
   return $self->{static_dict}->{lc $str} if defined $self->{static_dict}->{lc $str};
   for my $tr (@{$self->{regex_dict}}) {
-    my ($r,$t,$templ) = @$tr;
-    return $templ ? sprintf($templ,$str =~ m/$r/) : $t if $str =~ m/$r/;
+    my ($r,$templ) = @$tr;
+    return sprintf($templ,$str =~ m/$r/,'') if $str =~ m/$r/;
   }
   return "$str" if $self->{keep_if_no_match}; # keep no translation
   return undef;
@@ -59,9 +59,11 @@ sub add_translation {
   $self->{static_dict}->{lc $from} = lc $to unless defined $self->{static_dict}->{lc $from};
 }
 
-
-
-
+sub add_regex_translation {
+  my $self = shift;
+  my ($reg, $templ) = @_;
+  push @{$self->{regex_dict}}, [$reg,$templ];
+}
 
 
 1;
