@@ -20,7 +20,8 @@
           <xsl:apply-templates select="@ref" />
         </xsl:otherwise>
       </xsl:choose>
-      <xsl:apply-templates select="@role | @to | @from" />
+      <xsl:apply-templates select="@role | @to | @from | @ana" />
+      <xsl:apply-templates select="node()"/>
     </xsl:copy>
   </xsl:template>
 
