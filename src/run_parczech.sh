@@ -397,7 +397,7 @@ $XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI_META/allpers.$TEICORP
 log "adding <listOrg> teiCorpus: $DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME"
 
 ## add org
-$XSL_TRANSFORM metadater/add_org.xsl "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" org-path="$PSP_DB_DIR/org.merged.xml"
+$XSL_TRANSFORM metadater/add_org.xsl "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" org-path="$PSP_DB_DIR/org.xml"
 
 ## fix affiliation (when affiliated to event) #event->@ana, #org->@ref
 $XSL_TRANSFORM metadater/affiliations_fix.xsl "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/aff_fix.$TEICORPUS_FILENAME"
