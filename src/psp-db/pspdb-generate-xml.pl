@@ -932,7 +932,9 @@ sub sort_org {
   return -1 if $a_role eq 'parliament' and !($b_role eq 'parliament');
   return 1 if !($a_role eq 'parliament') and $b_role eq 'parliament';
   if($a_role eq $b_role){
-    return listOrg::org::_oldest_text(map {[$_->{from},$_->{from}]} values %{$l->{$a}}) cmp listOrg::org::_oldest_text(map {[$_->{from},$_->{from}]} values %{$l->{$b}});
+    return (listOrg::org::_oldest_text(map {[$_->{from},$_->{from}]} values %{$l->{$a}}) cmp listOrg::org::_oldest_text(map {[$_->{from},$_->{from}]} values %{$l->{$b}}))
+          ||
+          ($a cmp $b);
   }
   return $a cmp $b;
 }
