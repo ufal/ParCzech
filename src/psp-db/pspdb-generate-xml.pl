@@ -619,8 +619,6 @@ sub createPerson {
               AND org.od_organ IS NOT NULL',$pers->{id_osoba}));
     $sth->execute;
     while(my $pm = $sth->fetchrow_hashref ) {
-      print STDERR join("\t",values %$pm),"\n";
-      print STDERR $strp2->parse_datetime($pm->{od_organ}),"\n";
       $person->addLink(
                  sprintf('https://www.senat.cz/senatori/index.php?ke_dni=%d.%d.%d&par_3=%s',
                          (reverse split('-',$pm->{od_organ})),
