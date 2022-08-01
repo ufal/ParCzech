@@ -822,6 +822,8 @@ sub getNewestPhoto {
 sub addLink {
   my $self = shift;
   my ($link,$type) = (@_,'guest');
+  return unless $link;
+  $link = "https://$link" unless $link =~ m{https?://};
   $self->{idno}->{$type}->{$link} = 1;
 }
 
