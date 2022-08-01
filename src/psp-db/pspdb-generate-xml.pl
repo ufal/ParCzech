@@ -130,6 +130,15 @@ my %tabledef = (
         map {$_ => $cast{unescape_patch} } qw/web ulice obec psc email telefon fax psp_telefon facebook/
       },
     },
+    osoba_extra => {
+      def => [
+        map {my ($n,$t) = split('\|', $_);{name => $n, type => $t} }
+            qw/id_osoba|INTEGER id_org|INTEGER typ|INTEGER obvod|INTEGER strana|CHAR(100) id_external|INTEGER/
+      ],
+      index => [qw/id_osoba id_org typ id_external/],
+      invalid_values => {},
+      cast => {},
+    },
 
   }
 );
@@ -188,6 +197,7 @@ if($use_existing_db) {
   create_and_fill_table($tabledef{poslanci}->{funkce},'funkce');
   create_and_fill_table($tabledef{poslanci}->{zarazeni},'zarazeni');
   create_and_fill_table($tabledef{poslanci}->{poslanec},'poslanec');
+  create_and_fill_table($tabledef{poslanci}->{osoba_extra},'osoba_extra');
 }
 
 
@@ -481,9 +491,12 @@ sub addPerson { # create new person or use existing based on passed data
         } else {
           print STDERR "No match for '$gov_pers->{jmeno} $gov_pers->{prijmeni} nar. ",($gov_pers->{narozeni}//'???'),"' ($gov_pers->{id_osoba}) in psp database\n";
           # match based on name:
+          print STDERR  "TODO: add  testing affiliation with government \n";
           $sth = $pspdb->prepare(sprintf('SELECT * FROM osoby WHERE jmeno="%s" AND prijmeni="%s"', $gov_pers->{jmeno}, $gov_pers->{prijmeni}));
           $sth->execute;
-          if(my $psp_pers = $sth->fetchrow_hashref) {
+          my $result = $sth->fetchall_hashref('id_osoba');
+          print STDERR "Multiple persons matched - using older one\n" if(keys %$result > 1);
+          if(my $psp_pers = [reverse sort {($a->{narozeni}//'') cmp ($b->{narozeni}//'')} values %$result]->[0]) {
             print STDERR "MATCHING (REG:$psp_pers->{id_osoba} <=> GOV:$gov_pers->{id_osoba}) '$psp_pers->{jmeno} $psp_pers->{prijmeni}'\n";
             $opts{psp_id} = $psp_pers->{id_osoba};
           } else {
@@ -590,6 +603,28 @@ sub createPerson {
       $person->addLink($pm->{facebook}, 'facebook') if defined $pm->{facebook};
       $person->addLink($pm->{web}, 'personal') if defined $pm->{web};
       $person->addPhoto($self->getPhotoUrl($pm->{id_osoba},$pm->{od_obd},$pm->{obd_zkratka}), $pm->{od_obd})  if defined $pm->{foto};
+    }
+
+    # try to add senat url
+    $sth = $pspdb->prepare(sprintf(
+           'SELECT
+             extra.id_external AS id_external,
+             org.od_organ AS od_organ
+            FROM
+              osoba_extra AS extra
+              JOIN organy as org ON org.id_organ = extra.id_org
+            WHERE
+              extra.id_osoba=%s
+              AND extra.typ=1
+              AND org.od_organ IS NOT NULL',$pers->{id_osoba}));
+    $sth->execute;
+    while(my $pm = $sth->fetchrow_hashref ) {
+      print STDERR join("\t",values %$pm),"\n";
+      print STDERR $strp2->parse_datetime($pm->{od_organ}),"\n";
+      $person->addLink(
+                 sprintf('https://www.senat.cz/senatori/index.php?ke_dni=%d.%d.%d&par_3=%s',
+                         (reverse split('-',$pm->{od_organ})),
+                         $pm->{id_external}), 'senat');
     }
   }
 
@@ -829,12 +864,15 @@ sub addToXML {
   }
   # links
   my %subtypes = map {$_=>1} qw/facebook twitter personal/;
-  for my $type (qw/psp gov guest/, keys %subtypes){
+  for my $type (qw/psp gov senat guest/, keys %subtypes){
     if(defined $self->{idno}->{$type}){
       for my $link (keys %{$self->{idno}->{$type}}){
         my $idno = $pers->addNewChild( undef, 'idno');
         $idno->setAttribute('type','URI');
         $idno->setAttribute('subtype',$type) if defined $subtypes{$type};
+        $idno->setAttribute('subtype','parliament') if $type eq 'psp';
+        $idno->setAttribute('subtype','parliament') if $type eq 'senat';
+        $idno->setAttribute('subtype','government') if $type eq 'gov';
         $idno->appendText($link);
       }
     }
