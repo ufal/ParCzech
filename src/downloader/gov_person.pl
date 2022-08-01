@@ -1,7 +1,10 @@
 use warnings;
 use strict;
-use ScrapperUfal;
+use open qw(:std :utf8);
 use utf8;
+use ParCzech::PipeLine::FileManager "gov";
+
+use ScrapperUfal;
 use File::Spec;
 use File::Path;
 use Getopt::Long;
@@ -32,12 +35,14 @@ my $db_dir = 'out_gov_db';
 my $cache_dir;
 my $run_date = ScrapperUfal::get_timestamp('%Y%m%dT%H%M%S');
 my $debug_level = 0;
+my $person_list_in;
 
 Getopt::Long::GetOptions(
   'db=s' => \$db_dir,
   'cache=s' => \$cache_dir,
   'id=s' => \$run_date,
-  'debug=i' => \$debug_level
+  'debug=i' => \$debug_level,
+  'person-list=s' => \$person_list_in,
   );
 
 my $db_out_dir = File::Spec->catdir( $db_dir,$run_date);
@@ -51,6 +56,16 @@ if ($cache_dir) {
   ScrapperUfal::Browser::use_devel_cache();
 }
 
+
+# load existing urls from person-list
+if($person_list_in){
+  print STDERR "Adding seen government urls: $person_list_in\n";
+  my $personlist = ParCzech::PipeLine::FileManager::XML::open_xml($person_list_in);
+  my $xpc = ParCzech::PipeLine::FileManager::TeiFile::new_XPathContext();
+  for my $idno (map {trim $_} grep {/vlada.cz/} $xpc->findnodes('//tei:person/tei:idno/text()',$personlist->{dom})) {
+    push @pers_urls,"$idno" if is_new($idno);
+  }
+}
 
 
 make_request($URL_start);
