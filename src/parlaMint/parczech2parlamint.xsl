@@ -110,16 +110,9 @@
             <xsl:choose>
               <xsl:when test="$handler">
                 <idno type="URI" subtype="handle"><xsl:value-of select="$handler" /></idno>
-                <pubPlace>
-                  <xsl:element name="ref">
-                    <xsl:attribute name="target"><xsl:value-of select="$handler" /></xsl:attribute>
-                    <xsl:value-of select="$handler" />
-                  </xsl:element>
-                </pubPlace>
               </xsl:when>
               <xsl:otherwise>
                 <idno type="URI">https://github.com/clarin-eric/ParlaMint</idno>
-                <pubPlace><ref target="https://github.com/clarin-eric/ParlaMint">https://github.com/clarin-eric/ParlaMint</ref></pubPlace>
               </xsl:otherwise>
             </xsl:choose>
 
