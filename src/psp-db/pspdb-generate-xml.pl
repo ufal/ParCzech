@@ -868,9 +868,9 @@ sub addToXML {
   }
   # links
   my %subtypes = map {$_=>1} qw/facebook twitter personal/;
-  for my $type (qw/psp gov senat guest/, keys %subtypes){
+  for my $type (sort qw/psp gov senat guest/, keys %subtypes){
     if(defined $self->{idno}->{$type}){
-      for my $link (keys %{$self->{idno}->{$type}}){
+      for my $link (sort keys %{$self->{idno}->{$type}}){
         my $idno = $pers->addNewChild( undef, 'idno');
         $idno->setAttribute('type','URI');
         $idno->setAttribute('subtype',$type) if defined $subtypes{$type};
