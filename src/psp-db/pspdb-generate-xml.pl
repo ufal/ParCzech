@@ -760,7 +760,7 @@ sub new {
   bless $self, $class;
   $self->{alternative_ids} = {}; # type => value
   $self->{idno} = {};
-  $self->{affiliation} = [];
+  $self->{affiliation} = {};
   $self->init(%opts);
   return $self;
 }
@@ -831,10 +831,14 @@ sub affiliate {
   my $self = shift;
   my %opts = @_;
   my $aff = {};
-  for $a (qw/ref ana role from to lang_cs lang_en/){
-    $aff->{$a} = $opts{$a} if $opts{$a}
+  my $aff_key = join("\t",map {$opts{$_}//''} qw/from ref role lang_cs lang_en to/);
+  $self->{affiliation}->{$aff_key} //= {};
+  for $a (qw/ref role from to lang_cs lang_en/){
+    $self->{affiliation}->{$aff_key}->{$a} = $opts{$a} if $opts{$a}
   }
-  push @{$self->{affiliation}},$aff;
+  $self->{affiliation}->{$aff_key}->{ana} //= '';
+  $self->{affiliation}->{$aff_key}->{ana} .= ' '.$opts{ana} if $opts{ana};
+  $self->{affiliation}->{$aff_key}->{ana} =~ s/^ *//;
 }
 
 sub toString {
@@ -884,10 +888,20 @@ sub addToXML {
     $graphic->setAttribute('url',$photo);
   }
   # affiliations
-  for my $pers_aff (sort { $b->{from} cmp $a->{from} } @{$self->{affiliation} // []}){
+  for my $pers_aff (map {$self->{affiliation}->{$_}} reverse sort keys %{$self->{affiliation} // {}}){
     my $aff = $pers->addNewChild( undef, 'affiliation');
-    for my $a (qw/ref role ana from to/){
+    for my $a (qw/ref role from to/){
       $aff->setAttribute($a,$pers_aff->{$a}) if $pers_aff->{$a};
+    }
+    if ($pers_aff->{ana}){
+      $aff->setAttribute('ana',
+                          join(" ",
+                               do {
+                                  my %seen;
+                                  grep {!$seen{$_}++} split(" ", $pers_aff->{ana})
+                                }
+                              )
+                        )
     }
     for my $a (qw/lang_cs lang_en/){
       if($pers_aff->{$a}){
