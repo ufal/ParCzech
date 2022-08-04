@@ -391,11 +391,11 @@
                         <catDesc xml:lang="cs"><term>Dvoukomorový parlament</term></catDesc>
                         <catDesc xml:lang="en"><term>Bicameralism</term></catDesc>
                         <category xml:id="parla.upper">
-                           <catDesc xml:lang="cs"><term>Senát</term></catDesc>
+                           <catDesc xml:lang="cs"><term>Horní komora</term></catDesc>
                            <catDesc xml:lang="en"><term>Upper house</term></catDesc>
                         </category>
                         <category xml:id="parla.lower">
-                           <catDesc xml:lang="cs"><term>Poslanecká sněmovna</term></catDesc>
+                           <catDesc xml:lang="cs"><term>Dolní komora</term></catDesc>
                            <catDesc xml:lang="en"><term>Lower house</term></catDesc>
                         </category>
                      </category>
