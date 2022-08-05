@@ -55,6 +55,7 @@ wget -O "$OUTPUT_DIRECTORY/poslanci.zip"  https://www.psp.cz/eknih/cdrom/opendat
 ## unpack
 unzip -o "$OUTPUT_DIRECTORY/poslanci.zip" -d "$OUTPUT_DIRECTORY/poslanci"
 
+sed -i -f <(sed 's#\s*=>\s*#\\s*$/#;s#$#/#;s#^#s/^#' $D/patch_db.map) $OUTPUT_DIRECTORY/poslanci/*.unl
 
 perl -I $D/../lib $D/pspdb-generate-xml.pl --merge-to-events --person-list "$PERSONLIST" "${PARAMS[@]}" --translations "$D/translations.unl" --patches "$D/patches.unl" --roles-patches "$D/roles-patches.unl" --output-dir "$OUTPUT_DIRECTORY" --input-db-dir "$OUTPUT_DIRECTORY"
 
