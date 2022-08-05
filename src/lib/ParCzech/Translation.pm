@@ -29,8 +29,12 @@ sub load_files {
     open(my $fh,"<:encoding(utf-8)",  $file) or die "Cannot open:$!\n";
     while(my $line = <$fh>) {
       my ($from, $to) = map {s/^\s*$//; s/^\s*//; s/\s*$//; $_} split('\|',$line);
-      $self->add_translation($from,$to);
-      $self->add_translation($to, $from) if $bothdirections;
+      if($from =~ m/^qr\/.*\/[a-z]*/){
+        $self->add_regex_translation(eval $from, $to);
+      } else {
+        $self->add_translation($from,$to);
+        $self->add_translation($to, $from) if $bothdirections;
+      }
     }
     close($fh);
   }
