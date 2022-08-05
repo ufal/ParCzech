@@ -666,10 +666,38 @@ sub createPerson {
             JOIN organy as org ON org.id_organ = funk.id_organ
             JOIN typ_funkce AS typf ON funk.id_typ_funkce = typf.id_typ_funkce
           WHERE zaraz.id_osoba=%s
-                AND zaraz.cl_funkce = 1',$pers->{id_osoba}));
+                AND zaraz.cl_funkce = 1
+                AND funk.id_typ_funkce > 0',$pers->{id_osoba}));
     $sth->execute;
     while(my $func = $sth->fetchrow_hashref ) {
-      $self->addAffiliation($person,$func->{id_organ},  $func->{typ_funkce_en}//$translator->translate_static($func->{typ_funkce_cz})//$func->{typ_funkce_en}, $func->{od_o}, $func->{do_o}, $func->{typ_funkce_cz}, $translator->translate_static($func->{typ_funkce_cz})//$func->{typ_funkce_en});
+      $self->addAffiliation($person,
+                            $func->{id_organ},
+                            $roles_patcher->translate_static( $translator->translate_static($func->{typ_funkce_cz})
+                                                              // $func->{typ_funkce_en}),
+                            $func->{od_o},
+                            $func->{do_o},
+                            $func->{typ_funkce_cz},
+                            $translator->translate_static($func->{typ_funkce_cz})
+                              //$func->{typ_funkce_en}
+                            );
+    }
+    # patched functions
+    $sth = $pspdb->prepare(sprintf(
+         'SELECT
+            org.id_organ AS id_organ,
+            org.zkratka AS zkratka,
+            zaraz.od_o AS od_o,
+            zaraz.do_o AS do_o,
+            funk.nazev_funkce_cz AS nazev_funkce
+          FROM zarazeni AS zaraz
+            JOIN funkce AS funk ON funk.id_funkce = zaraz.id_of
+            JOIN organy as org ON org.id_organ = funk.id_organ
+          WHERE zaraz.id_osoba=%s
+                AND zaraz.cl_funkce = 1
+                AND funk.id_typ_funkce < 0',$pers->{id_osoba}));
+    $sth->execute;
+    while(my $func = $sth->fetchrow_hashref ) {
+      $self->addAffiliation($person,$func->{id_organ}, $roles_patcher->translate_static($func->{nazev_funkce}), $func->{od_o}, $func->{do_o}, $func->{nazev_funkce}, $translator->translate_static($func->{nazev_funkce}));
     }
     ###########
     # members
