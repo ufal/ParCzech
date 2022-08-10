@@ -15,7 +15,7 @@ use List::Util;
 
 
 
-my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations,$patches, $roles_patches, $flat, $merge_to_events, $term_list, $allterm_person_filepath);
+my ($debug, $personlist_in, $outdir, $indbdir, $govdir,$translations,$patches, $roles_patches, $org_ana, $flat, $merge_to_events, $term_list, $allterm_person_filepath);
 
 =note
 
@@ -156,6 +156,7 @@ GetOptions ( ## Command line options
             'translations=s' => \$translations,
             'patches=s' => \$patches,
             'roles-patches=s' => \$roles_patches,
+            'org-ana=s' => \$org_ana,
             );
 
 
@@ -218,6 +219,7 @@ my $patcher = ParCzech::Translation->new(single_direction => 1, keep_if_no_match
 my $translator = ParCzech::Translation->new($translations ? (tran_files => $translations) : (),
                                             tran_regex => $regex_translations);
 my $roles_patcher = ParCzech::Translation->new(single_direction => 1, keep_if_no_match => 1 ,$roles_patches ? (tran_files => $roles_patches) : ());
+my $org_annotator = ParCzech::Translation->new(single_direction => 1,$org_ana ? (tran_files => $org_ana) : ());
 
 my $org_translator = ParCzech::Translation->new($translations ? (tran_files => $translations) : ());
 my $orglist = listOrg->new(db => $pspdb, translator => $org_translator,
@@ -1267,10 +1269,10 @@ sub new {
   $prefix =~ s/[0-9]*$// if $self->{role} eq 'parliament';
   $self->{prefix} = $prefix unless $self->{prefix};
 
-
+  $self->annotate($org_annotator->translate_static(join('@',$self->{id},$self->{name_cz},$self->{name_en})));
   $self->{child} = {};
   $self->{events} = {};
-  print STDERR "ORG:",$self->id(),"\t",$self->{name_cz},"\t",$self->prefix(),"\n";
+  print STDERR "ORG:",$self->id(),"(".$self->{ana}.")\t",$self->{name_cz},"\t",$self->prefix(),"\n";
   return $self;
 }
 
@@ -1294,6 +1296,7 @@ sub new_from_list{
                       );
   $self->{id} = $prefix;
   bless $self, $class;
+  $self->annotate($org_annotator->translate_static(join('@',$self->{id},$self->{name_cz},$self->{name_en})));
   for my $org (@orgs){
     $self->{events} //= {};
     $self->{events}->{$org->id()} = event->new(org=>$org);
@@ -1302,6 +1305,13 @@ sub new_from_list{
   return $self
 }
 
+sub annotate {
+  my $self = shift;
+  my $ana = shift;
+  $self->{ana} //= '';
+  $self->{ana} .= ' '.$ana if $ana;
+  $self->{ana} =~ s/^ *//;
+}
 
 sub _newest_text{
   return [reverse grep {$_} map {$_->[0]} sort { $a->[1] cmp $b->[1] } @_]->[0]
@@ -1355,6 +1365,16 @@ sub addToXML {
   my $org = $parent->addNewChild( undef, 'org');
   $org->setAttributeNS($XMLNS, 'id', $self->id);
   $org->setAttribute('role',$self->{role}) if $self->{role};
+  if ($self->{ana}){
+    $org->setAttribute('ana',
+                        join(" ",
+                             do {
+                                my %seen;
+                                grep {!$seen{$_}++} split(" ", $self->{ana})
+                              }
+                            )
+                      )
+  }
   for my $n ([qw/name_cz cs/],[qw/name_en en/])  {
     if(defined $self->{$n->[0]}) {
       my $name = $org->addNewChild(undef,'orgName');

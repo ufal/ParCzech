@@ -1,0 +1,5 @@
+qr/^parliament.PSP/i|#parla.national #parla.lower
+qr/^senate/i|#parla.national #parla.upper
+qr/^nationalCouncil/i|#parla.regional #parla.uni
+qr/^chamberOfTheNations/i|#parla.national #parla.uni
+qr/^chamberOfThePeople/i|#parla.national #parla.uni
