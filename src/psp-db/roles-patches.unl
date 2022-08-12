@@ -6,3 +6,4 @@ qr/^Ministe?r.*/i|minister
 qr/^Prime Minister/i|head
 qr/^Deputy Prime Minister/i|deputy head
 qr/^Head.*/i|head
+qr/^presidium member/i|member
