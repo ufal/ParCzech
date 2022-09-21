@@ -20,7 +20,7 @@ my $dirname = dirname($scriptname);
 
 my $udsyn_taxonomy = File::Spec->catfile($dirname,'tei_udsyn_taxonomy.xml');
 
-my ($debug, $try2continue_on_error, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores);
+my ($debug, $try2continue_on_error, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores, $try2fix_spaces);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -40,6 +40,7 @@ GetOptions ( ## Command line options
             'colon2underscore' => \$replace_colons_with_underscores, # replace colons in extended syntax relations with underscore
             'debug' => \$debug, # debugging mode
             'try2continue-on-error' => \$try2continue_on_error,
+            'try2fix-spaces' => \$try2fix_spaces,
             'test' => \$test, # tokenize, tag and lemmatize and parse to stdout, do not change the database
             'append-metadata=s' => \$append_metadata, # add metadata from file (prefixes, taxonomy)
             'no-lemma-tag' => \$no_lemma_tag, # no tags and lemmas
@@ -91,8 +92,8 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
           parent_id => $parent_id,
           parent_cnt => $parent_cnt,
           node => $chnode,
-          text => '',
-          len => 0,
+          text => ($try2fix_spaces?' ':''),
+          len => ($try2fix_spaces?1:0),
           textptr => length($text),
           tokenize => 0
         };
@@ -576,7 +577,7 @@ sub add_notes_and_spaces_to_queue {
 
     # adding elements without tokenization
     while( $self->{nodesptr} < scalar(@{$self->{nodes}})
-      && $self->{nodes}->[$self->{nodesptr}]->{textptr_end} == $self->{textptr}
+      && $self->{nodes}->[$self->{nodesptr}]->{textptr_end} == $self->{textptr} + ($try2fix_spaces?1:0)
       && not($self->{nodes}->[$self->{nodesptr}]->{tokenize})
       && $self->{nodes}->[$self->{nodesptr}]->{parent_cnt} == $self->{paragraph_ptr} # current parent !!! elements without tokenization has zero length
       && $self->{nodes}->[$self->{nodesptr}]->{node}->nodeType != XML_TEXT_NODE # node is not text
@@ -584,6 +585,7 @@ sub add_notes_and_spaces_to_queue {
       $changed = 1;
       push @{$self->{no_token_elem_queue}}, $self->{nodes}->[$self->{nodesptr}]->{node};
       $self->{nodesptr}++;
+      $self->{textptr}+=($try2fix_spaces?1:0)
     }
   }
 }
