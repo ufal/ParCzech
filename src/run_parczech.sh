@@ -446,7 +446,7 @@ mkdir -p $UDPIPE_TEI
 log "annotating udpipe2 $UDPIPE_TEI"
 
 perl -I lib udpipe2/udpipe2.pl --colon2underscore \
-                               --model=czech-pdt-ud-2.6-200830 \
+                               --model=czech-pdt-ud-2.10-220711 \
                                --filelist $TEI_FILELIST \
                                --input-dir $DOWNLOADER_TEI_META \
                                --output-dir $UDPIPE_TEI

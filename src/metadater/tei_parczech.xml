@@ -38,7 +38,7 @@
     <pcz:item pcz:dep="tagsDecl.ann" />
     <pcz:item pcz:dep="ParCzech-extent.ann" />
     <pcz:item pcz:dep="udpipe2" />
-    <pcz:item pcz:dep="udpipe2.app-czech-pdt-ud-2.6-200830" />
+    <pcz:item pcz:dep="udpipe2.app-czech-pdt-ud-2.10-220711" />
 
 
     <pcz:item pcz:dep="NER.conll2003" />
@@ -811,6 +811,20 @@
         <application ident="UDPipe" version="2">
           <label>UDPipe 2 (czech-pdt-ud-2.6-200830 model)</label>
           <desc>POS tagging, lemmatization and dependency parsing done with UDPipe 2 (<ref target="http://ufal.mff.cuni.cz/udpipe/2">http://ufal.mff.cuni.cz/udpipe/2</ref>) with czech-pdt-ud-2.6-200830 model</desc>
+        </application>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
+
+  <pcz:meta pcz:name="udpipe2.app-czech-pdt-ud-2.10-220711">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:appInfo">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:appInfo/tei:application[@ident='UDPipe']" />
+      </pcz:test>
+      <pcz:tei>
+        <application ident="UDPipe" version="2">
+          <label>UDPipe 2 (czech-pdt-ud-2.10-220711 model)</label>
+          <desc>POS tagging, lemmatization and dependency parsing done with UDPipe 2 (<ref target="http://ufal.mff.cuni.cz/udpipe/2">http://ufal.mff.cuni.cz/udpipe/2</ref>) with czech-pdt-ud-2.10-220711 model</desc>
         </application>
       </pcz:tei>
     </pcz:item>
