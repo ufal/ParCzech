@@ -511,6 +511,7 @@ log "annotating nametag2  $NAMETAG_TEI"
 
 perl -I lib nametag2/nametag2.pl --conll2003 \
                                  --varied-tei-elements \
+                                 --use-xpos \
                                  --lindat-token "$LINDAT_TOKEN" \
                                  --model=czech-cnec2.0-200831 \
                                  --filelist $TEI_FILELIST \

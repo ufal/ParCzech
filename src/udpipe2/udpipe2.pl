@@ -20,7 +20,7 @@ my $dirname = dirname($scriptname);
 
 my $udsyn_taxonomy = File::Spec->catfile($dirname,'tei_udsyn_taxonomy.xml');
 
-my ($debug, $try2continue_on_error, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores, $try2fix_spaces, $token);
+my ($debug, $try2continue_on_error, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores, $try2fix_spaces, $token, $use_xpos);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -45,6 +45,7 @@ GetOptions ( ## Command line options
             'lindat-token=s' => \$token,
             'append-metadata=s' => \$append_metadata, # add metadata from file (prefixes, taxonomy)
             'no-lemma-tag' => \$no_lemma_tag, # no tags and lemmas
+            'use-xpos' => \$use_xpos, # use xpos tags
             'no-parse' => \$no_parse, # no dependency parsing
             'model=s' => \$model, # udpipe model tagger
             'elements=s' => \$elements_names,
@@ -633,7 +634,7 @@ sub add_token {
   }
 
   if(defined($opts{xpos}) and !$self->{no_lemma_tag}) {
-    $token->setAttribute('ana', 'pdt:'.$opts{xpos});
+    $token->setAttribute('ana', 'pdt:'.$opts{xpos}) if $use_xpos;
   }
   $token->setAttribute('join', 'right') if ($opts{spacing} // '') =~ /SpaceAfter=No/;
 
