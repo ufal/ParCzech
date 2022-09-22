@@ -13,7 +13,7 @@ use ParCzech::PipeLine::FileManager "nametag";
 
 my $scriptname = $0;
 
-my ($debug, $test, $model);
+my ($debug, $test, $model, $token);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -33,6 +33,7 @@ GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize, tag and lemmatize and parse to stdout, do not change the database
             'conll2003' => \$connl_type,
+            'lindat-token=s' => \$token,
             'varied-tei-elements' => \$varied_tei_elements,
             'model=s' => \$model, # udpipe model tagger
             'word-element=s' => \$word_element_name,
@@ -48,6 +49,7 @@ usage_exit() unless ParCzech::PipeLine::FileManager::process_opts();
 usage_exit() unless $model;
 
 my $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
+$ua->default_header(Authorization=>"Bearer lc_$token") if $token;
 my $current_file;
 
 while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $xpc)) {

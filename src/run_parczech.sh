@@ -446,6 +446,7 @@ mkdir -p $UDPIPE_TEI
 log "annotating udpipe2 $UDPIPE_TEI"
 
 perl -I lib udpipe2/udpipe2.pl --colon2underscore \
+                               --lindat-token "$LINDAT_TOKEN" \
                                --model=czech-pdt-ud-2.10-220711 \
                                --filelist $TEI_FILELIST \
                                --input-dir $DOWNLOADER_TEI_META \
@@ -510,6 +511,7 @@ log "annotating nametag2  $NAMETAG_TEI"
 
 perl -I lib nametag2/nametag2.pl --conll2003 \
                                  --varied-tei-elements \
+                                 --lindat-token "$LINDAT_TOKEN" \
                                  --model=czech-cnec2.0-200831 \
                                  --filelist $TEI_FILELIST \
                                  --input-dir $UDPIPE_TEI \

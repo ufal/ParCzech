@@ -20,7 +20,7 @@ my $dirname = dirname($scriptname);
 
 my $udsyn_taxonomy = File::Spec->catfile($dirname,'tei_udsyn_taxonomy.xml');
 
-my ($debug, $try2continue_on_error, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores, $try2fix_spaces);
+my ($debug, $try2continue_on_error, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores, $try2fix_spaces, $token);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -42,6 +42,7 @@ GetOptions ( ## Command line options
             'try2continue-on-error' => \$try2continue_on_error,
             'try2fix-spaces' => \$try2fix_spaces,
             'test' => \$test, # tokenize, tag and lemmatize and parse to stdout, do not change the database
+            'lindat-token=s' => \$token,
             'append-metadata=s' => \$append_metadata, # add metadata from file (prefixes, taxonomy)
             'no-lemma-tag' => \$no_lemma_tag, # no tags and lemmas
             'no-parse' => \$no_parse, # no dependency parsing
@@ -68,6 +69,7 @@ if ( $elements_names =~ m/[\s"']/ ){
 
 
 my $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
+$ua->default_header(Authorization=>"Bearer lc_$token") if $token;
 my $current_file;
 
 while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $xpc)) {
