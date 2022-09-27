@@ -8,7 +8,7 @@
 
   <xsl:output method="xml" indent="yes" encoding="UTF-8" />
 
-  <xsl:template match="tei:listOrg | tei:listPerson">
+  <xsl:template match="tei:listPerson"> <!-- listOrg using different sorting -->
     <xsl:copy>
       <xsl:apply-templates select="@*" />
       <xsl:apply-templates select="node()">
