@@ -402,8 +402,11 @@ $XSL_TRANSFORM metadater/add_org.xsl "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILEN
 ## fix affiliation (when affiliated to event) #event->@ana, #org->@ref
 $XSL_TRANSFORM metadater/affiliations_fix.xsl "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/aff_fix.$TEICORPUS_FILENAME"
 
+## add org relations
+$XSL_TRANSFORM metadater/add_org_relations.xsl "$DOWNLOADER_TEI_META/aff_fix.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/org_rel.$TEICORPUS_FILENAME" coal-opp="coalition-opposition/coalition-opposition.xml"
+
 ## sort header data in teiCorpus
-$XSL_TRANSFORM metadater/header_data_sorter.xsl "$DOWNLOADER_TEI_META/aff_fix.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/sorted.$TEICORPUS_FILENAME"
+$XSL_TRANSFORM metadater/header_data_sorter.xsl "$DOWNLOADER_TEI_META/org_rel.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/sorted.$TEICORPUS_FILENAME"
 
 
 ## add metadata to teiCorpus
