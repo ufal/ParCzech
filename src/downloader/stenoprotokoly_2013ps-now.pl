@@ -248,6 +248,22 @@ for my $sch_link (@steno_voleb_obd) {
 
       push @steno_sittings, [$sitting_link, $term_id, $meeting_id, $sitting_id] if defined($prune_regex) || is_new($sitting_link,1) || exists $unauthorized->{$term_id}->{$meeting_id}->{$sitting_id};
     }
+=special_sittings
+get all "strange" lings following meeting and preceding next meeting
+<a href="025schuz/index.htm"><b>25. schůze</b></a> (<a href="025schuz/25-1.html">31.&nbsp;května</a>, <a href="025schuz/25-2.html">1.</a>, <a href="025schuz/25-3.html">2.</a>, <a href="025schuz/25-4.html">3.</a>, <a href="025schuz/25-5.html">14.</a>, <a href="025schuz/25-6.html">15.</a>, <a href="025schuz/25-7.html">16.</a>, <a href="025schuz/25-8.html">17.&nbsp;června&nbsp;2022</a>)
+<br>
+&nbsp;&nbsp;&nbsp;<a href="220615/">Vystoupení prezidenta Ukrajiny Volodymyra Zelenského před oběma komorami Parlamentu České republiky</a>
+<br>
+=cut
+    my @spec_sittings_links = grep {m/^\d{6}\/$/} xpath_string('./following-sibling::br[1]/following-sibling::a[contains(./preceding-sibling::a[contains(@href,"schuz")][1]/@href,"'.$meeting_id.'schuz")]/@href',$meeting_node);
+    for my $spec_sitting_link (@spec_sittings_links) {
+      $spec_sitting_link = URI->new_abs($spec_sitting_link,$sch_link);
+      my ($sitting_id) = $spec_sitting_link =~ m/(\d{6})\//;
+      $sitting_id = sprintf("%06d",$sitting_id);
+      debug_print( "\tnew sitting ".join('-', $term_id, '000', $sitting_id)."\t$spec_sitting_link", __LINE__);
+
+      push @meetings_with_wrong_sitting_link, [$spec_sitting_link, $term_id, '000', $sitting_id] if defined($prune_regex) || is_new($spec_sitting_link,1) || exists $unauthorized->{$term_id}->{'000'}->{$sitting_id};
+    }
   }
 }
 
@@ -557,6 +573,7 @@ sub html_patcher {
     print STDERR "document is not loaded, unable to patch: $link\n";
     return;
   }
+  return if $link =~ m/\/\d{6}\//; # skipping patching special meeting links
   my ($term, $meeting, $part) = $link =~ m/(\d+ps)\/stenprot\/.*\/s(\d\d\d)(\d\d\d).htm$/;
   my $patched = date_patcher($link, $term,$meeting,$part);
   return $patched;
