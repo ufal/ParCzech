@@ -172,7 +172,23 @@
         <xsl:attribute name="pasive" select="concat('#',./@party-id)"/>
         <xsl:attribute name="from" select="$event/@from"/>
         <xsl:if test="$event/@to"><xsl:attribute name="to" select="$event/@to"/></xsl:if>
-        <xsl:if test="not($group-event-id='')"><xsl:attribute name="ana" select="concat('#',./@group-event-id)"/></xsl:if>
+        <xsl:variable name="group-event-id">
+          <xsl:if test="not($group-event-id='')"><xsl:value-of select="concat('#',./@group-event-id)"/></xsl:if>
+        </xsl:variable>
+        <!-- Add term when coalition/opposition active -->
+        <xsl:variable name="term">
+          <xsl:variable name="terms" select="$listOrg//tei:org[@role = 'parliament' and contains(@ana,'#parla.lower')]/tei:listEvent"/>
+          <xsl:for-each select="$terms/tei:event">
+            <xsl:if test="et:between-dates($event/@from, @from, @to) and
+              et:between-dates($event/@to, @from, @to)">
+              <xsl:value-of select="concat('#', @xml:id, ' ')"/>
+            </xsl:if>
+          </xsl:for-each>
+        </xsl:variable>
+        <xsl:variable name='ana' select="concat($term,' ',$group-event-id)"/>
+        <xsl:if test="normalize-space($ana)">
+          <xsl:attribute name="ana" select="normalize-space($ana)"/>
+        </xsl:if>
         <!--xsl:comment><xsl:value-of select="@cnt"/></xsl:comment-->
       </xsl:element>
     </xsl:for-each>
