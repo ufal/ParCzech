@@ -43,7 +43,7 @@ my %cast = (
   unescape_patch => sub {my $s = shift; $s =~ s/\\ / /g; $s =~ s/^\s+|\s+$//g; return $s},
 );
 my %uniqueOrgRoles = map {($_ => 1)} qw/parliament senate nationalCouncil president/;
-
+my %skip_orgs  = map {($_ => 1)} qw/Nezařazení/;
 
 my %data_links = ();
 my %mapper = ();
@@ -726,6 +726,7 @@ sub addAffiliation {
   my $self = shift;
   my ($person,$org_db_id,$role,$from,$to,$roleNameCZ,$roleNameEN) = @_;
   my $org = $self->{org_list}->addOrg($org_db_id);
+  return unless $org;
   if(($org->{name_cz}//'') =~ /Poslanecká Sněmovna/ && ($role//'') eq 'member'){
     $roleNameCZ = ($person->{sex} eq 'F') ? "Poslankyně" : "Poslanec";
     $roleNameEN = "Member of Parliament";
@@ -1087,6 +1088,7 @@ sub addOrg {
           WHERE org.id_organ=%s',$dbid));
     $sth->execute;
     if(my $orgrow = $sth->fetchrow_hashref ) {
+      return undef if $skip_orgs{$orgrow->{name_cz}};
       my $role = $self->getRole($orgrow->{type});
       my $parent;
       $parent = $self->addOrg($orgrow->{parent}) unless $flat;
