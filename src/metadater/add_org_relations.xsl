@@ -5,12 +5,83 @@
   xmlns:tei="http://www.tei-c.org/ns/1.0"
   xmlns:xi="http://www.w3.org/2001/XInclude"
   xmlns:mk="http://ufal.mff.cuni.cz/matyas-kopp"
-  exclude-result-prefixes="tei" >
-  <xsl:param name="coalition-opposition" />
+  xmlns:et="http://nl.ijs.si/et"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  exclude-result-prefixes="tei mk et xs" >
+  <xsl:param name="coal-opp" />
   <xsl:param name="doc-personList" />
-  <xsl:variable name="coal-opp" select="document($coalition-opposition)" />
 
   <xsl:output method="xml" indent="yes" encoding="UTF-8" />
+
+
+  <!-- Transform TSV into a XML variable -->
+  <xsl:variable name="coal-opp-relations">
+    <xsl:variable name="data" select="unparsed-text($coal-opp,'UTF-8')"/>
+    <list>
+      <xsl:for-each select="tokenize($data, '\n')">
+        <xsl:variable name="line" select="."/>
+        <xsl:if test="not(starts-with($line, 'role'))">
+          <xsl:analyze-string select="$line"
+                  regex="^(.*)&#9;(.*)&#9;(.*)&#9;(.*)&#9;(.*)&#9;(.*)$">
+            <xsl:matching-substring>
+              <xsl:variable name="role" select="normalize-space(regex-group(1))"/>
+              <xsl:variable name="from" select="replace(
+                  replace(
+                  normalize-space(regex-group(2)),
+                  '-(\d)-', '-0$1-'),
+                  '-(\d)$', '-0$1')"/>
+              <xsl:variable name="to" select="replace(
+                      replace(
+                      normalize-space(regex-group(3)),
+                      '-(\d)-', '-0$1-'),
+                      '-(\d)$', '-0$1')"/>
+              <xsl:variable name="groups" select="normalize-space(regex-group(4))"/>
+              <xsl:choose>
+                <xsl:when test="$from and $from != '-' and not(matches($from, '\d\d\d\d-\d\d-\d\d'))">
+                  <xsl:message select="concat('ERROR: from = ', $from)"/>
+                </xsl:when>
+                <xsl:when test="$to and $to != '-' and not(matches($to, '\d\d\d\d-\d\d-\d\d'))">
+                  <xsl:message select="concat('ERROR: to = ', $to)"/>
+                </xsl:when>
+                <xsl:when test="$role != 'coalition' and $role != 'opposition'">
+                  <xsl:message select="concat('WARN: role = ', $role, ', skipping!')"/>
+                </xsl:when>
+                <xsl:otherwise>
+                  <item>
+                    <name>
+                      <xsl:if test="$role != 'coalition' and $role != 'opposition'">
+                        <xsl:message select="concat('WARN : role = ', $role, ' hmmm')"/>
+                      </xsl:if>
+                      <xsl:value-of select="$role"/>
+                    </name>
+                    <from>
+                      <xsl:if test="$from != '' and $from != '-'">
+                        <xsl:value-of select="$from"/>
+                      </xsl:if>
+                    </from>
+                    <to>
+                      <xsl:if test="$to != '' and $to != '-'">
+                        <xsl:value-of select="$to"/>
+                      </xsl:if>
+                    </to>
+                    <xsl:for-each select="tokenize($groups, ' ')">
+                      <group>
+                        <xsl:value-of select="."/>
+                      </group>
+                    </xsl:for-each>
+                  </item>
+                </xsl:otherwise>
+              </xsl:choose>
+            </xsl:matching-substring>
+            <xsl:non-matching-substring>
+              <xsl:message select="concat('ERROR: bad line ', $line)"/>
+            </xsl:non-matching-substring>
+          </xsl:analyze-string>
+        </xsl:if>
+      </xsl:for-each>
+    </list>
+  </xsl:variable>
+
 
   <xsl:variable name="listPerson">
     <xsl:choose>
@@ -110,10 +181,71 @@
 
 
   <xsl:template name="formations">
-    <xsl:message>TODO: implement coallition and opposition formations (read from file)</xsl:message>
+    <xsl:for-each select="$coal-opp-relations//tei:item">
+      <xsl:sort select="concat(tei:role,' ',tei:from)"/>
+      <xsl:variable name="item" select="."/>
+      <relation>
+        <xsl:attribute name="name" select="$item/tei:name"/>
+        <xsl:variable name="groups">
+          <xsl:for-each select="tei:group">
+            <xsl:variable name="group-abb" select="."/>
+            <xsl:variable name="group-org" select="$listOrg//tei:org[@role='parliamentaryGroup'
+                                                             and ./tei:orgName[@full='abb' and text() = $group-abb]
+                                                                    ]"/>
+            <xsl:choose>
+              <xsl:when test="$group-org">
+                <xsl:value-of select="concat('#', $group-org/@xml:id , ' ')"/>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:message select="concat('ERROR: ',
+                         $item/tei:name, ' group = ', ., ' between ',
+                         $item/tei:from, ' - ', $item/tei:to)"/>
+              </xsl:otherwise>
+            </xsl:choose>
+          </xsl:for-each>
+        </xsl:variable>
+        <xsl:choose>
+          <xsl:when test="tei:name = 'coalition'">
+            <xsl:attribute name="mutual" select="normalize-space($groups)"/>
+          </xsl:when>
+          <xsl:when test="tei:name = 'opposition'">
+            <xsl:attribute name="active" select="normalize-space($groups)"/>
+            <xsl:attribute name="passive">
+              <xsl:variable name="government"
+                      select="$listOrg//tei:org[@role = 'government']/@xml:id"/>
+              <xsl:choose>
+                <xsl:when test="$government != ''">
+                  <xsl:value-of select="concat('#', $government)"/>
+                </xsl:when>
+                <xsl:otherwise>
+                  <xsl:message>ERROR: missing government for opposition</xsl:message>
+                </xsl:otherwise>
+              </xsl:choose>
+            </xsl:attribute>
+          </xsl:when>
+        </xsl:choose>
+        <xsl:if test="normalize-space(tei:from)">
+          <xsl:attribute name="from" select="tei:from"/>
+        </xsl:if>
+        <xsl:if test="normalize-space(tei:to)">
+          <xsl:attribute name="to" select="tei:to"/>
+        </xsl:if>
+        <!-- Add term when coalition/opposition active -->
+        <xsl:variable name="term">
+          <xsl:variable name="terms" select="$listOrg//tei:org[@role = 'parliament' and contains(@ana,'#parla.lower')]/tei:listEvent"/>
+          <xsl:for-each select="$terms/tei:event">
+            <xsl:if test="et:between-dates($item/tei:from, @from, @to) and
+              et:between-dates($item/tei:to, @from, @to)">
+              <xsl:value-of select="concat('#', @xml:id, ' ')"/>
+            </xsl:if>
+          </xsl:for-each>
+        </xsl:variable>
+        <xsl:if test="normalize-space($term)">
+          <xsl:attribute name="ana" select="normalize-space($term)"/>
+        </xsl:if>
+      </relation>
+    </xsl:for-each>
   </xsl:template>
-
-
 
 
   <xsl:template match="@*|node()">
@@ -156,5 +288,32 @@
     <xsl:param name="node"/>
     <xsl:param name="date"/>
     <xsl:sequence select="$date >= mk:get_from($node) and mk:get_to($node) >= $date"/>
+  </xsl:function>
+
+    <!-- Is the first date between the following two? -->
+  <xsl:function name="et:between-dates" as="xs:boolean">
+    <xsl:param name="date" as="xs:string?"/>
+    <xsl:param name="from" as="xs:string?"/>
+    <xsl:param name="to" as="xs:string?"/>
+    <xsl:choose>
+      <xsl:when test="not(normalize-space($date))">
+        <xsl:value-of select="true()"/>
+      </xsl:when>
+      <xsl:when test="not(normalize-space($from) or normalize-space($to))">
+        <xsl:value-of select="true()"/>
+      </xsl:when>
+      <xsl:when test="not(normalize-space($from)) and xs:date($date) &lt;= xs:date($to)">
+        <xsl:value-of select="true()"/>
+      </xsl:when>
+      <xsl:when test="not(normalize-space($to)) and xs:date($date) &gt;= xs:date($from)">
+        <xsl:value-of select="true()"/>
+      </xsl:when>
+      <xsl:when test="xs:date($date) &gt;= xs:date($from) and xs:date($date) &lt;= xs:date($to)">
+        <xsl:value-of select="true()"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="false()"/>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:function>
 </xsl:stylesheet>

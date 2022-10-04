@@ -17,6 +17,15 @@
     </xsl:copy>
   </xsl:template>
 
+  <xsl:template match="tei:listRelation">
+    <xsl:copy>
+      <xsl:apply-templates select="@*" />
+      <xsl:apply-templates select="tei:relation">
+        <xsl:sort select="concat(@name,' ', @from)" data-type="text" order="ascending"/>
+      </xsl:apply-templates>
+    </xsl:copy>
+  </xsl:template>
+
   <xsl:template match="@*|node()">
     <xsl:copy>
       <xsl:apply-templates select="@*|node()"/>
