@@ -169,7 +169,7 @@
       <xsl:element name="relation">
         <xsl:attribute name="name">representing</xsl:attribute>
         <xsl:attribute name="active" select="concat('#',./@group-id)"/>
-        <xsl:attribute name="pasive" select="concat('#',./@party-id)"/>
+        <xsl:attribute name="passive" select="concat('#',./@party-id)"/>
         <xsl:attribute name="from" select="$event/@from"/>
         <xsl:if test="$event/@to"><xsl:attribute name="to" select="$event/@to"/></xsl:if>
         <xsl:variable name="group-event-id">
