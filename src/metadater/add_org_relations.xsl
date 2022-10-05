@@ -207,10 +207,16 @@
             <xsl:variable name="group-abb" select="."/>
             <xsl:variable name="group-org" select="$listOrg//tei:org[@role='parliamentaryGroup'
                                                              and ./tei:orgName[@full='abb' and text() = $group-abb]
+                                                             and .//tei:event[et:between-dates($item/tei:from,@from,@to)]
                                                                     ]"/>
+            <xsl:if test="count($group-org)>1">
+              <xsl:message select="concat('ERROR: multiple parliamentary groups match ',
+                         $item/tei:name, ' group = ', ., ' between ',
+                         $item/tei:from, ' - ', $item/tei:to)"/>
+            </xsl:if>
             <xsl:choose>
               <xsl:when test="$group-org">
-                <xsl:value-of select="concat('#', $group-org/@xml:id , ' ')"/>
+                <xsl:value-of select="$group-org/@xml:id/concat('#', . , ' ')"/>
               </xsl:when>
               <xsl:otherwise>
                 <xsl:message select="concat('ERROR: ',
