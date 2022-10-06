@@ -121,7 +121,7 @@
                <p xml:lang="en">This work is licensed under the <ref target="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</ref>.</p>
                <p xml:lang="cs">Toto dílo je licencováno <ref target="http://creativecommons.org/licenses/by/4.0/">Creative Commons Uveďte původ 4.0 Mezinárodní Veřejná licence</ref>.</p>
             </availability>
-            <date when="2021">RELEASE_DATE</date>
+            <date><xsl:attribute name="when" select="substring(current-date(),1,10)"/>RELEASE_DATE</date> <!-- use current date to pass ParlaMint validation -->
     </xsl:copy>
   </xsl:template>
 

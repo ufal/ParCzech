@@ -132,13 +132,14 @@ create_parlaMint() {
   LOG=$3
   FLAG=$4
   SUFF=$5
+  INSERTINCL=$6
   set_handler $FLAG
   mkdir -p OUT_DIR
   if [ ! -s "$IN_DIR" ]; then
     echo "warning: missing input directory"
     return 0
   fi
-  CORPFILE=`echo $IN_DIR/ParCzech*.xml`
+  CORPFILE=`ls $IN_DIR/ParCzech{,.ana}.xml 2> /dev/null`
   echo -e "in directory $IN_DIR\nout directory $OUT_DIR\n$CORPFILE\n"
   if [ ! -s $CORPFILE ]; then
     echo "input corpus file does not exist ($CORPFILE) or is empty "
@@ -155,7 +156,7 @@ create_parlaMint() {
   cat $LOG | create_xml_remame > $LOG.xml
   echo
   echo $CORPFILE $OUT_DIR/${CORPFILE##*/}
-  $XSL_TRANSFORM parlaMint/transform-teiCorpus.xsl "$CORPFILE" "$OUT_DIR/${CORPFILE##*/}" id-prefix="$DATA_PREFIX" outdir="$OUT_DIR" rename="$LOG.xml" "${PARAMS[@]}" 2>&1 \
+  $XSL_TRANSFORM parlaMint/transform-teiCorpus.xsl "$CORPFILE" "$OUT_DIR/${CORPFILE##*/}" insert-include=$INSERTINCL id-prefix="$DATA_PREFIX" outdir="$OUT_DIR" rename="$LOG.xml" "${PARAMS[@]}" 2>&1 \
         | filter_rename $LOG
 
 
@@ -167,8 +168,8 @@ create_parlaMint() {
 
 }
 
-create_parlaMint "$INPUT_RAW_DIR" "$OUTPUT_RAW_DIR" "$RENAME_LOG.raw" -t ""
-create_parlaMint "$INPUT_ANA_DIR" "$OUTPUT_ANA_DIR" "$RENAME_LOG.ana" -a ".ana"
+create_parlaMint "$INPUT_RAW_DIR" "$OUTPUT_RAW_DIR" "$RENAME_LOG.raw" -t "" 1
+create_parlaMint "$INPUT_ANA_DIR" "$OUTPUT_ANA_DIR" "$RENAME_LOG.ana" -a ".ana" 1
 
 
 if [ "$VALIDATE" -eq "1"  ]; then

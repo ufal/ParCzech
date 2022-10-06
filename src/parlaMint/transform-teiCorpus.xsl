@@ -10,6 +10,7 @@
   <xsl:output method="xml" indent="yes" encoding="UTF-8" />
   <xsl:param name="outdir" />
   <xsl:param name="rename" />
+  <xsl:param name="insert-include" />
 
   <xsl:variable name="rename-files-doc" select="document($rename)" />
   <xsl:key name="rename-list" match="file" use="@from" />
@@ -38,6 +39,30 @@
         <xsl:value-of select=" key('rename-list',@href,$rename-files-doc)/@to"/>
       </xsl:attribute>
     </xsl:element>
+  </xsl:template>
+
+
+  <xsl:template match="//tei:particDesc"> <!-- needed to remove unused namespaces -->
+    <xsl:element name="{name()}">
+      <xsl:apply-templates select="@*"/>
+      <xsl:apply-templates select="element()"/>
+    </xsl:element>
+  </xsl:template>
+  <xsl:template match="xi:include[parent::tei:particDesc]">
+    <xsl:choose>
+      <xsl:when test="$insert-include = 1">
+        <xsl:message select="concat('inserting content of ',@href)"/>
+        <xsl:copy-of select="document(@href)"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:element name="xi:include" namespace="http://www.w3.org/2001/XInclude">
+          <xsl:namespace name="xi" select="'http://www.w3.org/2001/XInclude'"/>
+          <xsl:attribute name="href">
+            <xsl:value-of select="replace(@href,'ParCzech','ParlaMint-CZ')"/>
+          </xsl:attribute>
+        </xsl:element>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
 
 
