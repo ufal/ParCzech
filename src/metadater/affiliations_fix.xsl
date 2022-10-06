@@ -5,6 +5,7 @@
   xmlns:tei="http://www.tei-c.org/ns/1.0"
   xmlns:xi="http://www.w3.org/2001/XInclude"
   exclude-result-prefixes="tei" >
+  <xsl:param name="doc-orgList" />
 
   <xsl:output method="xml" indent="yes" encoding="UTF-8" />
 

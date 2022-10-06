@@ -30,6 +30,7 @@
     <pcz:item pcz:dep="encodingDesc-corpus" />
     <pcz:item pcz:dep="profileDesc-corpus" />
     <pcz:item pcz:dep="textClass" />
+    <pcz:item pcz:dep="particDesc" />
   </pcz:meta>
 
   <pcz:meta pcz:name="ParCzech-live-corpus.ann">
@@ -690,7 +691,19 @@
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
-
+  <pcz:meta pcz:name="particDesc">
+    <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:profileDesc/tei:particDesc">
+      <pcz:test>
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:profileDesc/tei:particDesc/tei:listPerson" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:profileDesc/tei:particDesc/tei:listOrg" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:profileDesc/tei:particDesc/xi:include" />
+      </pcz:test>
+      <pcz:tei>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ParCzech-listOrg.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ParCzech-listPerson.xml"/>
+      </pcz:tei>
+    </pcz:item>
+  </pcz:meta>
 <!--
   <pcz:meta pcz:name="ParCzechPS-2.0-taxonomy">
     <pcz:item pcz:xpath="/tei:TEI/tei:teiHeader/tei:encodingDesc/tei:classDecl">

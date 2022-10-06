@@ -11,7 +11,7 @@
   <xsl:key name="id-personlist" match="*[local-name(.) = 'person' and not(@corresp)]" use="@*[local-name(.) = 'id']" />
   <xsl:key name="id-personlist-corresp" match="*[local-name(.) = 'person' and @corresp]" use="@*[local-name(.) = 'id']" />
 
-  <xsl:template match="/*/*[local-name(.) = 'teiHeader']//*[local-name(.) = 'listPerson']/*[local-name(.) = 'person' and @corresp][1]">
+  <xsl:template match="//*[local-name(.) = 'listPerson']/*[local-name(.) = 'person' and @corresp][1]">
     <xsl:call-template name="template-person">
       <xsl:with-param name="context-node" select="." />
       <xsl:with-param name="seen-ids" select="string(' ')" />

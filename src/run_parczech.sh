@@ -384,29 +384,28 @@ fi; # END METADATER CONDITION
 ### Metadata to teiCorpus   ###
 ###############################
 
+export DOWNLOADER_TEI_META_WORKING=$DATA_DIR/downloader-tei-meta-working/${ID}
+
 if skip_process_single_file "metadater" "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" ; then # BEGIN METADATER teiCorpus CONDITION
 
-log "adding <listPerson> teiCorpus: $DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME"
+#extract listPerson element from teiCorpus
+$XSL_TRANSFORM metadater/extract_and_remove_element.xsl "$PSP_DB_DIR/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META_WORKING/listPerson-extracted.$TEICORPUS_FILENAME" element="listPerson" prefix="$DOWNLOADER_TEI_META_WORKING/ParCzech-seen-"
 
 ## add all term persons
-$XSL_TRANSFORM metadater/add_allterm_persons.xsl "$PSP_DB_DIR/$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/allpers.$TEICORPUS_FILENAME" allterm-personlist-path="$PSP_DB_ALL_TERM_PERSON"
+$XSL_TRANSFORM metadater/add_allterm_persons.xsl "$DOWNLOADER_TEI_META_WORKING/ParCzech-seen-listPerson.xml" "$DOWNLOADER_TEI_META_WORKING/ParCzech-allpers-listPerson.xml" allterm-personlist-path="$PSP_DB_ALL_TERM_PERSON"
 
 ## merge personlist
-$XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI_META/allpers.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" personlist-path="$PSP_DB_DIR/person.xml"
-
-log "adding <listOrg> teiCorpus: $DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME"
-
-## add org
-$XSL_TRANSFORM metadater/add_org.xsl "$DOWNLOADER_TEI_META/pers.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" org-path="$PSP_DB_DIR/org.xml"
+$XSL_TRANSFORM metadater/knit_persons.xsl "$DOWNLOADER_TEI_META_WORKING/ParCzech-allpers-listPerson.xml" "$DOWNLOADER_TEI_META_WORKING/ParCzech-pers-listPerson.xml" personlist-path="$PSP_DB_DIR/person.xml"
 
 ## fix affiliation (when affiliated to event) #event->@ana, #org->@ref
-$XSL_TRANSFORM metadater/affiliations_fix.xsl "$DOWNLOADER_TEI_META/org.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/aff_fix.$TEICORPUS_FILENAME"
+$XSL_TRANSFORM metadater/affiliations_fix.xsl "$DOWNLOADER_TEI_META_WORKING/ParCzech-pers-listPerson.xml" "$DOWNLOADER_TEI_META_WORKING/ParCzech-aff_fix-listPerson.xml" doc-orgList="$PSP_DB_DIR/org.xml"
 
 ## add org relations
-$XSL_TRANSFORM metadater/add_org_relations.xsl "$DOWNLOADER_TEI_META/aff_fix.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/org_rel.$TEICORPUS_FILENAME" coal-opp="parczech_coal-opp.tsv"
+$XSL_TRANSFORM metadater/add_org_relations.xsl "$PSP_DB_DIR/org.xml" "$DOWNLOADER_TEI_META_WORKING/ParCzech-org_rel-listOrg.xml" coal-opp="parczech_coal-opp.tsv" doc-personList="$DOWNLOADER_TEI_META_WORKING/ParCzech-aff_fix-listPerson.xml"
 
-## sort header data in teiCorpus
-$XSL_TRANSFORM metadater/header_data_sorter.xsl "$DOWNLOADER_TEI_META/org_rel.$TEICORPUS_FILENAME" "$DOWNLOADER_TEI_META/sorted.$TEICORPUS_FILENAME"
+## sorting org and person
+$XSL_TRANSFORM metadater/header_data_sorter.xsl "$DOWNLOADER_TEI_META_WORKING/ParCzech-org_rel-listOrg.xml" "$DOWNLOADER_TEI_META/ParCzech-listOrg.xml"
+$XSL_TRANSFORM metadater/header_data_sorter.xsl "$DOWNLOADER_TEI_META_WORKING/ParCzech-aff_fix-listPerson.xml" "$DOWNLOADER_TEI_META/ParCzech-listPerson.xml"
 
 
 ## add metadata to teiCorpus
@@ -417,7 +416,7 @@ log "VARIABLES: $CORPUS_VARS"
 
 perl -I lib metadater/metadater.pl --metadata-name "$METADATA_NAME-corpus" \
                                    --metadata-file metadater/tei_parczech.xml \
-                                   --input-file "$DOWNLOADER_TEI_META/sorted.$TEICORPUS_FILENAME"  \
+                                   --input-file "$DOWNLOADER_TEI_META_WORKING/listPerson-extracted.$TEICORPUS_FILENAME"  \
                                    --output-file "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME" \
                                    --variables "$CORPUS_VARS"
 patch_invalid_characters "$DOWNLOADER_TEI_META/$TEICORPUS_FILENAME"
@@ -689,7 +688,7 @@ export PARCZECH_TEI_RAW_CONS=$DATA_DIR/parczech.tei.raw/${CONSOLIDATED_FOLDER}
 export PARCZECH_TEI_ANA_CONS=$DATA_DIR/parczech.tei.ana/${CONSOLIDATED_FOLDER}
 
 function consolidate() {
-  echo -en "TODO CONSOLIDATE \n\t$1 \n\t$2 \n\t$3 \n\t$4\n"
+  echo -en "TODO CONSOLIDATE \n\t$1 \n\t$2 \n\t$3 \n\t$4 \n\t$5\n"
   # test if exist consolidated data
   find $2
   echo
@@ -697,6 +696,9 @@ function consolidate() {
 
     echo "Copy all data to $2"
     cp -r $1 $2
+    echo "Copy listOrg and listPerson to $2"
+    cp  "$5/ParCzech-listOrg.xml" $2/
+    cp  "$5/ParCzech-listPerson.xml" $2/
     mv "$2/$3" "$2/${4}.xml"
     xmlstarlet edit --inplace \
                     --update "/_:teiCorpus/@xml:id" \
@@ -710,8 +712,8 @@ function consolidate() {
   fi
 }
 
-consolidate $PARCZECH_TEI_RAW $PARCZECH_TEI_RAW_CONS $TEICORPUS_FILENAME ParCzech
-consolidate $ANNOTATED_TEI_META $PARCZECH_TEI_ANA_CONS $ANATEICORPUS_FILENAME ParCzech.ana
+consolidate $PARCZECH_TEI_RAW $PARCZECH_TEI_RAW_CONS $TEICORPUS_FILENAME ParCzech $DOWNLOADER_TEI_META
+consolidate $ANNOTATED_TEI_META $PARCZECH_TEI_ANA_CONS $ANATEICORPUS_FILENAME ParCzech.ana $DOWNLOADER_TEI_META
 
 if [ "$EXIT_CONDITION" == "consolidate" ] ; then
   echo "EXITTING: $EXIT_CONDITION"

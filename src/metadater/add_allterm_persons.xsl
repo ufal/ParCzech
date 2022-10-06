@@ -8,7 +8,7 @@
   <xsl:param name="allterm-personlist-path" />
   <xsl:variable name="personlist-doc" select="document($allterm-personlist-path)" />
 
-  <xsl:template match="/*/*[local-name(.) = 'teiHeader']//*[local-name(.) = 'listPerson']">
+  <xsl:template match="//*[local-name(.) = 'listPerson']">
     <xsl:copy>
       <xsl:apply-templates select="@*|node()"/>
       <xsl:copy-of select="$personlist-doc/tei:listPerson/tei:person" />
