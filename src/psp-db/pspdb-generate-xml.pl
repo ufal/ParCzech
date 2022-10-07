@@ -42,7 +42,7 @@ my %cast = (
   datehour => sub {my $d = shift; return $d ? "$d:00:00" : ''},
   unescape_patch => sub {my $s = shift; $s =~ s/\\ / /g; $s =~ s/^\s+|\s+$//g; return $s},
 );
-my %uniqueOrgRoles = map {($_ => 1)} qw/parliament senate nationalCouncil republic/;
+my %uniqueOrgRoles = map {($_ => 1)} qw/parliament senate nationalCouncil republic politicalParty/;
 my %skip_orgs  = map {($_ => 1)} qw/Nezařazení/;
 
 my %data_links = ();
