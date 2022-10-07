@@ -2,6 +2,7 @@ senate|parliament
 nationalCouncil|parliament
 chamberOfTheNations|parliament
 chamberOfThePeople|parliament
+president|head
 qr/^Ministe?r.*/i|minister
 qr/^Prime Minister/i|head
 qr/^Deputy Prime Minister/i|deputy head
