@@ -126,6 +126,15 @@ set_handler () {
   fi
 }
 
+copy_incl_file() {
+  IN_DIR=$1
+  OUT_DIR=$2
+  OUT_FILE=$3
+  IN_FILE=`echo -n "$OUT_FILE" | sed 's/ParlaMint-CZ-list/ParCzech-list/;s/ParlaMint-CZ-//;s/ParlaMint-//'`
+  echo cp "$IN_DIR/$IN_FILE" "$OUT_DIR/$OUT_FILE"
+  cp "$IN_DIR/$IN_FILE" "$OUT_DIR/$OUT_FILE"
+}
+
 create_parlaMint() {
   IN_DIR=$1
   OUT_DIR=$2
@@ -156,20 +165,27 @@ create_parlaMint() {
   cat $LOG | create_xml_remame > $LOG.xml
   echo
   echo $CORPFILE $OUT_DIR/${CORPFILE##*/}
-  $XSL_TRANSFORM parlaMint/transform-teiCorpus.xsl "$CORPFILE" "$OUT_DIR/${CORPFILE##*/}" insert-include=$INSERTINCL id-prefix="$DATA_PREFIX" outdir="$OUT_DIR" rename="$LOG.xml" "${PARAMS[@]}" 2>&1 \
+  $XSL_TRANSFORM parlaMint/transform-teiCorpus.xsl "$CORPFILE" "$OUT_DIR/tmp.${CORPFILE##*/}" insert-include=$INSERTINCL id-prefix="$DATA_PREFIX" outdir="$OUT_DIR" rename="$LOG.xml" "${PARAMS[@]}" 2>&1 \
         | filter_rename $LOG
-
+  $XSL_TRANSFORM parlaMint/move-include-namespace.xsl "$OUT_DIR/tmp.${CORPFILE##*/}" "$OUT_DIR/${CORPFILE##*/}"
+  rm "$OUT_DIR/tmp.${CORPFILE##*/}"
 
   cat $LOG | rename_xml_file $OUT_DIR
 
   echo;echo "UPDATING tagUsage: $OUT_DIR/${DATA_PREFIX}${SUFF}.xml"
-  sed -i 's/teiHeader xmlns:xi="[^"]*XInclude"/teiHeader/' "$OUT_DIR/${DATA_PREFIX}${SUFF}.xml"
+  #sed -i 's/teiHeader xmlns:xi="[^"]*XInclude"/teiHeader/' "$OUT_DIR/${DATA_PREFIX}${SUFF}.xml"
   $D/metadater/update_tagUsage.sh -M -c `realpath $CONFIG_FILE` $FLAG "$OUT_DIR/${DATA_PREFIX}${SUFF}.xml"
-
+  if [ $INSERTINCL -eq 0 ] ; then
+    for INCL in `java -cp /usr/share/java/saxon.jar net.sf.saxon.Query -xi:off \!method=adaptive -qs:'//*[local-name()="teiHeader"]//*[local-name()="include"]/@href' -s:"$OUT_DIR/${DATA_PREFIX}${SUFF}.xml" | sed 's/^ *href="//;s/"//'`
+    do
+      copy_incl_file $IN_DIR/ $OUT_DIR/ $INCL
+    done
+    copy_incl_file parlaMint/ $OUT_DIR/ ParlaMint-taxonomy-subcorpus.xml
+  fi
 }
 
-create_parlaMint "$INPUT_RAW_DIR" "$OUTPUT_RAW_DIR" "$RENAME_LOG.raw" -t "" 1
-create_parlaMint "$INPUT_ANA_DIR" "$OUTPUT_ANA_DIR" "$RENAME_LOG.ana" -a ".ana" 1
+create_parlaMint "$INPUT_RAW_DIR" "$OUTPUT_RAW_DIR" "$RENAME_LOG.raw" -t "" 0
+create_parlaMint "$INPUT_ANA_DIR" "$OUTPUT_ANA_DIR" "$RENAME_LOG.ana" -a ".ana" 0
 
 
 if [ "$VALIDATE" -eq "1"  ]; then
