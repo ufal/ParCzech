@@ -353,148 +353,12 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='parla.legislature']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-parla.legislature.xml']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-meeting.parts.xml']" />
       </pcz:test>
       <pcz:tei>
-            <taxonomy xml:id="parla.legislature">
-               <desc xml:lang="cs"><term>Zákonodárná moc</term></desc>
-               <desc xml:lang="en"><term>Legislature</term></desc>
-               <category xml:id="parla.geo-political">
-                  <catDesc xml:lang="cs"><term>Geo-politické nebo administrativní jednotky</term></catDesc>
-                  <catDesc xml:lang="en"><term>Geo-political or administrative units</term></catDesc>
-                  <category xml:id="parla.supranational">
-                     <catDesc xml:lang="cs"><term>Mezinárodní legislatura</term></catDesc>
-                     <catDesc xml:lang="en"><term>Supranational legislature</term></catDesc>
-                  </category>
-                  <category xml:id="parla.national">
-                     <catDesc xml:lang="cs"><term>Národní legislatura</term></catDesc>
-                     <catDesc xml:lang="en"><term>National legislature</term></catDesc>
-                  </category>
-                  <category xml:id="parla.regional">
-                     <catDesc xml:lang="cs"><term>Regionální legislatura</term></catDesc>
-                     <catDesc xml:lang="en"><term>Regional legislature</term></catDesc>
-                  </category>
-                  <category xml:id="parla.local">
-                     <catDesc xml:lang="cs"><term>Místní legislatura</term></catDesc>
-                     <catDesc xml:lang="en"><term>Local legislature</term></catDesc>
-                  </category>
-               </category>
-               <category xml:id="parla.organization">
-                  <catDesc xml:lang="cs"><term>Organizace</term></catDesc>
-                  <catDesc xml:lang="en"><term>Organization</term></catDesc>
-                  <category xml:id="parla.chambers">
-                     <catDesc xml:lang="cs"><term>Komory</term></catDesc>
-                     <catDesc xml:lang="en"><term>Chambers</term></catDesc>
-                     <category xml:id="parla.uni">
-                        <catDesc xml:lang="cs"><term>Jednokomorový parlament</term></catDesc>
-                        <catDesc xml:lang="en"><term>Unicameralism</term></catDesc>
-                     </category>
-                     <category xml:id="parla.bi">
-                        <catDesc xml:lang="cs"><term>Dvoukomorový parlament</term></catDesc>
-                        <catDesc xml:lang="en"><term>Bicameralism</term></catDesc>
-                        <category xml:id="parla.upper">
-                           <catDesc xml:lang="cs"><term>Horní komora</term></catDesc>
-                           <catDesc xml:lang="en"><term>Upper house</term></catDesc>
-                        </category>
-                        <category xml:id="parla.lower">
-                           <catDesc xml:lang="cs"><term>Dolní komora</term></catDesc>
-                           <catDesc xml:lang="en"><term>Lower house</term></catDesc>
-                        </category>
-                     </category>
-                     <category xml:id="parla.multi">
-                        <catDesc xml:lang="cs"><term>Vícekomorový parlament</term></catDesc>
-                        <catDesc xml:lang="en"><term>Multicameralism</term></catDesc>
-                        <category xml:id="parla.chamber">
-                           <catDesc xml:lang="cs"><term>Komora</term></catDesc>
-                           <catDesc xml:lang="en"><term>Chamber</term></catDesc>
-                        </category>
-                     </category>
-                  </category>
-                  <category xml:id="parla.committee">
-                     <catDesc xml:lang="cs"><term>Komise</term></catDesc>
-                     <catDesc xml:lang="en"><term>Committee</term></catDesc>
-                     <category xml:id="parla.committee.standing">
-                        <catDesc xml:lang="cs"><term>Stálá komise</term></catDesc>
-                        <catDesc xml:lang="en"><term>Standing committee</term></catDesc>
-                     </category>
-                     <category xml:id="parla.committee.special">
-                        <catDesc xml:lang="cs"><term>Zvláštní komise</term></catDesc>
-                        <catDesc xml:lang="en"><term>Special committee</term></catDesc>
-                     </category>
-                     <category xml:id="parla.committee.inquiry">
-                        <catDesc xml:lang="cs"><term>Vyšetřovací komise</term></catDesc>
-                        <catDesc xml:lang="en"><term>Committee of inquiry </term></catDesc>
-                     </category>
-                  </category>
-               </category>
-               <category xml:id="parla.term">
-                  <catDesc xml:lang="cs"><term>Legislativní perioda</term></catDesc>
-                  <catDesc xml:lang="en"><term>Legislative period</term>: term of the parliament between general elections.</catDesc>
-                  <category xml:id="parla.session">
-                     <catDesc xml:lang="cs"><term>Legislativní schůze</term></catDesc>
-                     <catDesc xml:lang="en"><term>Legislative session</term>: the period of time in which a legislature is convened for purpose of lawmaking, usually being one of two or more smaller divisions of the entire time between two elections. A session is a meeting or series of connected meetings devoted to a single order of business, program, agenda, or announced purpose.</catDesc>
-                     <category xml:id="parla.meeting">
-                        <catDesc xml:lang="cs"><term>Schůze</term></catDesc>
-                        <catDesc xml:lang="en"><term>Meeting</term>: Each meeting may be a separate session or part of a group of meetings constituting a session. The session/meeting may take one or more days.</catDesc>
-                        <category xml:id="parla.meeting-types">
-                           <catDesc xml:lang="cs"><term>Druhy schůzí</term></catDesc>
-                           <catDesc xml:lang="en"><term>Types of meetings</term></catDesc>
-                           <category xml:id="parla.meeting.regular">
-                              <catDesc xml:lang="cs"><term>Běžná schůze</term></catDesc>
-                              <catDesc xml:lang="en"><term>Regular meeting</term></catDesc>
-                           </category>
-                           <category xml:id="parla.meeting.special">
-                              <catDesc xml:lang="cs"><term>Zvláštní schůze</term></catDesc>
-                              <catDesc xml:lang="en"><term>Special meeting</term></catDesc>
-                              <category xml:id="parla.meeting.extraordinary">
-                                 <catDesc xml:lang="cs"><term>Mimořádná schůze</term></catDesc>
-                                 <catDesc xml:lang="en"><term>Extraordinary meeting</term></catDesc>
-                              </category>
-                              <category xml:id="parla.meeting.urgent">
-                                 <catDesc xml:lang="cs"><term>Urgentní schůze</term></catDesc>
-                                 <catDesc xml:lang="en"><term>Urgent meeting</term></catDesc>
-                              </category>
-                              <category xml:id="parla.meeting.ceremonial">
-                                 <catDesc xml:lang="cs"><term>Slavnostní schůze</term></catDesc>
-                                 <catDesc xml:lang="en"><term>Ceremonial meeting</term></catDesc>
-                              </category>
-                              <category xml:id="parla.meeting.commemorative">
-                                 <catDesc xml:lang="cs"><term>Pamětní schůze</term></catDesc>
-                                 <catDesc xml:lang="en"><term>Commemorative meeting</term></catDesc>
-                              </category>
-                              <category xml:id="parla.meeting.opinions">
-                                 <catDesc xml:lang="cs"><term>Veřejná prezentace možností</term></catDesc>
-                                 <catDesc xml:lang="en"><term>Public presentation of opinions</term></catDesc>
-                              </category>
-                           </category>
-                           <category xml:id="parla.meeting.continued">
-                              <catDesc xml:lang="cs"><term>Pokračování schůze</term></catDesc>
-                              <catDesc xml:lang="en"><term>Continued meeting</term></catDesc>
-                           </category>
-                           <category xml:id="parla.meeting.public">
-                              <catDesc xml:lang="cs"><term>Veřejná schůze</term></catDesc>
-                              <catDesc xml:lang="en"><term>Public meeting</term></catDesc>
-                           </category>
-                           <category xml:id="parla.meeting.executive">
-                              <catDesc xml:lang="cs"><term>Výkonná schůze</term></catDesc>
-                              <catDesc xml:lang="en"><term>Executive meeting</term></catDesc>
-                           </category>
-                        </category>
-                        <category xml:id="parla.sitting">
-                           <catDesc xml:lang="cs"><term>Sezení</term></catDesc>
-                           <catDesc xml:lang="en"><term>Sitting</term>: sitting day</catDesc>
-                        </category>
-                     </category>
-                  </category>
-               </category>
-            </taxonomy>
-            <taxonomy xml:id="meeting.parts">
-              <desc xml:lang="cs"><term>Bod</term></desc>
-              <desc xml:lang="en"><term>Agenda</term></desc>
-              <category xml:id="parla.agenda">
-                <catDesc xml:lang="cs"><term>Bod jednání</term></catDesc>
-                <catDesc xml:lang="en"><term>Agenda</term>: topic discussed during sitting</catDesc>
-              </category>
-            </taxonomy>
+            <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-parla.legislature.xml"/>
+            <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-meeting.parts.xml"/>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
@@ -505,20 +369,10 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='parla.links']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-parla.links.xml']" />
       </pcz:test>
       <pcz:tei>
-          <taxonomy xml:id="parla.links">
-            <desc xml:lang="cs"><term>Druhy odkazů</term></desc>
-            <desc xml:lang="en"><term>Types of links</term></desc>
-            <category xml:id="parla.voting">
-              <catDesc xml:lang="cs"><term>Hlasování</term></catDesc>
-              <catDesc xml:lang="en"><term>Voting</term></catDesc>
-            </category>
-            <category xml:id="parla.print">
-              <catDesc xml:lang="cs"><term>Sněmovní tisk</term></catDesc>
-              <catDesc xml:lang="en"><term>Regular</term></catDesc>
-            </category>
-          </taxonomy>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-parla.links.xml"/>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
@@ -527,24 +381,10 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='speaker_types']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-speaker_types.xml']" />
       </pcz:test>
       <pcz:tei>
-          <taxonomy xml:id="speaker_types">
-            <desc xml:lang="cs"><term>Druhy řečníků</term></desc>
-            <desc xml:lang="en"><term>Types of speakers</term></desc>
-            <category xml:id="chair">
-              <catDesc xml:lang="cs"><term>Předsedající</term>: předsedá zasedání</catDesc>
-              <catDesc xml:lang="en"><term>Chairperson</term>: chairman of a sitting</catDesc>
-            </category>
-            <category xml:id="regular">
-              <catDesc xml:lang="cs"><term>Poslanec</term>: poslanec nebo člen vlády</catDesc>
-              <catDesc xml:lang="en"><term>Regular</term>: a regular speaker at a sitting</catDesc>
-            </category>
-            <category xml:id="guest">
-              <catDesc xml:lang="cs"><term>Host</term>: ghostující řečník na sezení</catDesc>
-              <catDesc xml:lang="en"><term>Guest</term>: a guest speaker at a sitting</catDesc>
-            </category>
-          </taxonomy>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-speaker_types.xml"/>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
@@ -757,27 +597,10 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
     <pcz:test>
       <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='NER']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-NER.xml']" />
     </pcz:test>
     <pcz:tei>
-      <taxonomy xml:id="NER">
-        <desc xml:lang="en"><term>Named entities</term></desc>
-        <category xml:id="PER">
-          <catDesc xml:lang="cs"><term>osoba</term></catDesc>
-          <catDesc xml:lang="en"><term>person</term></catDesc>
-        </category>
-        <category xml:id="LOC">
-          <catDesc xml:lang="cs"><term>místo</term></catDesc>
-          <catDesc xml:lang="en"><term>location</term></catDesc>
-        </category>
-        <category xml:id="ORG">
-          <catDesc xml:lang="cs"><term>organizace</term></catDesc>
-          <catDesc xml:lang="en"><term>organization</term></catDesc>
-        </category>
-        <category xml:id="MISC">
-          <catDesc xml:lang="cs"><term>různé</term></catDesc>
-          <catDesc xml:lang="en"><term>miscellaneous</term></catDesc>
-        </category>
-      </taxonomy>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-NER.xml"/>
     </pcz:tei>
     </pcz:item>
   </pcz:meta>
@@ -889,185 +712,10 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='NER.cnec2.0']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-NER.cnec2.0.xml']" />
       </pcz:test>
       <pcz:tei>
-        <taxonomy xml:id="NER.cnec2.0">
-          <desc xml:lang="en"><term> CNEC 2.0 Named Entities</term></desc>
-          <category xml:id="NER.cnec2.0.P">
-            <catDesc xml:lang="en"><term>person name</term></catDesc>
-          </category>
-          <category xml:id="NER.cnec2.0.T">
-            <catDesc xml:lang="en"><term>temporal expression</term></catDesc>
-          </category>
-          <category xml:id="NER.cnec2.0.A">
-            <catDesc xml:lang="en"><term>address</term></catDesc>
-          </category>
-          <category xml:id="NER.cnec2.0.C">
-            <catDesc xml:lang="en"><term>bibliographic</term>: Bibliographic item</catDesc>
-          </category>
-          <category xml:id="NER.cnec2.0.t">
-            <catDesc xml:lang="en"><term>time</term>: Time expression</catDesc>
-            <category xml:id="NER.cnec2.0.ty">
-              <catDesc xml:lang="en"><term>year</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.tf">
-              <catDesc xml:lang="en"><term>feast</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.td">
-              <catDesc xml:lang="en"><term>day</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.th">
-              <catDesc xml:lang="en"><term>hour</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.tm">
-              <catDesc xml:lang="en"><term>month</term></catDesc>
-            </category>
-          </category>
-          <category xml:id="NER.cnec2.0.m">
-            <catDesc xml:lang="en"><term>media</term>: Media name</catDesc>
-            <category xml:id="NER.cnec2.0.me">
-              <catDesc xml:lang="en"><term>email</term>: Email address</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.ms">
-              <catDesc xml:lang="en"><term>media station</term>: Radio and TV station</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.mi">
-              <catDesc xml:lang="en"><term>url</term>: Internet link</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.mn">
-              <catDesc xml:lang="en"><term>periodic</term></catDesc>
-            </category>
-          </category>
-          <category xml:id="NER.cnec2.0.i">
-            <catDesc xml:lang="en"><term>institution</term></catDesc>
-            <category xml:id="NER.cnec2.0.if">
-              <catDesc xml:lang="en"><term>company</term>: Company, concern</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.io">
-              <catDesc xml:lang="en"><term>politic</term>: Government or political instution</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.i_">
-              <catDesc xml:lang="en"><term>underspecified institution</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.ia">
-              <catDesc xml:lang="en"><term>conference</term>: Conference or contest</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.ic">
-              <catDesc xml:lang="en"><term>culture</term>: Cultural, Education or Scientific institution</catDesc>
-            </category>
-          </category>
-          <category xml:id="NER.cnec2.0.a">
-            <catDesc xml:lang="en"><term>address number</term></catDesc>
-            <category xml:id="NER.cnec2.0.at">
-              <catDesc xml:lang="en"><term>phone</term>: Phone or fax number</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.az">
-              <catDesc xml:lang="en"><term>zip code</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.ah">
-              <catDesc xml:lang="en"><term>street number</term></catDesc>
-            </category>
-          </category>
-          <category xml:id="NER.cnec2.0.o">
-            <catDesc xml:lang="en"><term>artifact</term></catDesc>
-            <category xml:id="NER.cnec2.0.or">
-              <catDesc xml:lang="en"><term>directives</term>: Directive or norm</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.op">
-              <catDesc xml:lang="en"><term>product</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.oa">
-              <catDesc xml:lang="en"><term>cultural artifacts</term>: Books, movies</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.oe">
-              <catDesc xml:lang="en"><term>measure</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.om">
-              <catDesc xml:lang="en"><term>currency</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.o_">
-              <catDesc xml:lang="en"><term>underspecified artifact</term></catDesc>
-            </category>
-          </category>
-          <category xml:id="NER.cnec2.0.p">
-            <catDesc xml:lang="en"><term>person name</term></catDesc>
-            <category xml:id="NER.cnec2.0.pm">
-              <catDesc xml:lang="en"><term>middle name</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.pc">
-              <catDesc xml:lang="en"><term>inhabitant</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.p_">
-              <catDesc xml:lang="en"><term>underspecified person</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.ps">
-              <catDesc xml:lang="en"><term>surname</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.pf">
-              <catDesc xml:lang="en"><term>forename</term>: First name</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.pd">
-              <catDesc xml:lang="en"><term>title</term>: (academic) titles</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.pp">
-              <catDesc xml:lang="en"><term>relig. or myth persons</term></catDesc>
-            </category>
-          </category>
-          <category xml:id="NER.cnec2.0.n">
-            <catDesc xml:lang="en"><term>number expression</term></catDesc>
-            <category xml:id="NER.cnec2.0.nc">
-              <catDesc xml:lang="en"><term>cardinal</term>: Cardinal number</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.n_">
-              <catDesc xml:lang="en"><term>underspecified number</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.ni">
-              <catDesc xml:lang="en"><term>itemizer</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.nb">
-              <catDesc xml:lang="en"><term>doc. number</term>: vol./page/chap./sec./fig. number</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.na">
-              <catDesc xml:lang="en"><term>age</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.ns">
-              <catDesc xml:lang="en"><term>score</term>: Sport score</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.no">
-              <catDesc xml:lang="en"><term>Ordinal</term>: Ordinal numbers</catDesc>
-            </category>
-          </category>
-          <category xml:id="NER.cnec2.0.g">
-            <catDesc xml:lang="en"><term>geographic</term></catDesc>
-            <category xml:id="NER.cnec2.0.gl">
-              <catDesc xml:lang="en"><term>nature</term>: nature area or object</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.gu">
-              <catDesc xml:lang="en"><term>city</term>: City, town</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.gh">
-              <catDesc xml:lang="en"><term>hydronym</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.g_">
-              <catDesc xml:lang="en"><term>underspecified geographic</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.gr">
-              <catDesc xml:lang="en"><term>territory</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.gq">
-              <catDesc xml:lang="en"><term>urban part</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.gs">
-              <catDesc xml:lang="en"><term>street</term>: Streets, square</catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.gc">
-              <catDesc xml:lang="en"><term>state</term></catDesc>
-            </category>
-            <category xml:id="NER.cnec2.0.gt">
-              <catDesc xml:lang="en"><term>continent</term></catDesc>
-            </category>
-          </category>
-        </taxonomy>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-NER.cnec2.0.xml"/>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
@@ -1076,152 +724,10 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='UD-SYN']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-UD-SYN.xml']" />
       </pcz:test>
       <pcz:tei>
-        <taxonomy xml:id="UD-SYN">
-           <desc xml:lang="en"><term>UD syntactic relations</term></desc>
-           <category xml:id="acl">
-              <catDesc xml:lang="en"><term>acl</term>: Clausal modifier of noun (adjectival clause)</catDesc>
-           </category>
-           <category xml:id="acl_relcl">
-              <catDesc xml:lang="en"><term>acl:relcl</term>: Relative clause modifier</catDesc>
-           </category>
-           <category xml:id="advcl">
-              <catDesc xml:lang="en"><term>advcl</term>: Adverbial clause modifier</catDesc>
-           </category>
-           <category xml:id="advmod">
-              <catDesc xml:lang="en"><term>advmod</term>: Adverbial modifier</catDesc>
-           </category>
-           <category xml:id="advmod_emph">
-              <catDesc xml:lang="en"><term>advmod:emph</term>: Emphasizing word, intensifier</catDesc>
-           </category>
-           <category xml:id="amod">
-              <catDesc xml:lang="en"><term>amod</term>: Adjectival modifier</catDesc>
-           </category>
-           <category xml:id="appos">
-              <catDesc xml:lang="en"><term>appos</term>: Appositional modifier</catDesc>
-           </category>
-           <category xml:id="aux">
-              <catDesc xml:lang="en"><term>aux</term>: Auxiliary</catDesc>
-           </category>
-           <category xml:id="aux_pass">
-              <catDesc xml:lang="en"><term>aux:pass</term>: Passive auxiliary</catDesc>
-           </category>
-           <category xml:id="case">
-              <catDesc xml:lang="en"><term>case</term>: Case marking</catDesc>
-           </category>
-           <category xml:id="cc">
-              <catDesc xml:lang="en"><term>cc</term>: Coordinating conjunction</catDesc>
-           </category>
-           <category xml:id="ccomp">
-              <catDesc xml:lang="en"><term>ccomp</term>: Clausal complement</catDesc>
-           </category>
-           <category xml:id="cc_preconj">
-              <catDesc xml:lang="en"><term>cc:preconj</term>: Preconjunct</catDesc>
-           </category>
-           <category xml:id="compound">
-              <catDesc xml:lang="en"><term>compound</term>: Compound</catDesc>
-           </category>
-           <category xml:id="conj">
-              <catDesc xml:lang="en"><term>conj</term>: Conjunct</catDesc>
-           </category>
-           <category xml:id="cop">
-              <catDesc xml:lang="en"><term>cop</term>: Copula</catDesc>
-           </category>
-           <category xml:id="csubj">
-              <catDesc xml:lang="en"><term>csubj</term>: Clausal subject</catDesc>
-           </category>
-           <category xml:id="csubj_pass">
-              <catDesc xml:lang="en"><term>csubj:pass</term>: Clausal passive subject</catDesc>
-           </category>
-           <category xml:id="dep">
-              <catDesc xml:lang="en"><term>dep</term>: Unspecified dependency</catDesc>
-           </category>
-           <category xml:id="det">
-              <catDesc xml:lang="en"><term>det</term>: Determiner</catDesc>
-           </category>
-           <category xml:id="det_numgov">
-              <catDesc xml:lang="en"><term>det:numgov</term>: Pronominal quantifier governing the case of the noun</catDesc>
-           </category>
-           <category xml:id="det_nummod">
-              <catDesc xml:lang="en"><term>det:nummod</term>: Pronominal quantifier agreeing in case with the noun</catDesc>
-           </category>
-           <category xml:id="discourse">
-              <catDesc xml:lang="en"><term>discourse</term>: Discourse element</catDesc>
-           </category>
-           <category xml:id="expl">
-              <catDesc xml:lang="en"><term>expl</term>: Expletive</catDesc>
-           </category>
-           <category xml:id="expl_pass">
-              <catDesc xml:lang="en"><term>expl:pass</term>: Reflexive pronoun used in reflexive passive</catDesc>
-           </category>
-           <category xml:id="expl_pv">
-              <catDesc xml:lang="en"><term>expl:pv</term>: Reflexive clitic with an inherently reflexive verb</catDesc>
-           </category>
-           <category xml:id="fixed">
-              <catDesc xml:lang="en"><term>fixed</term>: Fixed multiword expression</catDesc>
-           </category>
-           <category xml:id="flat">
-              <catDesc xml:lang="en"><term>flat</term>: Flat multiword expression</catDesc>
-           </category>
-           <category xml:id="flat_foreign">
-              <catDesc xml:lang="en"><term>flat:foreign</term>: Flat multiword expression: foreign</catDesc>
-           </category>
-           <category xml:id="flat_name">
-              <catDesc xml:lang="en"><term>flat:name</term>: Flat name</catDesc>
-           </category>
-           <category xml:id="iobj">
-              <catDesc xml:lang="en"><term>iobj</term>: Indirect object</catDesc>
-           </category>
-           <category xml:id="mark">
-              <catDesc xml:lang="en"><term>mark</term>: Marker</catDesc>
-           </category>
-           <category xml:id="nmod">
-              <catDesc xml:lang="en"><term>nmod</term>: Nominal modifier</catDesc>
-           </category>
-           <category xml:id="nsubj">
-              <catDesc xml:lang="en"><term>nsubj</term>: Nominal subject</catDesc>
-           </category>
-           <category xml:id="nsubj_pass">
-              <catDesc xml:lang="en"><term>nsubj:pass</term>: Passive nominal subject</catDesc>
-           </category>
-           <category xml:id="nummod">
-              <catDesc xml:lang="en"><term>nummod</term>: Numeric modifier</catDesc>
-           </category>
-           <category xml:id="nummod_gov">
-              <catDesc xml:lang="en"><term>nummod:gov</term>: Numeric modifier governing the case of the noun</catDesc>
-           </category>
-           <category xml:id="obj">
-              <catDesc xml:lang="en"><term>obj</term>: Object</catDesc>
-           </category>
-           <category xml:id="obl">
-              <catDesc xml:lang="en"><term>obl</term>: Oblique nominal</catDesc>
-           </category>
-           <category xml:id="obl_arg">
-              <catDesc xml:lang="en"><term>obl:arg</term>: Oblique argument</catDesc>
-           </category>
-           <category xml:id="orphan">
-              <catDesc xml:lang="en"><term>orphan</term>: Orphan</catDesc>
-           </category>
-           <category xml:id="parataxis">
-              <catDesc xml:lang="en"><term>parataxis</term>: Parataxis</catDesc>
-           </category>
-           <category xml:id="punct">
-              <catDesc xml:lang="en"><term>punct</term>: Punctuation</catDesc>
-           </category>
-           <category xml:id="reparandum">
-              <catDesc xml:lang="en"><term>reparandum</term>: Overridden disfluency (here used for program mistakes!)</catDesc>
-           </category>
-           <category xml:id="root">
-              <catDesc xml:lang="en"><term>root</term>: Root</catDesc>
-           </category>
-           <category xml:id="vocative">
-              <catDesc xml:lang="en"><term>vocative</term>: Vocative</catDesc>
-           </category>
-           <category xml:id="xcomp">
-              <catDesc xml:lang="en"><term>xcomp</term>: Open clausal complement</catDesc>
-           </category>
-        </taxonomy>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-UD-SYN.xml"/>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>

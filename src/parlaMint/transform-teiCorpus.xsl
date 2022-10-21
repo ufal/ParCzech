@@ -48,7 +48,7 @@
       <xsl:apply-templates select="element()"/>
     </xsl:element>
   </xsl:template>
-  <xsl:template match="xi:include[parent::tei:particDesc]">
+  <xsl:template match="xi:include[ancestor::tei:teiHeader]">
     <xsl:choose>
       <xsl:when test="$insert-include = 1">
         <xsl:message select="concat('inserting content of ',@href)"/>
@@ -108,8 +108,8 @@
   </xsl:template>
 
   <xsl:template match="tei:classDecl">
-    <xsl:copy>
-      <xsl:apply-templates select="./tei:taxonomy"/>
+    <xsl:element name="{name()}">
+      <xsl:apply-templates select="element()"/>
       <taxonomy xml:id="subcorpus">
          <desc xml:lang="cs"><term>Podkorpusy</term></desc>
          <desc xml:lang="en"><term>Subcorpora</term></desc>
@@ -122,7 +122,7 @@
             <catDesc xml:lang="en"><term>COVID</term>: COVID subcorpus, from 2019-11-01 onwards</catDesc>
          </category>
       </taxonomy>
-    </xsl:copy>
+    </xsl:element>
   </xsl:template>
 
 
