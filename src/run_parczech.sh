@@ -700,12 +700,19 @@ function consolidate() {
     cp  "$5/ParCzech-listOrg.xml" $2/
     cp  "$5/ParCzech-listPerson.xml" $2/
     mv "$2/$3" "$2/${4}.xml"
+    java -cp /usr/share/java/saxon.jar net.sf.saxon.Query \
+         -xi:off \!method=adaptive \
+         -qs:'//*/*[local-name()="classDecl"]/*[local-name()="include"]/@href' \
+         -s:"$2/${4}.xml" \
+         | sed 's/^ *href="//;s/"//' \
+         | xargs -I {} cp metadater/taxonomies/{} $2
     xmlstarlet edit --inplace \
                     --update "/_:teiCorpus/@xml:id" \
                     --value "${4}" \
                     "$2/${4}.xml"
   else
     echo "Consolidating new data $1 to $2"
+    echo "Merging organizations and persons is not implemented !!!"
     rsync -a --backup --suffix=".${ID}" --exclude "$3"  "$1/" "$2"
     mv "$2/${4}.xml" "$2/${4}.xml.${ID}"
     perl -I lib lib/ParCzech/XMLmerge.pm  "$2/${4}.xml.${ID}" "$1/$3" "$2/${4}.xml"
