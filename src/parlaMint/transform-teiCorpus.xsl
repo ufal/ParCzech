@@ -26,12 +26,7 @@
   </xsl:template>
   <xsl:template match="/tei:teiCorpus/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@ident='pdt']" /><!-- removing pdt prefix definition -->
 
-  <xsl:template match="/tei:teiCorpus"> <!-- needed to remove unused namespaces -->
-    <xsl:element name="{name()}">
-      <xsl:apply-templates select="@*"/>
-      <xsl:apply-templates select="element()"/>
-    </xsl:element>
-  </xsl:template>
+
   <xsl:template match="/tei:teiCorpus/xi:include">
     <xsl:element name="xi:include" namespace="http://www.w3.org/2001/XInclude">
       <xsl:namespace name="xi" select="'http://www.w3.org/2001/XInclude'"/>
@@ -41,13 +36,6 @@
     </xsl:element>
   </xsl:template>
 
-
-  <xsl:template match="//tei:particDesc"> <!-- needed to remove unused namespaces -->
-    <xsl:element name="{name()}">
-      <xsl:apply-templates select="@*"/>
-      <xsl:apply-templates select="element()"/>
-    </xsl:element>
-  </xsl:template>
   <xsl:template match="xi:include[ancestor::tei:teiHeader]">
     <xsl:choose>
       <xsl:when test="$insert-include = 1">
@@ -58,7 +46,17 @@
         <xsl:element name="xi:include" namespace="http://www.w3.org/2001/XInclude">
           <xsl:namespace name="xi" select="'http://www.w3.org/2001/XInclude'"/>
           <xsl:attribute name="href">
-            <xsl:value-of select="replace(@href,'ParCzech','ParlaMint-CZ')"/>
+            <xsl:choose>
+              <xsl:when test="matches(@href,'^ParCzech-list.*\.xml')">
+                <xsl:value-of select="replace(@href,'ParCzech','ParlaMint-CZ')"/>
+              </xsl:when>
+              <xsl:when test="matches(@href,'^taxonomy-(subcorpus|parla.legislature|speaker_types|NER|UD-SYN)\.xml')">
+                <xsl:value-of select="concat('ParlaMint-',@href)"/>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:value-of select="concat('ParlaMint-CZ-',@href)"/>
+              </xsl:otherwise>
+            </xsl:choose>
           </xsl:attribute>
         </xsl:element>
       </xsl:otherwise>
@@ -108,21 +106,31 @@
   </xsl:template>
 
   <xsl:template match="tei:classDecl">
-    <xsl:element name="{name()}">
+    <xsl:copy>
       <xsl:apply-templates select="element()"/>
-      <taxonomy xml:id="subcorpus">
-         <desc xml:lang="cs"><term>Podkorpusy</term></desc>
-         <desc xml:lang="en"><term>Subcorpora</term></desc>
-         <category xml:id="reference">
-            <catDesc xml:lang="cs"><term>Referenční</term>: referenční podkorpus, do 2019-10-31</catDesc>
-            <catDesc xml:lang="en"><term>Reference</term>: reference subcorpus, until 2019-10-31</catDesc>
-         </category>
-         <category xml:id="covid">
-            <catDesc xml:lang="cs"><term>COVID</term>: COVID podkorpus, od 2019-11-01 dále</catDesc>
-            <catDesc xml:lang="en"><term>COVID</term>: COVID subcorpus, from 2019-11-01 onwards</catDesc>
-         </category>
-      </taxonomy>
-    </xsl:element>
+      <xsl:choose>
+        <xsl:when test="$insert-include = 1">
+          <taxonomy xml:id="subcorpus">
+             <desc xml:lang="cs"><term>Podkorpusy</term></desc>
+             <desc xml:lang="en"><term>Subcorpora</term></desc>
+             <category xml:id="reference">
+                <catDesc xml:lang="cs"><term>Referenční</term>: referenční podkorpus, do 2019-10-31</catDesc>
+                <catDesc xml:lang="en"><term>Reference</term>: reference subcorpus, until 2019-10-31</catDesc>
+             </category>
+             <category xml:id="covid">
+                <catDesc xml:lang="cs"><term>COVID</term>: COVID podkorpus, od 2019-11-01 dále</catDesc>
+                <catDesc xml:lang="en"><term>COVID</term>: COVID subcorpus, from 2019-11-01 onwards</catDesc>
+             </category>
+          </taxonomy>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:element name="xi:include" namespace="http://www.w3.org/2001/XInclude">
+            <xsl:namespace name="xi" select="'http://www.w3.org/2001/XInclude'"/>
+            <xsl:attribute name="href">ParlaMint-taxonomy-subcorpus.xml</xsl:attribute>
+          </xsl:element>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:copy>
   </xsl:template>
 
 
