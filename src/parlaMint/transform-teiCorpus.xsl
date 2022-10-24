@@ -38,6 +38,9 @@
 
   <xsl:template match="xi:include[ancestor::tei:teiHeader]">
     <xsl:choose>
+      <xsl:when test="contains(@href,'parla.links')">
+        <xsl:message select="concat('removing: ',@href)"/>
+      </xsl:when>
       <xsl:when test="$insert-include = 1">
         <xsl:message select="concat('inserting content of ',@href)"/>
         <xsl:copy-of select="document(@href)"/>
