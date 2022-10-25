@@ -62,8 +62,14 @@ if($person_list_in){
   print STDERR "Adding seen government urls: $person_list_in\n";
   my $personlist = ParCzech::PipeLine::FileManager::XML::open_xml($person_list_in);
   my $xpc = ParCzech::PipeLine::FileManager::TeiFile::new_XPathContext();
-  for my $idno (map {trim $_} grep {/vlada.cz/} $xpc->findnodes('//tei:person/tei:idno/text()',$personlist->{dom})) {
-    push @pers_urls,"$idno" if is_new($idno);
+  for my $idno ($xpc->findnodes('//tei:person/tei:idno[contains(text(),"vlada.cz")]',$personlist->{dom})) {
+    my $url = trim $idno->textContent();
+    push @pers_urls,
+         [
+           $url,
+           trim($xpc->findvalue('../tei:persName/tei:surname',$idno)),
+           trim($xpc->findvalue('../tei:persName/tei:forename',$idno))
+         ] if is_new($url);
   }
 }
 
@@ -84,20 +90,24 @@ for my $gov_url (@gov_urls) {
   print STDERR "DOWNLOADING: $gov_url\n";
   next unless doc_loaded;
   for my $pers_link (grep {m/clenove-vlady.*-\d+\/?$/} xpath_string('//div[has(@class,"content-main")]//p/a/@href')) {
-    push @pers_urls,"$pers_link" if is_new($pers_link);
+    push @pers_urls,["$pers_link",'',''] if is_new($pers_link);
   }
 }
 
 my $fh;
 open($fh,'>:encoding(utf-8)',  File::Spec->catfile($db_out_dir,'gov_osoby.unl')) or die "Cannot open:$!\n";
 
-for my $pers_link (@pers_urls) {
+for my $pers (@pers_urls) {
+  my ($pers_link,$sname,$fname) = @$pers;
   $pers_link = "$URL$pers_link" unless $pers_link =~ m/^http/;
   make_request($pers_link);
   print STDERR "DOWNLOADING: $pers_link\n";
-  next unless doc_loaded;
   my ($id) = $pers_link =~ m/[^\/]*-([0-9]*)\/?$/;
   next unless is_new("PERSON-$id");
+  if( !doc_loaded || xpath_node('//h1[contains(text(),"Zadaná adresa není na našem webu dostupná")]')){
+    print $fh "$id||$sname|$fname||||||\n" if $fname and $sname;
+    next;
+  }
   my $main = xpath_node('//*[has(@class,"content-main")]');
   next unless $main;
   my $persName = xpath_string('./h1[1]',$main);
