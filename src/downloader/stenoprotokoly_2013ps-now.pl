@@ -430,7 +430,7 @@ sub record_exporter {
       add_pagebreak_and_audio_to_teiFile($link); # add audio if possible
       $teiFile->addPageTime($pagedate) if $pagedate;
       $teiFile->addSittingDate($datetime) if $datetime;
-      debug_print( "  UTTERANCE " .($$ref_author->{authorname}), __LINE__, 5);
+      debug_print( "  UTTERANCE " .($$ref_author->{authorname}), __LINE__, 5) if scalar(%$$ref_author);
       my $id = $teiFile->addUtterance(
         author => {
           author_full => $$ref_author->{author},
@@ -442,7 +442,7 @@ sub record_exporter {
         },
 
        # link =>  $$ref_post->{link}.'#'.($$ref_post->{id}->{post}//'')
-      );
+      ) if scalar(%$$ref_author);
 
     }
     if(my $status_str = xpath_string('.//strong[contains(text(), "eautorizováno !" )]',$cnt) ) { # Neautorizováno or neautorizováno
