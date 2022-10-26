@@ -405,7 +405,12 @@ sub close_paragraph {
 
   $self->add_notes_and_spaces_to_queue();
   $self->print_queue();
-
+  if(my ($last_token) = reverse $xpc->findnodes('.//s[last()]/*[local-name()="w" or local-name()="pc"][text()][last()]',$self->{paragraph})){
+    if($last_token->hasAttribute('join')){
+      $last_token->removeAttribute('join');
+      $ParCzech::PipeLine::FileManager::logger->log_line("removing attribute join at the end of paragraph from token ".$last_token->getAttributeNS($xmlNS,'id'));
+    }
+  }
   undef $self->{paragraph};
   undef $self->{paragraph_ptr};
 }
