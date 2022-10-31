@@ -15,7 +15,7 @@
     <catDesc xml:lang="en"><term>Regular</term>: a regular speaker at a sitting</catDesc>
   </category>
   <category xml:id="guest">
-    <catDesc xml:lang="cs"><term>Host</term>: ghostující řečník na sezení</catDesc>
+    <catDesc xml:lang="cs"><term>Host</term>: hostující řečník na sezení</catDesc>
     <catDesc xml:lang="en"><term>Guest</term>: a guest speaker at a sitting</catDesc>
   </category>
 </taxonomy>
