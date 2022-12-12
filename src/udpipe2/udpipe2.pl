@@ -89,6 +89,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
   next unless defined($current_file->{dom});
 
   my $doc = $current_file->get_doc();
+  my %seen_elems_to_annotate;
   for my $lng (sort keys %models){
     my $act_model = $models{$lng}->{model};
     my $act_xpath = $models{$lng}->{xpath};
@@ -102,6 +103,12 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
       while(my $parent = shift @parents) {
         my $contain_text = undef;
         my $parent_id = $parent->getAttributeNS('http://www.w3.org/XML/1998/namespace','id');
+        if($parent_id) {
+          $ParCzech::PipeLine::FileManager::logger->log_line("ERROR: Duplicite id $parent_id") if defined $seen_elems_to_annotate{$parent_id};
+          $seen_elems_to_annotate{$parent_id} = $parent;
+        } else {
+          $ParCzech::PipeLine::FileManager::logger->log_line("ERROR: Missing ",$parent->nodeName()," element id");
+        }
         $parent_cnt++;
         for my $chnode ($parent->childNodes()) {
           $chnode->unbindNode();
@@ -176,6 +183,17 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
   }
   $current_file->add_static_data('udpipe2.prefix-pdt', $append_metadata) if $append_metadata and ! $no_lemma_tag;
   $current_file->add_static_data('udpipe2.ud-syn', $append_metadata) if $append_metadata and ! $no_parse;
+
+  for my $not_ann_node (
+                 grep {! defined $seen_elems_to_annotate{$_->getAttributeNS('http://www.w3.org/XML/1998/namespace','id')} }
+                      $xpc->findnodes('//tei:text//tei:*[contains(" '.join(' ',split(',',$elements_names)).' ", concat(" ",name()," "))]',$doc)) {
+    my $lng = $not_ann_node->findvalue('ancestor-or-self::*[@xml:lang][1]/@xml:lang');
+    $ParCzech::PipeLine::FileManager::logger->log_line("ERROR: element <".
+                                                       $not_ann_node->nodeName.
+                                                       ">(id=".
+                                                       $not_ann_node->getAttributeNS('http://www.w3.org/XML/1998/namespace','id').
+                                                       ") lang=$lng was not annotated")
+  }
 
   #print STDERR $xpc->findnodes('//tei:text',$doc);
   if($test) {
