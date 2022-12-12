@@ -20,14 +20,14 @@ my $dirname = dirname($scriptname);
 
 my $udsyn_taxonomy = File::Spec->catfile($dirname,'tei_udsyn_taxonomy.xml');
 
-my ($debug, $try2continue_on_error, $test, $no_lemma_tag, $no_parse, $model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores, $try2fix_spaces, $token, $use_xpos);
+my ($debug, $try2continue_on_error, $test, $no_lemma_tag, $no_parse, @model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores, $try2fix_spaces, $token, $use_xpos);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
 my $xpc = ParCzech::PipeLine::FileManager::TeiFile::new_XPathContext();
 
 my $url = 'http://lindat.mff.cuni.cz/services/udpipe/api/process';
-$elements_names = "seg,head";
+$elements_names = "seg";
 $sub_elements_names = "ref";
 my $word_element_name = 'w';
 my $punct_element_name = 'pc';
@@ -47,7 +47,7 @@ GetOptions ( ## Command line options
             'no-lemma-tag' => \$no_lemma_tag, # no tags and lemmas
             'use-xpos' => \$use_xpos, # use xpos tags
             'no-parse' => \$no_parse, # no dependency parsing
-            'model=s' => \$model, # udpipe model tagger
+            'model=s' => \@model, # udpipe model tagger
             'elements=s' => \$elements_names,
             'sub-elements=s' => \$sub_elements_names, # child elements that are also tokenized
             'word-element=s' => \$word_element_name,
@@ -60,7 +60,19 @@ GetOptions ( ## Command line options
 usage_exit() unless ParCzech::PipeLine::FileManager::process_opts();
 
 
-usage_exit() unless $model;
+usage_exit('Missing model') unless @model;
+
+my %models;
+for my $mod (@model){
+  my ($l,$m) = $mod =~ m/^([^:]*?):?([^:]*)$/;
+  usage_exit('Two models for one language is not allowed') if defined $models{$l};
+  $models{$l} = {
+    xpath => ($l ? " and ancestor-or-self::*[\@xml:lang][1]/\@xml:lang=\"$l\" " : ''),
+    model => $m
+  }
+}
+
+usage_exit('It is not allowed to combine models with (lang:model) and without(model) language specification') if defined $models{''} and keys %models > 1;
 
 my %sub_elements_names_filter = map {$_ => 1} split(',', $sub_elements_names);
 
@@ -77,88 +89,91 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
   next unless defined($current_file->{dom});
 
   my $doc = $current_file->get_doc();
-
-  my @parents = $xpc->findnodes('//tei:text//tei:*[contains(" '.join(' ',split(',',$elements_names)).' ", concat(" ",name()," "))]',$doc);
-  while(@parents) {
-    my @nodes = (); # {parent: ..., node: ..., text: ..., tokenize: boolean}
-    my $text = '';
-    my $parent_cnt = 0;
-    my $grandpa = undef;
-    while(my $parent = shift @parents) {
-      my $contain_text = undef;
-      my $parent_id = $parent->getAttributeNS('http://www.w3.org/XML/1998/namespace','id');
-      $parent_cnt++;
-      for my $chnode ($parent->childNodes()) {
-        $chnode->unbindNode();
-        my $child = {
-          parent => $parent,
-          parent_id => $parent_id,
-          parent_cnt => $parent_cnt,
-          node => $chnode,
-          text => ($try2fix_spaces?' ':''),
-          len => ($try2fix_spaces?1:0),
-          textptr => length($text),
-          tokenize => 0
-        };
-        if ( $chnode->nodeType == XML_TEXT_NODE || exists $sub_elements_names_filter{$chnode->nodeName}) {
-          $child->{text} = $chnode->textContent();
-          $child->{text} =~ s/[\n\r ]+/ /g;
-          $child->{len} = length($child->{text});
-          if($chnode->nodeType != XML_TEXT_NODE) {
-            if ( $chnode->textContent =~ /^\s*$/ ) {
-              $ParCzech::PipeLine::FileManager::logger->log_line("SKIPPING element: does not contains text to be tokenized",$chnode );
-            } else {
-              $child->{tokenize} = 1;
+  for my $lng (sort keys %models){
+    my $act_model = $models{$lng}->{model};
+    my $act_xpath = $models{$lng}->{xpath};
+    $ParCzech::PipeLine::FileManager::logger->log_line("INFO: processing $lng with $act_model" );
+    my @parents = $xpc->findnodes('//tei:text//tei:*[contains(" '.join(' ',split(',',$elements_names)).' ", concat(" ",name()," "))'.$act_xpath.']',$doc);
+    while(@parents) {
+      my @nodes = (); # {parent: ..., node: ..., text: ..., tokenize: boolean}
+      my $text = '';
+      my $parent_cnt = 0;
+      my $grandpa = undef;
+      while(my $parent = shift @parents) {
+        my $contain_text = undef;
+        my $parent_id = $parent->getAttributeNS('http://www.w3.org/XML/1998/namespace','id');
+        $parent_cnt++;
+        for my $chnode ($parent->childNodes()) {
+          $chnode->unbindNode();
+          my $child = {
+            parent => $parent,
+            parent_id => $parent_id,
+            parent_cnt => $parent_cnt,
+            node => $chnode,
+            text => ($try2fix_spaces?' ':''),
+            len => ($try2fix_spaces?1:0),
+            textptr => length($text),
+            tokenize => 0
+          };
+          if ( $chnode->nodeType == XML_TEXT_NODE || exists $sub_elements_names_filter{$chnode->nodeName}) {
+            $child->{text} = $chnode->textContent();
+            $child->{text} =~ s/[\n\r ]+/ /g;
+            $child->{len} = length($child->{text});
+            if($chnode->nodeType != XML_TEXT_NODE) {
+              if ( $chnode->textContent =~ /^\s*$/ ) {
+                $ParCzech::PipeLine::FileManager::logger->log_line("SKIPPING element: does not contains text to be tokenized",$chnode );
+              } else {
+                $child->{tokenize} = 1;
+              }
             }
+            $chnode->removeChildNodes()
+            # TODO test if it does not contain element_node -> warn !!!
           }
-          $chnode->removeChildNodes()
-          # TODO test if it does not contain element_node -> warn !!!
+          $text .= $child->{text};
+          $child->{textptr_end} = length($text);
+          push @nodes,$child;
+          $contain_text = 1;
         }
-        $text .= $child->{text};
-        $child->{textptr_end} = length($text);
-        push @nodes,$child;
-        $contain_text = 1;
-      }
-      unless($contain_text){
-        $ParCzech::PipeLine::FileManager::logger->log_line("SKIPPING paragraph-like element: does not contains text to be tokenized",$parent );
-        next;
-      }
-      # do not append next paragraph when punctation is not at the end of current paragraph:
-      last unless $text =~ m/[\.!?|)}\]"']\s*/;
-      # newline between segments !!!
-      $text .= "\r\n\r\n"; # force html4.01 endlines "CR LF" to not break tokenRanges https://github.com/libwww-perl/HTTP-Message/blob/b8a00e5b149d4a2396c88f3b00fd2f6e1386407f/lib/HTTP/Request/Common.pm#L91
-      my $grandpa_a = $parent->parentNode();
-      last if length($text) > $soft_max_text_length and not($grandpa == $grandpa_a);
-      $grandpa = $grandpa_a;
-    }
-    my $nodeptr = 0;
-    while($text){
-      my $act_text = $text;
-      my $conll = run_udpipe($act_text);
-      my $text_index = 0;
-      my $space='';
-      if($text_index = find_first_merged_paragraph($conll)){
-        $act_text = substr $text, 0, $text_index, '';
-        ($space,$text) = $text =~ /^([\r\n]*)(.*)$/s;
-        $text_index += length $space;
-        $conll = run_udpipe($act_text);
-      } else {
-        $text = '';
-      }
-      $ParCzech::PipeLine::FileManager::logger->log_line("Starting annotating at:",$nodes[$nodeptr]?$nodes[$nodeptr]->{parent_id}:'no node') if $debug;
-      $nodeptr = fill_conllu_data_doc($conll, $act_text, $nodeptr, @nodes); # return nodeptr -> number of nodes used
-      if ($text_index){
-        $ParCzech::PipeLine::FileManager::logger->log_line("UDPipe request splitted at",$nodes[$nodeptr]->{parent_id},"node");
-        for my $i ($nodeptr..$#nodes){ # patch index to text
-          $nodes[$i]->{textptr} -= $text_index;
-          $nodes[$i]->{textptr_end} -= $text_index;
+        unless($contain_text){
+          $ParCzech::PipeLine::FileManager::logger->log_line("SKIPPING paragraph-like element: does not contains text to be tokenized",$parent );
+          next;
         }
+        # do not append next paragraph when punctation is not at the end of current paragraph:
+        last unless $text =~ m/[\.!?|)}\]"']\s*/;
+        # newline between segments !!!
+        $text .= "\r\n\r\n"; # force html4.01 endlines "CR LF" to not break tokenRanges https://github.com/libwww-perl/HTTP-Message/blob/b8a00e5b149d4a2396c88f3b00fd2f6e1386407f/lib/HTTP/Request/Common.pm#L91
+        my $grandpa_a = $parent->parentNode();
+        last if length($text) > $soft_max_text_length and not($grandpa == $grandpa_a);
+        $grandpa = $grandpa_a;
       }
+      my $nodeptr = 0;
+      while($text){
+        my $act_text = $text;
+        my $conll = run_udpipe($act_text, $act_model);
+        my $text_index = 0;
+        my $space='';
+        if($text_index = find_first_merged_paragraph($conll)){
+          $act_text = substr $text, 0, $text_index, '';
+          ($space,$text) = $text =~ /^([\r\n]*)(.*)$/s;
+          $text_index += length $space;
+          $conll = run_udpipe($act_text, $act_model);
+        } else {
+          $text = '';
+        }
+        $ParCzech::PipeLine::FileManager::logger->log_line("Starting annotating at:",$nodes[$nodeptr]?$nodes[$nodeptr]->{parent_id}:'no node') if $debug;
+        $nodeptr = fill_conllu_data_doc($conll, $act_text, $nodeptr, @nodes); # return nodeptr -> number of nodes used
+        if ($text_index){
+          $ParCzech::PipeLine::FileManager::logger->log_line("UDPipe request splitted at",$nodes[$nodeptr]->{parent_id},"node");
+          for my $i ($nodeptr..$#nodes){ # patch index to text
+            $nodes[$i]->{textptr} -= $text_index;
+            $nodes[$i]->{textptr_end} -= $text_index;
+          }
+        }
 
+      }
     }
+    $current_file->add_static_data('udpipe2.app-'.$act_model, $append_metadata) if $append_metadata;
   }
-
-  $current_file->add_static_data('udpipe2.app-'.$model, $append_metadata) if $append_metadata;
   $current_file->add_static_data('udpipe2.prefix-pdt', $append_metadata) if $append_metadata and ! $no_lemma_tag;
   $current_file->add_static_data('udpipe2.ud-syn', $append_metadata) if $append_metadata and ! $no_parse;
 
@@ -173,7 +188,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
 
 
 sub run_udpipe {
-  my ($_text, $_model, $_url) = (@_, $model, $url);
+  my ($_text, $_model, $_url) = (@_, $url);
   my %form = (
     "tokenizer" => "ranges",
     $no_lemma_tag ? () : ("tagger" => "1"),
@@ -298,20 +313,26 @@ sub fill_conllu_data_doc {
 
 
 sub usage_exit {
+  my $msg = shift;
    my ($fm_args,$fm_desc) =  @{ParCzech::PipeLine::FileManager::usage('tei')};
+   print "ERROR: $msg\n\n" if $msg;
    print
-"Usage: udpipe2.pl  $fm_args --model <STRING> [--test] [--no-parse] [--no-lemma-tag] [OPTIONAL]
+"Usage: udpipe2.pl  $fm_args (--model <STRING>)+ [--test] [--no-parse] [--no-lemma-tag] [OPTIONAL]
 
 $fm_desc
 
 \t--model=s\tspecific UDPipe model
+\t\t\tif single model and no language specification, then annotation is run on all elements
+\t\t\tit is also possible to specify language:
+\t\t\t\t--model 'cs:czech-pdt-ud-2.10-220711'
+\t\t\t\tthen only elements with specific xml:lang='cs' is processed with czech-pdt-ud-2.10-220711
 \t--test\tprint result to stdout - don't change any file
 \t--append-metadata\tappend metadata to header from file
 \t--no-parse\tno dependency parsing
 \t--no-lemma-tag\tno lemmas and tags
 
 OPTIONAL:
-\t--elements=s\tcomma separated names of elements to be tokenized and tagged. Default value: seg,head
+\t--elements=s\tcomma separated names of elements to be tokenized and tagged. Default value: seg
 \t--sub-elements=s\tcomma separated names of elements to be tokenized and tagged (child nodes of elements). Other sub-elements are skipped. Default value: ref
 \t--word-element=s\tname of word element
 \t--punct-element=s\tname of punctation element
