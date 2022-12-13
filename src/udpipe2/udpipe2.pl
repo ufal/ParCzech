@@ -146,7 +146,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
           next;
         }
         # do not append next paragraph when punctation is not at the end of current paragraph:
-        last unless $text =~ m/[\.!?|)}\]"']\s*/;
+        last unless $text =~ m/[\.!?|)}\]"']\s*$/;
         # newline between segments !!!
         $text .= "\r\n\r\n"; # force html4.01 endlines "CR LF" to not break tokenRanges https://github.com/libwww-perl/HTTP-Message/blob/b8a00e5b149d4a2396c88f3b00fd2f6e1386407f/lib/HTTP/Request/Common.pm#L91
         my $grandpa_a = $parent->parentNode();
@@ -266,7 +266,7 @@ sub run_udpipe {
 
 sub find_first_merged_paragraph {
   my $conll = shift;
-  my ($bad_split_line) = $conll =~ m/(\d*[^\n]*SpacesAfter=(?:(?:\\r)\\n){2,}\|TokenRange=[\d:]*)\n\d/s;
+  my ($bad_split_line) = $conll =~ m/(\d*[^\n]*SpacesAfter=(?:\\s)*(?:(?:\\r)\\n){2,}\|TokenRange=[\d:]*)\n\d/s;
   if( $bad_split_line ){
     $ParCzech::PipeLine::FileManager::logger->log_line("bad split line: ",$bad_split_line);
     my ($index) = $bad_split_line =~ m/TokenRange=\d*:(\d*)/;
