@@ -20,7 +20,7 @@ my $dirname = dirname($scriptname);
 
 my $udsyn_taxonomy = File::Spec->catfile($dirname,'tei_udsyn_taxonomy.xml');
 
-my ($debug, $try2continue_on_error, $test, $no_lemma_tag, $no_parse, @model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores, $try2fix_spaces, $token, $use_xpos);
+my ($debug, $try2continue_on_error, $test, $no_lemma_tag, $no_parse, @model, $elements_names, $sub_elements_names, $append_metadata, $replace_colons_with_underscores, $try2fix_spaces, $token, $use_xpos, $no_space_in_punct);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -52,6 +52,7 @@ GetOptions ( ## Command line options
             'sub-elements=s' => \$sub_elements_names, # child elements that are also tokenized
             'word-element=s' => \$word_element_name,
             'punct-element=s' => \$punct_element_name,
+            'no-space-in-punct' => \$no_space_in_punct,
             'sent-element=s' => \$sent_element_name,
             ParCzech::PipeLine::FileManager::opts()
 #            'tags=s' => \@tags, # tag attribute name|format (pos cs::pdt)
@@ -641,10 +642,13 @@ sub add_notes_and_spaces_to_queue {
 sub add_token {
   my $self = shift;
   my %opts = @_;
-  warn "Not in sentence!!! $opts{forn}\n" unless $self->{sentence};
+  warn "Not in sentence!!! $opts{form}\n" unless $self->{sentence};
   $self->add_line_text($opts{line}) if $opts{line};
 
-  my $token = XML::LibXML::Element->new(($opts{upos}//'') eq 'PUNCT' ? $punct_element_name : $word_element_name );
+  my $token_elem_name = ($opts{upos}//'') eq 'PUNCT' ? $punct_element_name : $word_element_name;
+  $token_elem_name = $word_element_name if $no_space_in_punct && $opts{form} =~ m/\s/;
+
+  my $token = XML::LibXML::Element->new($token_elem_name);
 
   $self->{token_counter}++;
   my $id = sprintf("%s.w%d",$self->{token_id_prefix}, $self->{token_counter});
