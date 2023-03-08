@@ -448,6 +448,7 @@ mkdir -p $UDPIPE_TEI
 log "annotating udpipe2 $UDPIPE_TEI"
 
 perl -I lib udpipe2/udpipe2.pl --colon2underscore \
+                               --use-xpos \
                                --lindat-token "$LINDAT_TOKEN" \
                                --model=czech-pdt-ud-2.10-220711 \
                                --filelist $TEI_FILELIST \
@@ -511,9 +512,8 @@ if skip_process "nametag2" "$NAMETAG_TEI" "$EXISTING_FILELIST" ; then # BEGIN NA
 mkdir -p $NAMETAG_TEI
 log "annotating nametag2  $NAMETAG_TEI"
 
-perl -I lib nametag2/nametag2.pl --conll2003 \
+perl -I lib nametag2/nametag2.pl --cnec2conll2003 \
                                  --varied-tei-elements \
-                                 --use-xpos \
                                  --lindat-token "$LINDAT_TOKEN" \
                                  --model=czech-cnec2.0-200831 \
                                  --filelist $TEI_FILELIST \

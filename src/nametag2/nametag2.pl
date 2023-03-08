@@ -13,7 +13,7 @@ use ParCzech::PipeLine::FileManager "nametag";
 
 my $scriptname = $0;
 
-my ($debug, $test, $model, $token);
+my ($debug, $test, @model, $token);
 
 my$xmlNS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -32,10 +32,10 @@ my $max_sent_cnt = 500;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize, tag and lemmatize and parse to stdout, do not change the database
-            'conll2003' => \$connl_type,
+            'cnec2conll2003' => \$connl_type,
             'lindat-token=s' => \$token,
             'varied-tei-elements' => \$varied_tei_elements,
-            'model=s' => \$model, # udpipe model tagger
+            'model=s' => \@model, # nametag model tagger
             'word-element=s' => \$word_element_name,
             'punct-element=s' => \$punct_element_name,
             'sent-element=s' => \$sent_element_name,
@@ -46,7 +46,19 @@ GetOptions ( ## Command line options
 usage_exit() unless ParCzech::PipeLine::FileManager::process_opts();
 
 
-usage_exit() unless $model;
+usage_exit('Missing model') unless @model;
+
+my %models;
+for my $mod (@model){
+  my ($l,$m) = $mod =~ m/^([^:]*?):?([^:]*)$/;
+  usage_exit('Two models for one language is not allowed') if defined $models{$l};
+  my $model_labels = ($m =~ /cnec/) ? 'cnec' : 'conll';
+  $models{$l} = {
+    xpath => ($l ? "[ ancestor-or-self::*[\@xml:lang][1]/\@xml:lang=\"$l\" ]" : ''),
+    model => $m,
+    model_labels => $model_labels,
+  }
+}
 
 my $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
 $ua->default_header(Authorization=>"Bearer lc_$token") if $token;
@@ -58,28 +70,36 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
   my $doc = $current_file->get_doc();
   my $name_id_prefix = $current_file->get_doc_id().'.ne';
 
-  my @sentences = $xpc->findnodes('//tei:text//tei:'.$sent_element_name,$doc);
   my $id_counter = 0;
-  while(@sentences) {
-    my @nodes = (); # {parent: ..., node: ..., text: ..., tokenize: boolean}
-    my $text = '';
-    my $sent_cnt = 0;
-    while(my $sent = shift @sentences) {
-      $sent_cnt++;
-      # find tokens in sentence
-      for my $token ($xpc->findnodes('.//tei:*[contains(" '.$word_element_name.' '.$punct_element_name.' ",concat(" ",name()," ")) and not(normalize-space(.)="")]',$sent)) {
-        $text .= trim($token->textContent());
+
+  for my $lng (sort keys %models){
+    my $model_labels = $models{$lng}->{model_labels};
+    my $act_model = $models{$lng}->{model};
+    my $act_xpath = $models{$lng}->{xpath};
+    $ParCzech::PipeLine::FileManager::logger->log_line("INFO: processing $lng with $act_model" );
+    my @sentences = $xpc->findnodes('//tei:text//tei:'.$sent_element_name.$act_xpath,$doc);
+
+    while(@sentences) {
+      my @nodes = (); # {parent: ..., node: ..., text: ..., tokenize: boolean}
+      my $text = '';
+      my $sent_cnt = 0;
+      while(my $sent = shift @sentences) {
+        $sent_cnt++;
+        # find tokens in sentence
+        for my $token ($xpc->findnodes('.//tei:*[contains(" '.$word_element_name.' '.$punct_element_name.' ",concat(" ",name()," ")) and not(normalize-space(.)="")]',$sent)) {
+          $text .= trim($token->textContent());
+          $text .= "\n";
+          push @nodes,$token;
+        }
+        # newlines between sentences
         $text .= "\n";
-        push @nodes,$token;
+        push @nodes, undef; # empty token between sentences
+        last if $sent_cnt >= $max_sent_cnt;
       }
-      # newlines between sentences
-      $text .= "\n";
-      push @nodes, undef; # empty token between sentences
-      last if $sent_cnt >= $max_sent_cnt;
+  #    print STDERR "TOKENS: ", scalar(@nodes),"========================================================\n";
+      my $vertical = run_nametag($text,$act_model);
+      $id_counter = fill_vertical_data_doc($model_labels, $vertical, $id_counter, $name_id_prefix, @nodes);
     }
-#    print STDERR "TOKENS: ", scalar(@nodes),"========================================================\n";
-    my $vertical = run_nametag($text);
-    $id_counter = fill_vertical_data_doc($vertical, $id_counter, $name_id_prefix, @nodes);
   }
 
   if($test) {
@@ -98,6 +118,7 @@ sub trim {
 
 sub run_nametag {
   my $data = shift;
+  my $model = shift;
   my %form = (
     "input" => "vertical",
     "output" => "vertical",
@@ -114,7 +135,7 @@ sub run_nametag {
 
 
 sub fill_vertical_data_doc {
-  my ($vertical_text, $name_cnt, $name_id_prefix, @node_list) = @_;
+  my ($model_labels, $vertical_text, $name_cnt, $name_id_prefix, @node_list) = @_;
 #  print STDERR "\n\n================================ fill_vertical_data_doc\n";
   my $nodeTagger = NodeTagger->new(@node_list);
   $nodeTagger->set_id_prefix($name_id_prefix);
@@ -134,14 +155,21 @@ sub fill_vertical_data_doc {
     }
     my @linenumbers = split(",",$range);
     $name_cnt++;
-    my $nm = $nodeTagger->add_name_entity($type, $linenumbers[0], $linenumbers[$#linenumbers], $name_cnt);
+    my $attr = "type";
+    if($model_labels eq 'cnec'){
+      $type = "ne:$type";
+      $attr = 'ana';
+    }
+    my $nm = $nodeTagger->add_name_entity($attr, $type, $linenumbers[0], $linenumbers[$#linenumbers], $name_cnt);
     unless($nm){
       $ParCzech::PipeLine::FileManager::logger->log_line("unable to add named entity: $line");
       $ParCzech::PipeLine::FileManager::logger->log_line("nodes: ",scalar(@node_list));
     }
   }
-  $nodeTagger->postprocess(\&cnec2connl) if $connl_type; # note: looking at entity names
-  $nodeTagger->postprocess(\&variedTEI) if $varied_tei_elements; # change entity names
+  if($model_labels eq 'cnec'){
+    $nodeTagger->postprocess(\&cnec2connl) if $connl_type; # note: looking at entity names
+    $nodeTagger->postprocess(\&variedTEI) if $varied_tei_elements; # change entity names
+  }
   return $name_cnt;
 }
 
@@ -243,17 +271,17 @@ sub postprocess {
 
 sub add_name_entity {
   my $self = shift;
-  my ($type, $start, $end, $id) = @_;
+  my ($attr, $type, $start, $end, $id) = @_;
   $start--;
   $end--;
 
   return undef unless $start < @{$self->{nodes}} and $end < @{$self->{nodes}} and $start <= $end and $start >= 0;
-  return $self->cover_tokens_with_name($type, $start, $end, $id)
+  return $self->cover_tokens_with_name($attr, $type, $start, $end, $id)
 }
 
 sub cover_tokens_with_name {
   my $self = shift;
-  my ($type, $start_idx, $end_idx, $id) = @_;
+  my ($attr, $type, $start_idx, $end_idx, $id) = @_;
   my ($start, $end) = ( $self->{nodes}->[$start_idx], $self->{nodes}->[$end_idx] );
   # anc contains: {ancestor, first_child, last_child, depth}
   my $full_id = sprintf("%s%d",$self->{id_prefix},$id);
@@ -271,7 +299,8 @@ sub cover_tokens_with_name {
   }
 
   my $name_elem = XML::LibXML::Element->new('name');
-  $name_elem->setAttribute('ana',"ne:$type");
+  $name_elem->setAttribute($attr,$type);
+
   $name_elem->setAttributeNS($xmlNS, 'id', $full_id);
   # append <name> element to ancestor before first_child
   $anc->{ancestor}->insertBefore($name_elem, $anc->{first_child});
