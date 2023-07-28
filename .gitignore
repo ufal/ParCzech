@@ -1,7 +1,7 @@
 .notes.md
 src/.cache
 src/current_process
-src/out
+src/out*
 **/*.log
 src/downloader/lib/ScrapperUfal.pm
 src/downloader/lib/ScrapperUfal/*
@@ -9,3 +9,8 @@ src/TEITOK
 src/NameTag-module/models
 src/**/*.xml
 src/**/*.mp3
+**/*.gz
+**/tmp
+**/*.zip
+**/*.tmp
+**/*nohup*
