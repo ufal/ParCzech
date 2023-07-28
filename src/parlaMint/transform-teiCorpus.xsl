@@ -74,10 +74,14 @@
 
   <xsl:function name="pcz:patch-corpus-id">
     <xsl:param name="id" />
-    <xsl:if test="contains($id,'.')">
-      <xsl:value-of select="concat($id-prefix,'.',substring-after($id,'.'))" />
-    </xsl:if>
-    <xsl:value-of select="$id-prefix" />
+    <xsl:choose>
+      <xsl:when test="contains($id,'.')">
+        <xsl:value-of select="concat($id-prefix,'.',substring-after($id,'.'))" />
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="$id-prefix" />
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:function>
 
   <xsl:template match="tei:encodingDesc">
