@@ -133,6 +133,17 @@ copy_incl_file() {
   IN_FILE=`echo -n "$OUT_FILE" | sed 's/ParlaMint-CZ-list/ParCzech-list/;s/ParlaMint-CZ-//;s/ParlaMint-//;s/\.ana\.xml$/.xml/'`
   echo cp "$IN_DIR/$IN_FILE" "$OUT_DIR/$OUT_FILE"
   cp "$IN_DIR/$IN_FILE" "$OUT_DIR/$OUT_FILE"
+  # if taxonomy/list then add/fix id
+  if [[ "$OUT_FILE" =~ ^.*(taxonomy|listPerson|listOrg).*.xml ]]; then
+    xmlstarlet edit --inplace \
+                  --update '/*/@xml:id' \
+                    --value "${OUT_FILE%.xml}" \
+                  --insert '/*[not(@xml:id)]' \
+                    --type attr -n 'xml:id' \
+                    --value "${OUT_FILE%.xml}" \
+                  "$OUT_DIR/$OUT_FILE"
+    echo "CHANGE ID: $OUT_DIR/$OUT_FILE"
+  fi
 }
 
 create_parlaMint() {
