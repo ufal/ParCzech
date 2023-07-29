@@ -130,7 +130,7 @@ copy_incl_file() {
   IN_DIR=$1
   OUT_DIR=$2
   OUT_FILE=$3
-  IN_FILE=`echo -n "$OUT_FILE" | sed 's/ParlaMint-CZ-list/ParCzech-list/;s/ParlaMint-CZ-//;s/ParlaMint-//'`
+  IN_FILE=`echo -n "$OUT_FILE" | sed 's/ParlaMint-CZ-list/ParCzech-list/;s/ParlaMint-CZ-//;s/ParlaMint-//;s/\.ana\.xml$/.xml/'`
   echo cp "$IN_DIR/$IN_FILE" "$OUT_DIR/$OUT_FILE"
   cp "$IN_DIR/$IN_FILE" "$OUT_DIR/$OUT_FILE"
 }

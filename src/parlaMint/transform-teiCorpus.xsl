@@ -53,8 +53,14 @@
               <xsl:when test="matches(@href,'^ParCzech-list.*\.xml')">
                 <xsl:value-of select="replace(@href,'ParCzech','ParlaMint-CZ')"/>
               </xsl:when>
-              <xsl:when test="matches(@href,'^taxonomy-(subcorpus|parla.legislature|speaker_types|NER|UD-SYN)\.xml')">
+              <xsl:when test="matches(@href,'^taxonomy-(subcorpus|parla.legislature|speaker_types)\.xml')">
                 <xsl:value-of select="concat('ParlaMint-',@href)"/>
+              </xsl:when>
+              <xsl:when test="matches(@href,'^taxonomy-(NER|UD-SYN)\.xml')"> <!-- add suffix to ana taxonomies -->
+                <xsl:value-of select="replace(concat('ParlaMint-',@href),'.xml', '.ana.xml')"/>
+              </xsl:when>
+              <xsl:when test="matches(@href,'NER.cnec2.0')"> <!-- add suffix to CNEC taxonomy -->
+                <xsl:value-of select="replace(concat('ParlaMint-CZ-',@href),'.xml', '.ana.xml')"/>
               </xsl:when>
               <xsl:otherwise>
                 <xsl:value-of select="concat('ParlaMint-CZ-',@href)"/>
