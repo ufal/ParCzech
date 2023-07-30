@@ -135,12 +135,23 @@ copy_incl_file() {
   cp "$IN_DIR/$IN_FILE" "$OUT_DIR/$OUT_FILE"
   # if taxonomy/list then add/fix id
   if [[ "$OUT_FILE" =~ ^.*(taxonomy|listPerson|listOrg).*.xml ]]; then
+    # cs: listPerson listOrg
+    # mul: taxonomies
+    [[ "$OUT_FILE" =~ ^.*(listPerson|listOrg).*.xml ]] \
+      && LANGUAGE="cs" \
+      || LANGUAGE="mul"
+
     xmlstarlet edit --inplace \
                   --update '/*/@xml:id' \
                     --value "${OUT_FILE%.xml}" \
                   --insert '/*[not(@xml:id)]' \
                     --type attr -n 'xml:id' \
                     --value "${OUT_FILE%.xml}" \
+                  --update '/*/@xml:lang' \
+                    --value "$LANGUAGE" \
+                  --insert '/*[not(@xml:lang)]' \
+                    --type attr -n 'xml:lang' \
+                    --value "$LANGUAGE" \
                   "$OUT_DIR/$OUT_FILE"
     echo "CHANGE ID: $OUT_DIR/$OUT_FILE"
   fi
