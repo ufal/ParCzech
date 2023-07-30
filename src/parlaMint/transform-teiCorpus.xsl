@@ -146,6 +146,10 @@
     </xsl:copy>
   </xsl:template>
 
+  <xsl:template match="tei:catRef/@scheme">
+    <xsl:attribute name="scheme">#ParlaMint-taxonomy-parla.legislature</xsl:attribute>
+  </xsl:template>
+
 
 
 </xsl:stylesheet>
