@@ -203,6 +203,7 @@ create_parlaMint() {
       copy_incl_file $IN_DIR/ $OUT_DIR/ $INCL
     done
     copy_incl_file parlaMint/ $OUT_DIR/ ParlaMint-taxonomy-subcorpus.xml
+    copy_incl_file parlaMint/ $OUT_DIR/ ParlaMint-taxonomy-politicalOrientation.xml
   fi
   echo "removing zero tagUsage"
   grep -rl '<tagUsage ' $OUT_DIR/ | \
