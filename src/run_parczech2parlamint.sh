@@ -207,7 +207,7 @@ create_parlaMint() {
   echo "removing zero tagUsage"
   grep -rl '<tagUsage ' $OUT_DIR/ | \
     xargs -I {} xmlstarlet edit --inplace \
-                  -P \
+                  --pf \
                   --delete "//_:tagUsage[@occurs='0']" \
                   "{}"
 }
