@@ -204,6 +204,12 @@ create_parlaMint() {
     done
     copy_incl_file parlaMint/ $OUT_DIR/ ParlaMint-taxonomy-subcorpus.xml
   fi
+  echo "removing zero tagUsage"
+  grep -rl '<tagUsage ' $OUT_DIR/ | \
+    xargs -I {} xmlstarlet edit --inplace \
+                  -P \
+                  --delete "//_:tagUsage[@occurs='0']" \
+                  "{}"
 }
 
 create_parlaMint "$INPUT_RAW_DIR" "$OUTPUT_RAW_DIR" "$RENAME_LOG.raw" -t "" 0

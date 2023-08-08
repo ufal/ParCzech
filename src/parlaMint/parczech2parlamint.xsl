@@ -25,7 +25,7 @@
     </xsl:attribute>
   </xsl:template>
 
-  <xsl:template match="/tei:tagUsage"/> <!-- removing tagUsage - statistics can change-->
+  <xsl:template match="tei:tagUsage"/> <!-- removing tagUsage - statistics can change-->
 
   <xsl:template match="/tei:TEI | /tei:TEI/tei:text">
     <xsl:copy>
