@@ -25,6 +25,7 @@
     </xsl:attribute>
   </xsl:template>
   <xsl:template match="/tei:teiCorpus/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@ident='pdt']" /><!-- removing pdt prefix definition -->
+  <xsl:template match="/tei:teiCorpus/tei:teiHeader/tei:encodingDesc/tei:listPrefixDef/tei:prefixDef[@ident='ne']" /><!-- removing cnec prefix definition -->
 
 
   <xsl:template match="/tei:teiCorpus/xi:include">
@@ -39,6 +40,9 @@
   <xsl:template match="xi:include[ancestor::tei:teiHeader]">
     <xsl:choose>
       <xsl:when test="contains(@href,'parla.links')">
+        <xsl:message select="concat('removing: ',@href)"/>
+      </xsl:when>
+      <xsl:when test="matches(@href,'NER.cnec2.0')">
         <xsl:message select="concat('removing: ',@href)"/>
       </xsl:when>
       <xsl:when test="$insert-include = 1">
@@ -58,9 +62,6 @@
               </xsl:when>
               <xsl:when test="matches(@href,'^taxonomy-(NER|UD-SYN)\.xml')"> <!-- add suffix to ana taxonomies -->
                 <xsl:value-of select="replace(concat('ParlaMint-',@href),'.xml', '.ana.xml')"/>
-              </xsl:when>
-              <xsl:when test="matches(@href,'NER.cnec2.0')"> <!-- add suffix to CNEC taxonomy -->
-                <xsl:value-of select="replace(concat('ParlaMint-CZ-',@href),'.xml', '.ana.xml')"/>
               </xsl:when>
               <xsl:otherwise>
                 <xsl:value-of select="concat('ParlaMint-CZ-',@href)"/>

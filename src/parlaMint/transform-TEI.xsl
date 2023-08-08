@@ -79,4 +79,12 @@
   </xsl:template>
 
 
+<!-- remove cnec named entities -->
+  <xsl:template match="tei:name[@type]/@ana"/>
+  <xsl:template match="tei:*[substring-before(@ana,':') = 'ne' and not(@type)]">
+    <xsl:apply-templates/>
+  </xsl:template>
+
+
+
 </xsl:stylesheet>
