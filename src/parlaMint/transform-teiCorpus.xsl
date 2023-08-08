@@ -124,18 +124,7 @@
       <xsl:apply-templates select="element()"/>
       <xsl:choose>
         <xsl:when test="$insert-include = 1">
-          <taxonomy xml:id="subcorpus">
-             <desc xml:lang="cs"><term>Podkorpusy</term></desc>
-             <desc xml:lang="en"><term>Subcorpora</term></desc>
-             <category xml:id="reference">
-                <catDesc xml:lang="cs"><term>Referenční</term>: referenční podkorpus, do 2019-10-31</catDesc>
-                <catDesc xml:lang="en"><term>Reference</term>: reference subcorpus, until 2019-10-31</catDesc>
-             </category>
-             <category xml:id="covid">
-                <catDesc xml:lang="cs"><term>COVID</term>: COVID podkorpus, od 2019-11-01 dále</catDesc>
-                <catDesc xml:lang="en"><term>COVID</term>: COVID subcorpus, from 2019-11-01 onwards</catDesc>
-             </category>
-          </taxonomy>
+          <xsl:message>ERROR: not implemented</xsl:message>
         </xsl:when>
         <xsl:otherwise>
           <xsl:element name="xi:include" namespace="http://www.w3.org/2001/XInclude">
