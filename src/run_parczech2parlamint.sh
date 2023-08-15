@@ -211,6 +211,7 @@ create_parlaMint() {
                   --pf \
                   --delete "//_:tagUsage[@occurs='0']" \
                   "{}"
+  find $OUT_DIR/ -type f -name "*.xml" | xargs -I {} sed -i '/^ *$/d' {}
 }
 
 create_parlaMint "$INPUT_RAW_DIR" "$OUTPUT_RAW_DIR" "$RENAME_LOG.raw" -t "" 0

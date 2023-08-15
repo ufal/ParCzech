@@ -69,8 +69,8 @@
 
   <xsl:template match="//tei:encodingDesc/tei:projectDesc">
     <xsl:copy>
-      <p xml:lang="cs"><ref target="https://www.clarin.eu/content/parlamint">ParlaMint</ref></p>
-      <p xml:lang="en"><ref target="https://www.clarin.eu/content/parlamint">ParlaMint</ref> is a project that aims to (1) create a multilingual set of comparable corpora of parliamentary proceedings uniformly encoded according to the <ref target="https://github.com/clarin-eric/parla-clarin">Parla-CLARIN recommendations</ref> and covering the COVID-19 pandemic from November 2019 as well as the earlier period from 2015 to serve as a reference corpus; (2) process the corpora linguistically to add Universal Dependencies syntactic structures and Named Entity annotation; (3) make the corpora available through concordancers and Parlameter; and (4) build use cases in Political Sciences and Digital Humanities based on the corpus data.</p>
+      <p xml:lang="cs"><ref target="https://www.clarin.eu/content/parlamint">ParlaMint</ref> je projekt, jehož cílem je (1) vytvořit vícejazyčný soubor srovnatelných korpusů parlamentních jednání jednotně kódovaných podle <ref target="https://clarin-eric.github.io/ParlaMint/">kritérií ParlaMint</ref> pokrývajících období od roku 2015 do poloviny roku 2022; (2) přidat do korpusu jazykové anotace a strojově je přeložit do angličtiny; (3) zpřístupnit korpus prostřednictvím vyhledávacích nástrojů; a (4) představit příklady využití korpusu v politických vědách a digitálních humanitních vědách.</p>
+      <p xml:lang="en"><ref target="https://www.clarin.eu/content/parlamint">ParlaMint</ref> is a project that aims to (1) create a multilingual set of comparable corpora of parliamentary proceedings uniformly encoded according to the <ref target="https://clarin-eric.github.io/ParlaMint/">ParlaMint encoding guidelines</ref>, covering the period from 2015 to mid-2022; (2) add linguistic annotations to the corpora and machine-translate them to English; (3) make the corpora available through concordancers; and (4) build use cases in Political Sciences and Digital Humanities based on the corpus data.</p>
     </xsl:copy>
   </xsl:template>
 
@@ -89,6 +89,17 @@
     </xsl:if>
   </xsl:template>
 
+  <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:meeting">
+    <xsl:copy>
+      <xsl:apply-templates select="@*"/>
+      <xsl:if test="not(@corresp)">
+        <xsl:attribute name="corresp">#parliament.PSP</xsl:attribute>
+        <xsl:message>WARN: adding meeting/@corresp: #parliament.PSP</xsl:message>
+      </xsl:if>
+      <xsl:apply-templates/>
+    </xsl:copy>
+  </xsl:template>
+
   <xsl:template match="//tei:fileDesc/tei:titleStmt/tei:funder[1]">
     <xsl:element name="funder">
       <orgName xml:lang="en">CLARIN research infrastructure</orgName>
@@ -96,6 +107,11 @@
     </xsl:element>
     <xsl:copy-of select="."/>
   </xsl:template>
+
+  <xsl:template match="//tei:setting/tei:name[@type='country']/text()">
+    <xsl:text>Česká republika</xsl:text>
+  </xsl:template>
+
 
   <xsl:template match="//tei:fileDesc/tei:editionStmt/tei:edition">
     <xsl:element name="edition">2.0</xsl:element>
