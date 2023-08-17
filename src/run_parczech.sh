@@ -712,10 +712,16 @@ function consolidate() {
                     "$2/${4}.xml"
   else
     echo "Consolidating new data $1 to $2"
-    echo "Merging organizations and persons is not implemented !!!"
-    rsync -a --backup --suffix=".${ID}" --exclude "$3"  "$1/" "$2"
+    rsync -a --backup --suffix=".${ID}" --exclude "$3" \
+                                        --exclude "*/ParCzech-listOrg.xml" \
+                                        --exclude "*/ParCzech-listPerson.xml" \
+                                    "$1/" "$2"
     mv "$2/${4}.xml" "$2/${4}.xml.${ID}"
+    mv "$2/ParCzech-listOrg.xml" "$2/ParCzech-listOrg.xml.${ID}"
+    mv "$2/ParCzech-listPerson.xml" "$2/ParCzech-listPerson.xml.${ID}"
     perl -I lib lib/ParCzech/XMLmerge.pm  "$2/${4}.xml.${ID}" "$1/$3" "$2/${4}.xml"
+    perl -I lib lib/ParCzech/XMLmerge.pm  "$2/ParCzech-listOrg.xml.${ID}" "$5/ParCzech-listOrg.xml" "$2/ParCzech-listOrg.xml"
+    perl -I lib lib/ParCzech/XMLmerge.pm  "$2/ParCzech-listPerson.xml.${ID}" "$5/ParCzech-listPerson.xml" "$2/ParCzech-listPerson.xml"
   fi
 }
 
