@@ -472,6 +472,7 @@ fi
 #    audio-vert-in/$ID/vertical.fl
 ###############################
 export AUDIO_VERT_DIR=$DATA_DIR/audio-vert-in/${ID}
+export AUDIO_CORRESP_TSV_DIR=$DATA_DIR/audio-corresp-tsv-in/${ID}
 export AUDIO_VERT_LIST=$AUDIO_VERT_DIR/vertical.fl
 export AUDIO_VERT_SPEAKERS=$AUDIO_VERT_DIR/speakers.tsv
 
@@ -488,6 +489,8 @@ do
   echo "${FILE%.*}.vert" >> $AUDIO_VERT_LIST
   $XSL_TRANSFORM audio/token_ids.xsl "$UDPIPE_TEI/$FILE" "$OUTFILE"
 done
+
+cat $AUDIO_VERT_LIST |sort| xargs -I % cat $AUDIO_VERT_DIR/% | perl audio/audio-corresp-split.pl "$AUDIO_CORRESP_TSV_DIR"
 
 fi; # END AUDIO-VERT-IN CONDITION
 
