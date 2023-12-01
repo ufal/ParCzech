@@ -98,7 +98,7 @@ sub aggr_end_print_status {
   if($success) {
     print STDERR "INFO: processed $file\n";
   } else {
-    print STDERR "ERROR: processing failed $file\n"
+    print STDERR "ERROR: processing failed $file\n";
     return 1;
   }
 }
