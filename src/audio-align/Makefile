@@ -49,7 +49,7 @@ asr-dir-$(YEAR)-$(MONTH)-$(DAY): test-audio-dir
 	@echo "$@: $(DATE)"
 	@ls $(AUDIO-DIR) | sed 's@\.mp3@@' | xargs -I {} make --no-print-directory asr-file-$(YEAR)-$(MONTH)-$(DAY) FILE={} DATE=$(DATE)
 
-asr-file-$(YEAR)-$(MONTH)-$(DAY): create-working-dir-asr-$(FILE) asr/julius asr/HCopy $(ASR-DIR)
+asr-file-$(YEAR)-$(MONTH)-$(DAY): create-working-dir-asr-$(FILE) $(ASR-DIR) # asr/julius asr/HCopy
 	@echo "INFO: make $@ DATE=$(DATE) FILE=$(FILE)"
 	./asr/get-aligned-transcript.sh $(RESOURCES) $(WORKING-DIR-ASR) $(AUDIO-DIR)/$(FILE).mp3 > $(ASR-DIR)/$(FILE).recout || echo "ERROR: FATAL make $@ DATE=$(DATE) FILE=$(FILE)"
 	@echo "INFO: " `cat $(ASR-DIR)/$(FILE).recout |wc -l ` "tokens recognized in $(AUDIO-DIR)/$(FILE).mp3"
