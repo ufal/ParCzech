@@ -97,6 +97,7 @@ sub aggr_end_print_status {
   print STDERR ($cnt?'INFO':'WARN').": seen $cnt tokens\n";
   if($success) {
     print STDERR "INFO: processed $file\n";
+    return 0;
   } else {
     print STDERR "ERROR: processing failed $file\n";
     return 1;
