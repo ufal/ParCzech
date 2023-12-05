@@ -25,7 +25,7 @@ YY=$(shell ls data/audio/www.psp.cz/eknih/*/audio/|sed 's/.*://'|xargs|)
 
 SBATCHDIR=$(DATADIR)/../sbatch
 SBATCHLOGS=$(DATADIR)/../logs
-SBATCH=$(SBATCHDIR)/asr$(YEAR)$(MONTH).sh
+SBATCH=$(SBATCHDIR)/$(YEAR)$(MONTH)asr.sh
 
 all:
 	echo "'$(YY)'"
@@ -48,8 +48,8 @@ asr-month-prepare-sbatch-jobs-$(YEAR)-$(MONTH):
 	@echo "#SBATCH --cpus-per-task=15                     # number of cores/threads per task (default 1)" >> $(SBATCH)
 	@echo "#SBATCH --gres=gpu:0                          # number of GPUs to request (default 0)" >> $(SBATCH)
 	@echo "#SBATCH --mem=30G                             # request 10 gigabytes memory (per node, default depends on node)" >> $(SBATCH)
-	@echo "#SBATCH --mail-type=begin        # send email when job begins" >> $(SBATCH)
-	@echo "#SBATCH --mail-type=end          # send email when job ends" >> $(SBATCH)
+	#@echo "#SBATCH --mail-type=begin        # send email when job begins" >> $(SBATCH)
+	#@echo "#SBATCH --mail-type=end          # send email when job ends" >> $(SBATCH)
 	@echo "#SBATCH --mail-type=fail         # send email if job fails" >> $(SBATCH)
 	@echo "#SBATCH --mail-user=kopp@ufal.mff.cuni.cz" >> $(SBATCH)
 	@echo "" >> $(SBATCH)
