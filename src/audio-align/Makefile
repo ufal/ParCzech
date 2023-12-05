@@ -51,8 +51,10 @@ asr-dir-$(YEAR)-$(MONTH)-$(DAY): test-audio-dir
 
 asr-file-$(YEAR)-$(MONTH)-$(DAY): create-working-dir-asr-$(FILE) $(ASR-DIR) # asr/julius asr/HCopy
 	@echo "INFO: make $@ DATE=$(DATE) FILE=$(FILE)"
-	./asr/get-aligned-transcript.sh $(RESOURCES) $(WORKING-DIR-ASR) $(AUDIO-DIR)/$(FILE).mp3 > $(ASR-DIR)/$(FILE).recout || echo "ERROR: FATAL make $@ DATE=$(DATE) FILE=$(FILE)"
-	@echo "INFO: " `cat $(ASR-DIR)/$(FILE).recout |wc -l ` "tokens recognized in $(AUDIO-DIR)/$(FILE).mp3"
+	@rm -f $(ASR-DIR)/$(FILE).recout.FAILED
+	./asr/get-aligned-transcript.sh $(RESOURCES) $(WORKING-DIR-ASR) $(AUDIO-DIR)/$(FILE).mp3 > $(ASR-DIR)/$(FILE).recout \
+	  || ( echo "ERROR: FATAL make $@ DATE=$(DATE) FILE=$(FILE)" && mv $(ASR-DIR)/$(FILE).recout $(ASR-DIR)/$(FILE).recout.FAILED )
+	@echo "INFO: " `cat $(ASR-DIR)/$(FILE).recout* |wc -l ` "tokens recognized in $(AUDIO-DIR)/$(FILE).mp3"
 
 
 
