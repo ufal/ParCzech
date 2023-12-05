@@ -47,7 +47,8 @@ for wavfn in "$tempdir"/rec--*; do
 done
 wait
 
-perl ${scriptdir}/julutil.pl aggregate-julout $PART_LENGTH "$tempdir"/*.julout || exit 1
+perl ${scriptdir}/julutil.pl aggregate-julout $PART_LENGTH "$tempdir"/*.julout && echo -n "INFO" || echo -n "WARN"
 
-echo "INFO: removing working directory $tempdir" >&2
+
+echo ": removing working directory $tempdir" >&2
 rm -r "$tempdir"
