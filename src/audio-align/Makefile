@@ -3,7 +3,8 @@ bin=~/scripts
 RESOURCES=asr/resources
 
 DATE=
-DATADIR=$(shell pwd)/data/
+PWD=$(shell pwd)
+DATADIR=$(PWD)/data/
 
 AUDIO=$(DATADIR)/audio/
 TOKENS=$(DATADIR)/audio-corresp-tsv-in/
@@ -22,9 +23,42 @@ TOKENS-DIR=$(shell echo $(TOKENS)/www.psp.cz/eknih/*/audio/$(YEAR)/$(MONTH)/$(DA
 
 YY=$(shell ls data/audio/www.psp.cz/eknih/*/audio/|sed 's/.*://'|xargs|)
 
+SBATCHDIR=$(DATADIR)/../sbatch
+SBATCHLOGS=$(DATADIR)/../logs
+SBATCH=$(SBATCHDIR)/asr$(YEAR)$(MONTH).sh
 
 all:
 	echo "'$(YY)'"
+
+
+asr-month-prepare-sbatch-jobs:
+	@echo "$@: $(DATE)"
+	echo $(AUDIO)/www.psp.cz/eknih/*/audio/*|${getdir}| xargs -I {} make --no-print-directory asr-month-prepare-sbatch-jobs-{} DATE={}
+asr-month-prepare-sbatch-jobs-$(YEAR):
+	@echo "$@: $(DATE)"
+	@echo $(AUDIO)/www.psp.cz/eknih/*/audio/$(YEAR)/*|${getdir}| xargs -I {} make --no-print-directory asr-month-prepare-sbatch-jobs-$(YEAR)-{} DATE=$(YEAR)-{}
+asr-month-prepare-sbatch-jobs-$(YEAR)-$(MONTH):
+	@echo "$@: $(DATE)"
+	@mkdir -p $(SBATCHDIR) $(SBATCHLOGS)
+	@echo "#!/bin/bash" > $(SBATCH)
+	@echo "#SBATCH -D $(PWD)/ # change directory before executing the job" >> $(SBATCH)
+	@echo "#SBATCH -o $(SBATCHLOGS)/%x.%j.out" >> $(SBATCH)
+	@echo "#SBATCH -e $(SBATCHLOGS)/%x.%j.err" >> $(SBATCH)
+	@echo "#SBATCH -N 1                                  # number of nodes (default 1)" >> $(SBATCH)
+	@echo "#SBATCH --cpus-per-task=15                     # number of cores/threads per task (default 1)" >> $(SBATCH)
+	@echo "#SBATCH --gres=gpu:0                          # number of GPUs to request (default 0)" >> $(SBATCH)
+	@echo "#SBATCH --mem=30G                             # request 10 gigabytes memory (per node, default depends on node)" >> $(SBATCH)
+	@echo "#SBATCH --mail-type=begin        # send email when job begins" >> $(SBATCH)
+	@echo "#SBATCH --mail-type=end          # send email when job ends" >> $(SBATCH)
+	@echo "#SBATCH --mail-type=fail         # send email if job fails" >> $(SBATCH)
+	@echo "#SBATCH --mail-user=kopp@ufal.mff.cuni.cz" >> $(SBATCH)
+	@echo "" >> $(SBATCH)
+	@echo "make asr-dir-$(YEAR)-$(MONTH) \ " >> $(SBATCH)
+	@echo "     DATE=$(YEAR)-$(MONTH) \ " >> $(SBATCH)
+	@echo "     DATADIR=$(DATADIR)/" >> $(SBATCH)
+	@echo "INFO: sbatch script created: $(SBATCH)"
+
+
 
 
 
