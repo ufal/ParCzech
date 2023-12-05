@@ -53,9 +53,7 @@ asr-month-prepare-sbatch-jobs-$(YEAR)-$(MONTH):
 	@echo "#SBATCH --mail-type=fail         # send email if job fails" >> $(SBATCH)
 	@echo "#SBATCH --mail-user=kopp@ufal.mff.cuni.cz" >> $(SBATCH)
 	@echo "" >> $(SBATCH)
-	@echo "make asr-dir-$(YEAR)-$(MONTH) \ " >> $(SBATCH)
-	@echo "     DATE=$(YEAR)-$(MONTH) \ " >> $(SBATCH)
-	@echo "     DATADIR=$(DATADIR)/" >> $(SBATCH)
+	@echo "make asr-dir-$(YEAR)-$(MONTH) DATE=$(YEAR)-$(MONTH) DATADIR=$(DATADIR)/" >> $(SBATCH)
 	@echo "INFO: sbatch script created: $(SBATCH)"
 
 
