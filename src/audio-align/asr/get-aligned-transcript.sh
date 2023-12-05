@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "INFO: command $0 $1 $2 $3" >&2
+echo "INFO: command $0 $1 $2 $3 $4" >&2
 
 scriptdir=`dirname "$0"`
 
@@ -10,18 +10,19 @@ scriptdir=`dirname "$0"`
 resources="$1"
 tempdir="$2"
 inaudiofn="$3"
+TIME_NEGATIVE_SHIFT="${4:-0}"
 
 audiolen=`soxi -D "$inaudiofn"`
 floorlen=${audiolen%.*}
 start=0
-end=$PART_LENGTH
+end=$((PART_LENGTH - TIME_NEGATIVE_SHIFT))
 while ((start < floorlen)); do
   if ((end >= floorlen)); then
       sox "$inaudiofn" "$tempdir/rec--from-$start--to-end.wav" remix - rate 16k trim $start
   else
       sox "$inaudiofn" "$tempdir/rec--from-$start--to-$end.wav" remix - rate 16k trim $start $PART_LENGTH
   fi
-  start=$((start + PART_LENGTH))
+  start=$((end))
   end=$((start + PART_LENGTH))
 done
 i=0
