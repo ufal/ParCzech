@@ -36,6 +36,9 @@ SBATCH=$(SBATCHDIR)/$(YEAR)$(MONTH)asr.sh
 ASR-SPLIT-NEG-SHIFT=0
 
 PREFIX=$(FILE)
+PREV-FILE=$(shell ls $(TOKENS-DIR)|sort -r|sed -n '/$(FILE)/,$$p'|sed -n 2p|sed 's/\..*//')
+NEXT-FILE=$(shell ls $(TOKENS-DIR)|sort   |sed -n '/$(FILE)/,$$p'|sed -n 2p|sed 's/\..*//')
+CONTEXT-SIZE=100
 
 .PHONY:
 
@@ -123,15 +126,13 @@ align-seq-dir-$(YEAR)-$(MONTH)-$(DAY): test-tokens-dir
 	@echo "$@: $(DATE)"
 	ls $(TOKENS-DIR) |sed 's@\.tsv@@'| xargs -I {} make --no-print-directory align-seq-file-{} FILE={} DATE=$(YEAR)-$(MONTH)-$(DAY)
 
-align-seq-file-$(FILE): create-working-dir-align-seq-$(FILE) $(ALIGN-SEQ-DIR)
+align-seq-file-$(FILE): add-context-to-steno-page-$(FILE) $(ALIGN-SEQ-DIR)
 	@echo "$@: $(DATE)"
 	@test -f $(ASR-DIR)/$(FILE).recout || echo "ERROR: file has not been recognized $(FILE) or does not have corresponding audio"
 	@(test -f $(ASR-DIR)/$(FILE).recout \
 		&& echo "running alignment $(FILE)" \
 		&& . $(PYTHON-ENV)/bin/activate \
-		&& echo "TODO ================ setup python environment" \
-		&& echo "TODO ================ add small part of previous and following page" \
-		&& cut -f 1 $(TOKENS)/www.psp.cz/eknih/*/audio/$(YEAR)/$(MONTH)/$(DAY)/$(FILE).tsv > $(WORKING-DIR-ALIGN-SEQ)/steno-cut \
+		&& cut -f 1 $(WORKING-DIR)/$(FILE).steno.tsv > $(WORKING-DIR-ALIGN-SEQ)/steno-cut \
 		&& bash align-seq/strip-timestamps.sh < "$(ASR-DIR)/$(FILE).recout" > "$(WORKING-DIR-ALIGN-SEQ)/recout-stripped" \
 		&& perl -Ilib align-seq/clean-extracted.pl < "$(WORKING-DIR-ALIGN-SEQ)/steno-cut" > "$(WORKING-DIR-ALIGN-SEQ)/steno-cleaned" \
 		&& python align-seq/match-lines.py "$(WORKING-DIR-ALIGN-SEQ)/recout-stripped" "$(WORKING-DIR-ALIGN-SEQ)/steno-cleaned" "$(WORKING-DIR-ALIGN-SEQ)/steno-disambiguated" > "$(WORKING-DIR-ALIGN-SEQ)/matched" \
@@ -139,7 +140,17 @@ align-seq-file-$(FILE): create-working-dir-align-seq-$(FILE) $(ALIGN-SEQ-DIR)
 	 ) || (echo "ERROR: FATAL $@")
 
 
-
+add-context-to-steno-page-$(FILE): create-working-dir-align-seq-$(FILE)
+	rm -f $(WORKING-DIR)/$(FILE).tsv
+	@test -f $(TOKENS-DIR)/$(PREV-FILE).tsv \
+	    && tail -n $(CONTEXT-SIZE) $(TOKENS-DIR)/$(PREV-FILE).tsv \
+	      | sed -E 's/^([^\t]*\t)/\1CONTEXT_/' >> $(WORKING-DIR)/$(FILE).steno.tsv \
+	    || :
+	cat $(TOKENS-DIR)/$(FILE).tsv >> $(WORKING-DIR)/$(FILE).steno.tsv
+	@test -f $(TOKENS-DIR)/$(NEXT-FILE).tsv \
+	    && head -n $(CONTEXT-SIZE) $(TOKENS-DIR)/$(NEXT-FILE).tsv \
+	      | sed -E 's/^([^\t]*\t)/\1CONTEXT_/'>> $(WORKING-DIR)/$(FILE).steno.tsv \
+	    || :
 
 #(3)################  token alignment
 
@@ -151,7 +162,7 @@ align-token-file-$(FILE): $(ALIGN-TOKEN-DIR)
 	. $(PYTHON-ENV)/bin/activate \
 	&& cd align-token \
 	&& python single_word_time_aligner.py \
-	        --vertical $(TOKENS)/www.psp.cz/eknih/*/audio/$(YEAR)/$(MONTH)/$(DAY)/$(FILE).tsv \
+	        --vertical $(WORKING-DIR)/$(FILE).steno.tsv \
 	        --transcript $(ALIGN-SEQ-DIR)/$(FILE).seq \
 	        --yaml_config config.yaml \
 	        --output $(ALIGN-TOKEN-DIR)/$(FILE).tsv
