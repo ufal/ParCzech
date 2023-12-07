@@ -1,0 +1,23 @@
+# perc corresponds to the percentage
+# this parameter is used to address preposition + noun problem in the timings
+# consider the following example in Czech (% is an empty str)
+#   v  ... %
+#  nem ... vnem
+# and say that our sentence starts with "V nem ..."
+# here we see that "v" is aligned to empty string so we can not detect the starting time of the sentence ...
+# but we can look at "vnem" ... also if we concatenate "v" and "nem" we get precisely "vnem", and edit distance between
+# "vnem" (obtaiend form concatenation of "v" and "nem") and "vnem" (mishearing form the time aligner) is zero
+# but what we the following case
+#   s  ... %
+#   ni ... spi
+# here edit distance between "sni" and "spi" is 1 (misheard "s ni" as "spi") if we normalize this edit distance by
+# the len of concatenation we get 1/3 ... 0.333
+# Finally, perc is this boundary, if we set perc=0.5 then "spi" is not too far from "sni" and is considered
+# as it was preposition + noun
+perc: 0.5
+# parameters below are parameters of the algorithm "Global alignment with affine gap penalty"
+# when starting new gap use start_penalty
+start_penalty: -5
+# when extending existing gap use extend_penalty
+extend_penalty: -2
+mult: 3

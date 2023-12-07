@@ -5,18 +5,24 @@ RESOURCES=asr/resources
 DATE=
 PWD=$(shell pwd)
 DATADIR=$(PWD)/data/
+PYTHON-ENV=./virtualenv/ParCzech
 
 AUDIO=$(DATADIR)/audio/
 TOKENS=$(DATADIR)/audio-corresp-tsv-in/
 
 WORKING-DIR=$(DATADIR)/audio-working
+
 WORKING-DIR-ASR=$(WORKING-DIR)/asr/$(FILE)
 ASR-DIR=$(DATADIR)/audio-asr
-WORKING-DIR-ALIGN=$(WORKING-DIR)/align/$(FILE)
+
+WORKING-DIR-ALIGN-SEQ=$(WORKING-DIR)/align-seq/$(FILE)
+ALIGN-SEQ-DIR=$(DATADIR)/audio-align-seq
+
+ALIGN-TOKEN-DIR=$(DATADIR)/audio-align-token
 
 YEAR=$(shell echo -n "$(DATE)" | sed -nE "s/^([0-9]{4}).*$$/\1/p")
 MONTH=$(shell echo -n "$(DATE)" | sed -nE "s/^[0-9]{4}-?([0-9]{2}).*$$/\1/p")
-DAY=$(shell echo -n "$(DATE)" | sed -nE "s/^[0-9]{4}-?[0-9]{2}-?([0-9]{2})$$/\1/p")
+DAY=$(shell echo -n "$(DATE)" | sed -nE "s/^[0-9]{4}-?[0-9]{2}-?([0-9]{2}).*$$/\1/p")
 
 AUDIO-DIR=$(shell echo $(AUDIO)/www.psp.cz/eknih/*/audio/$(YEAR)/$(MONTH)/$(DAY)/)
 TOKENS-DIR=$(shell echo $(TOKENS)/www.psp.cz/eknih/*/audio/$(YEAR)/$(MONTH)/$(DAY)/)
@@ -29,10 +35,19 @@ SBATCH=$(SBATCHDIR)/$(YEAR)$(MONTH)asr.sh
 
 ASR-SPLIT-NEG-SHIFT=0
 
+PREFIX=$(FILE)
+
+.PHONY:
+
 all:
 	echo "'$(YY)'"
 
 
+
+
+#(1)################  ASR
+
+## prepare batch
 asr-month-prepare-sbatch-jobs:
 	@echo "$@: $(DATE)"
 	echo $(AUDIO)/www.psp.cz/eknih/*/audio/*|${getdir}| xargs -I {} make --no-print-directory asr-month-prepare-sbatch-jobs-{} DATE={}
@@ -60,7 +75,7 @@ asr-month-prepare-sbatch-jobs-$(YEAR)-$(MONTH):
 
 
 
-
+## run asr
 
 # process all directories
 asr-dir:
@@ -90,19 +105,80 @@ asr-file-$(YEAR)-$(MONTH)-$(DAY): create-working-dir-asr-$(FILE) $(ASR-DIR) # as
 	  || ( echo "ERROR: FATAL make $@ DATE=$(DATE) FILE=$(FILE)" && mv $(ASR-DIR)/$(FILE).recout $(ASR-DIR)/$(FILE).recout.FAILED )
 	@echo "INFO: " `cat $(ASR-DIR)/$(FILE).recout* |wc -l ` "tokens recognized in $(AUDIO-DIR)/$(FILE).mp3"
 
+#(2)################  align ASR output with sequence of words
+
+align-seq-dir:
+	@echo "$@: $(DATE)"
+	@echo $(TOKENS)/www.psp.cz/eknih/*/audio/*|${getdir}| xargs -I {} make --no-print-directory align-seq-dir-{} DATE={}
+
+align-seq-dir-$(YEAR):
+	@echo "$@: $(DATE)"
+	@echo $(TOKENS)/www.psp.cz/eknih/*/audio/$(YEAR)/*|${getdir}| xargs -I {} make --no-print-directory align-seq-dir-$(YEAR)-{} DATE=$(YEAR)-{}
+
+align-seq-dir-$(YEAR)-$(MONTH):
+	@echo "$@: $(DATE)"
+	@echo $(TOKENS)/www.psp.cz/eknih/*/audio/$(YEAR)/$(MONTH)/*|${getdir}| xargs -I {} make --no-print-directory align-seq-dir-$(YEAR)-$(MONTH)-{} DATE=$(YEAR)-$(MONTH)-{}
+
+align-seq-dir-$(YEAR)-$(MONTH)-$(DAY): test-tokens-dir
+	@echo "$@: $(DATE)"
+	ls $(TOKENS-DIR) |sed 's@\.tsv@@'| xargs -I {} make --no-print-directory align-seq-file-{} FILE={} DATE=$(YEAR)-$(MONTH)-$(DAY)
+
+align-seq-file-$(FILE): create-working-dir-align-seq-$(FILE) $(ALIGN-SEQ-DIR)
+	@echo "$@: $(DATE)"
+	@test -f $(ASR-DIR)/$(FILE).recout || echo "ERROR: file has not been recognized $(FILE) or does not have corresponding audio"
+	@(test -f $(ASR-DIR)/$(FILE).recout \
+		&& echo "running alignment $(FILE)" \
+		&& . $(PYTHON-ENV)/bin/activate \
+		&& echo "TODO ================ setup python environment" \
+		&& echo "TODO ================ add small part of previous and following page" \
+		&& cut -f 1 $(TOKENS)/www.psp.cz/eknih/*/audio/$(YEAR)/$(MONTH)/$(DAY)/$(FILE).tsv > $(WORKING-DIR-ALIGN-SEQ)/steno-cut \
+		&& bash align-seq/strip-timestamps.sh < "$(ASR-DIR)/$(FILE).recout" > "$(WORKING-DIR-ALIGN-SEQ)/recout-stripped" \
+		&& perl -Ilib align-seq/clean-extracted.pl < "$(WORKING-DIR-ALIGN-SEQ)/steno-cut" > "$(WORKING-DIR-ALIGN-SEQ)/steno-cleaned" \
+		&& python align-seq/match-lines.py "$(WORKING-DIR-ALIGN-SEQ)/recout-stripped" "$(WORKING-DIR-ALIGN-SEQ)/steno-cleaned" "$(WORKING-DIR-ALIGN-SEQ)/steno-disambiguated" > "$(WORKING-DIR-ALIGN-SEQ)/matched" \
+		&& python align-seq/assign-timestamps.py "$(WORKING-DIR-ALIGN-SEQ)/steno-disambiguated" "$(ASR-DIR)/$(FILE).recout" < "$(WORKING-DIR-ALIGN-SEQ)/matched" > $(ALIGN-SEQ-DIR)/$(FILE).seq\
+	 ) || (echo "ERROR: FATAL $@")
 
 
-align-$(YEAR)-$(MONTH)-$(DAY): test-tokens-dir
-	echo "TODO: add testing of existence asr"
 
+
+#(3)################  token alignment
+
+align-token-pref:
+	ls $(ALIGN-SEQ-DIR)/$(PREFIX)*.seq | sed 's@^.*/@@;s@\.seq@@' | xargs -I {} make align-token-file-{} FILE={} DATE={}
+
+align-token-file-$(FILE): $(ALIGN-TOKEN-DIR)
+	@echo "$@: $(FILE)"
+	. $(PYTHON-ENV)/bin/activate \
+	&& cd align-token \
+	&& python single_word_time_aligner.py \
+	        --vertical $(TOKENS)/www.psp.cz/eknih/*/audio/$(YEAR)/$(MONTH)/$(DAY)/$(FILE).tsv \
+	        --transcript $(ALIGN-SEQ-DIR)/$(FILE).seq \
+	        --yaml_config config.yaml \
+	        --output $(ALIGN-TOKEN-DIR)/$(FILE).tsv
+	@echo "INFO: " \
+	      `cut -f5 $(ALIGN-TOKEN-DIR)/$(FILE).tsv | grep -ci 'True' ` \
+	      " out of " \
+	      `cut -f4 $(ALIGN-TOKEN-DIR)/$(FILE).tsv | grep -vP '^(-|id|CONTEXT_.*)$$'|wc -l ` \
+	      "tokens aligned in result $(ALIGN-TOKEN-DIR)/$(FILE).tsv"
+
+
+
+
+#####################################################
 $(ASR-DIR):
 	mkdir -p  $(ASR-DIR)
+
+$(ALIGN-SEQ-DIR):
+	mkdir -p  $(ALIGN-SEQ-DIR)
+
+$(ALIGN-TOKEN-DIR):
+	mkdir -p  $(ALIGN-TOKEN-DIR)
 
 create-working-dir-asr-$(FILE):
 	mkdir -p $(WORKING-DIR-ASR)
 
-create-working-dir-align-$(FILE):
-	mkdir -p $(WORKING-DIR-ALIGN)
+create-working-dir-align-seq-$(FILE):
+	mkdir -p $(WORKING-DIR-ALIGN-SEQ)
 
 test-audio-dir:
 	@test -d $(AUDIO-DIR) || (echo "ERROR: wrong input audio directory $(AUDIO-DIR)" & exit 1)
@@ -111,6 +187,7 @@ test-audio-dir:
 test-tokens-dir:
 	@test -d $(TOKENS-DIR) || (echo "ERROR: wrong input tokens directory $(TOKENS-DIR)" & exit 1)
 	@echo "INFO: input tokens directory $(TOKENS-DIR)"
+
 
 asr/julius:
 	git clone -b 'v4.6' --single-branch --depth 1 https://github.com/julius-speech/julius.git
