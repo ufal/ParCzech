@@ -126,7 +126,7 @@ align-seq-dir-$(YEAR)-$(MONTH)-$(DAY): test-tokens-dir
 	@echo "$@: $(DATE)"
 	ls $(TOKENS-DIR) |sed 's@\.tsv@@'| xargs -I {} make --no-print-directory align-seq-file-{} FILE={} DATE=$(YEAR)-$(MONTH)-$(DAY)
 
-align-seq-file-$(FILE): add-context-to-steno-page-$(FILE) $(ALIGN-SEQ-DIR)
+align-seq-file-$(FILE): add-context-to-steno-page-$(FILE) $(ALIGN-SEQ-DIR) $(PYTHON-ENV)/bin/activate
 	@echo "$@: $(DATE)"
 	@test -f $(ASR-DIR)/$(FILE).recout || echo "ERROR: file has not been recognized $(FILE) or does not have corresponding audio"
 	@(test -f $(ASR-DIR)/$(FILE).recout \
@@ -157,7 +157,7 @@ add-context-to-steno-page-$(FILE): create-working-dir-align-seq-$(FILE)
 align-token-pref:
 	ls $(ALIGN-SEQ-DIR)/$(PREFIX)*.seq | sed 's@^.*/@@;s@\.seq@@' | xargs -I {} make align-token-file-{} FILE={} DATE={}
 
-align-token-file-$(FILE): $(ALIGN-TOKEN-DIR)
+align-token-file-$(FILE): $(ALIGN-TOKEN-DIR) $(PYTHON-ENV)/bin/activate
 	@echo "$@: $(FILE)"
 	. $(PYTHON-ENV)/bin/activate \
 	&& cd align-token \
@@ -216,5 +216,13 @@ $(RESOURCES)/hmmmodel:
 	@echo "ERROR: resources are missing"
 	exit 1
 
+
+$(PYTHON-ENV)/bin/activate: setup-python-env
+setup-python-env:
+	mkdir -p `echo -n "$(PYTHON-ENV)"|sed 's#/$$##' |sed 's#[^/]*$$##'`
+	python -m venv $(PYTHON-ENV)
+	. $(PYTHON-ENV)/bin/activate \
+	&& pip install wheel \
+	&& pip install Levenshtein numpy unidecode num2words pyyaml pydub
 
 getdir = tr " " "\n" | sed "s@.*/@@"
