@@ -217,7 +217,8 @@ $(RESOURCES)/hmmmodel:
 	exit 1
 
 
-$(PYTHON-ENV)/bin/activate: setup-python-env
+$(PYTHON-ENV)/bin/activate:
+	@test -f $(PYTHON-ENV)/bin/activate || make setup-python-env
 setup-python-env:
 	mkdir -p `echo -n "$(PYTHON-ENV)"|sed 's#/$$##' |sed 's#[^/]*$$##'`
 	python -m venv $(PYTHON-ENV)
