@@ -15,8 +15,8 @@ my $scriptname = $0;
 my $dirname = dirname($scriptname);
 
 my %filename_template = (
-  words => 'words_%s.tsv',
-  stats => 'stats_%s.tsv',
+  words => '%s.tsv',
+  stats => '%s.stats',
   );
 my $cert_column = 'normalized_dist_with_gaps_80';
 my $invalid_label = 'outliers_continuous_gaps';

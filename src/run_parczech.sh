@@ -548,13 +548,13 @@ log "adding audio timeline  $AUDIO_TEI"
 
 if [ -s  "$AUDIO_VERT_OUTDIR/outliers_continuous_gaps_cnt_normalized1.txt" ]; then
   log "adding outliers_continuous_gaps to audio stats from $AUDIO_VERT_OUTDIR/outliers_continuous_gaps_cnt_normalized1.txt"
-  if ls $AUDIO_VERT_OUTDIR/stats_*.tsv.bak 1> /dev/null 2>&1; then
+  if ls $AUDIO_VERT_OUTDIR/*.stats.bak 1> /dev/null 2>&1; then
     log ".bak file exists - skipping patching"
   else
-    sed -i'.bak' '1s/$/\toutliers_continuous_gaps/;2s/$/\t0/' $AUDIO_VERT_OUTDIR/stats_*.tsv
+    sed -i'.bak' '1s/$/\toutliers_continuous_gaps/;2s/$/\t0/' $AUDIO_VERT_OUTDIR/*.stats
     for PAGEFILE in `sed 's/^.*sentences_//;s/\/.*$//' "$AUDIO_VERT_OUTDIR/outliers_continuous_gaps_cnt_normalized1.txt"`;
     do
-      sed -i '2s/\t0$/\t1/' $AUDIO_VERT_OUTDIR/stats_$PAGEFILE.tsv
+      sed -i '2s/\t0$/\t1/' $AUDIO_VERT_OUTDIR/$PAGEFILE.stats
     done
   fi
 fi
