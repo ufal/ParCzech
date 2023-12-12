@@ -88,6 +88,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
     my $cntr = 0;
     while (my $row = $tsv->getline_hr($fh)) {
       next if $row->{recognized} eq 'False';
+      next if $row->{id} =~ m/^CONTEXT_/;
       my $node = $current_file->{ids}->{$row->{id}};
       next unless $node;
       my ($wb_id,$we_id) = map {"$row->{id}.a$_"} qw/b e/;
