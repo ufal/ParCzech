@@ -46,7 +46,6 @@ usage_exit() unless $sync_dir;
 
 $ParCzech::PipeLine::FileManager::logger->log_line("aligned vertical data: $sync_dir");
 my $current_file;
-my $tsv = Text::CSV->new ({ binary => 1, auto_diag => 1, sep_char=> "\t"});
 
 while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $xpc, ids_hash => 1)) {
   next unless defined($current_file->{dom});
@@ -65,8 +64,7 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
       $ParCzech::PipeLine::FileManager::logger->log_line("Missing or not readable word file $audio_id: $words_file");
       next;
     }
-    open my $fh, "<:encoding(utf8)", "$words_file" or next;
-
+    $ParCzech::PipeLine::FileManager::logger->log_line("processing: $audio_id $words_file");
     # initialize timeline
     my $origin_id = "$audio_id.origin";
     my $timeline = XML::LibXML::Element->new('timeline');
@@ -76,6 +74,10 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
     my $cert_val = get_cert($audio_date);
     $timeline->setAttribute('cert',"$cert_val") if defined $cert_val;
     $body->appendChild($timeline);
+
+    my $tsv = Text::CSV->new ({ binary => 1, auto_diag => 1, diag_verbose => 1, sep_char=> "\t", quote_char => undef, escape_char => undef});
+    open my $fh, "<:encoding(utf8)", "$words_file" or next;
+
     # origin
     my $origin = XML::LibXML::Element->new('when');
     $origin->setAttributeNS(ParCzech::PipeLine::FileManager::TeiFile::get_NS_from_prefix('xml'),'id',$origin_id);
@@ -84,9 +86,15 @@ while($current_file = ParCzech::PipeLine::FileManager::next_file('tei', xpc => $
     $ParCzech::PipeLine::FileManager::logger->log_line("origin time: $audio_date -> $origin_date");
     $origin->setAttribute('absolute',$origin_date);
     $timeline->appendChild($origin);
-    my @header = $tsv->header ($fh); # read header
+    my @header = $tsv->header ($fh, { sep_set => [ "\t" ] }); # read header and set sep (for sure, otherwise it sometimes fails)
+    if(@header == 1){
+      $ParCzech::PipeLine::FileManager::logger->log_line("ERROR: FATAL fail header parsing $audio_date: |||",join('|', @header).'|||');
+      close $fh;
+      next;
+    }
     my $cntr = 0;
     while (my $row = $tsv->getline_hr($fh)) {
+      $ParCzech::PipeLine::FileManager::logger->log_line("Wrong line in $audio_date: $row|||",join('|',map {"$_=>".($row->{$_}//'UNDEFINED')} sort keys %$row).'|||') unless exists $row->{recognized};
       next if $row->{recognized} eq 'False';
       next if $row->{id} =~ m/^CONTEXT_/;
       my $node = $current_file->{ids}->{$row->{id}};
@@ -140,23 +148,31 @@ sub get_cert {
   my $date = shift;
   my $stats_file = File::Spec->catfile($sync_dir,sprintf($filename_template{stats},$date));
   unless (-r $stats_file) {
-    $ParCzech::PipeLine::FileManager::logger->log_line("Missing or not readable word file $date: $stats_file");
+    $ParCzech::PipeLine::FileManager::logger->log_line("Missing or not readable stat file $date: $stats_file");
     return;
   }
+  my $stattsv = Text::CSV->new ({ binary => 1, auto_diag => 1, sep_char=> "\t", quote_char => undef, escape_char => undef});
   open my $statfh, "<:encoding(utf8)", "$stats_file" or return;
-  my @header = $tsv->header ($statfh); # read header
-  my $row = $tsv->getline_hr($statfh);
+  my @header = $stattsv->header ($statfh, { sep_set => [ "\t" ] }); # read header and set sep (for sure, otherwise it sometimes fails)
+  my $row = $stattsv->getline_hr($statfh);
   close $statfh;
+  my $result;
   if ($row){
     if($cert_text){
       for my $c (@cert_order){
-        return $c if $row->{$cert_column} <= $cert{$c};
+        $result = $c;
+        last if $row->{$cert_column} <= $cert{$c};
       }
     } else {
-      return 0 if defined($row->{$invalid_label}) && $row->{$invalid_label} eq 1;
-      return 1 - $row->{$cert_column}
+      if(defined($row->{$invalid_label}) && $row->{$invalid_label} eq 1) {
+        $result = 0
+      } else {
+        $result = 1 - $row->{$cert_column}
+      }
     }
   }
+  $ParCzech::PipeLine::FileManager::logger->log_line("certainity of $date:",($result//'UNDEFINED'));
+  return $result;
 }
 
 sub usage_exit {
