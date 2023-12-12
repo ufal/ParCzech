@@ -18,7 +18,7 @@ my %filename_template = (
   words => '%s.tsv',
   stats => '%s.stats',
   );
-my $cert_column = 'normalized_dist_with_gaps_80';
+my $cert_column = 'normalized_dist_with_gaps_75';
 my $invalid_label = 'outliers_continuous_gaps';
 my %cert = ( # normalized character mismatch is lower than
     high => 0.3,
