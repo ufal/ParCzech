@@ -353,12 +353,12 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='parla.legislature']" />
-        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-parla.legislature.xml']" />
-        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-meeting.parts.xml']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='ParlaMint-taxonomy-parla.legislature.xml']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='ParCzech-taxonomy-meeting.parts.xml']" />
       </pcz:test>
       <pcz:tei>
-            <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-parla.legislature.xml"/>
-            <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-meeting.parts.xml"/>
+            <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ParlaMint-taxonomy-parla.legislature.xml"/>
+            <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ParCzech-taxonomy-meeting.parts.xml"/>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
@@ -369,10 +369,10 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='parla.links']" />
-        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-parla.links.xml']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='ParCzech-taxonomy-parla.links.xml']" />
       </pcz:test>
       <pcz:tei>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-parla.links.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ParCzech-taxonomy-parla.links.xml"/>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
@@ -381,10 +381,10 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='speaker_types']" />
-        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-speaker_types.xml']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='ParlaMint-taxonomy-speaker_types.xml']" />
       </pcz:test>
       <pcz:tei>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-speaker_types.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ParlaMint-taxonomy-speaker_types.xml"/>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
@@ -597,10 +597,10 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
     <pcz:test>
       <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='NER']" />
-        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-NER.xml']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='ParlaMint-taxonomy-NER.ana.xml']" />
     </pcz:test>
     <pcz:tei>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-NER.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ParlaMint-taxonomy-NER.ana.xml"/>
     </pcz:tei>
     </pcz:item>
   </pcz:meta>
@@ -712,10 +712,10 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='NER.cnec2.0']" />
-        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-NER.cnec2.0.xml']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='ParCzech-taxonomy-NER.cnec2.0.ana.xml']" />
       </pcz:test>
       <pcz:tei>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-NER.cnec2.0.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ParCzech-taxonomy-NER.cnec2.0.ana.xml"/>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
@@ -724,10 +724,10 @@
     <pcz:item pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl">
       <pcz:test>
         <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/tei:taxonomy[@xml:id='UD-SYN']" />
-        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='taxonomy-UD-SYN.xml']" />
+        <pcz:false pcz:xpath="/tei:*/tei:teiHeader/tei:encodingDesc/tei:classDecl/xi:include[@href='ParlaMint-taxonomy-UD-SYN.ana.xml']" />
       </pcz:test>
       <pcz:tei>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="taxonomy-UD-SYN.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ParlaMint-taxonomy-UD-SYN.ana.xml"/>
       </pcz:tei>
     </pcz:item>
   </pcz:meta>
