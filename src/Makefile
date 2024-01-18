@@ -11,19 +11,55 @@ SAMPLE-DATA-SOURCE=parczech:/opt/data/data-ParlaMint3.1-FRESH/
 
 
 
-release:
+release: get-lists-ParlaMint4.0
 	mkdir -p $(DATA-RELEASE)/
+	sed -i 's/xml:id="ParlaMint-CZ-/xml:id="ParCzech-/' $(DATA-IN)/ParlaMint-CZ-list*.xml
 	$s -xsl:tools/ParCzech-finalize.xsl \
 	    outDir=$(DATA-RELEASE)/ \
-	    inListPerson=$(DATA-IN)/parczech.tei.ana/consolidated/ParCzech-listPerson.xml  \
-	    inListOrg=$(DATA-IN)/parczech.tei.ana/consolidated/ParCzech-listOrg.xml \
+	    inListPerson=$(DATA-IN)/ParlaMint-CZ-listPerson.xml  \
+	    inListOrg=$(DATA-IN)/ParlaMint-CZ-listOrg.xml \
 	    inTaxonomiesDir=$(PWD)/metadater/taxonomies/ \
 	    type=TEI.ana \
 	    $(DATA-IN)/parczech.tei.ana/consolidated/ParCzech.ana.xml
 	cp ./tei2teitok/pdt-fslib.xml $(DATA-RELEASE)/ParCzech.TEI.ana/
+	$s -xsl:tools/ParCzech-finalize.xsl \
+	    outDir=$(DATA-RELEASE)/ \
+	    inListPerson=$(DATA-IN)/ParlaMint-CZ-listPerson.xml  \
+	    inListOrg=$(DATA-IN)/ParlaMint-CZ-listOrg.xml \
+	    inTaxonomiesDir=$(PWD)/metadater/taxonomies/ \
+	    anaDir=$(DATA-RELEASE)/ParCzech.TEI.ana \
+	    type=TEI \
+	    $(DATA-IN)/parczech.tei.raw/consolidated/ParCzech.xml
+
+get-lists-ParlaMint4.0: $(DATA-IN)/ParlaMint-CZ-listOrg.xml $(DATA-IN)/ParlaMint-CZ-listPerson.xml
+	echo 'diff <(sort $(DATA-IN)/parczech.tei.ana/consolidated/ParCzech-listPerson.xml| grep -o "xml:id=\"[^\"]*"|sort ) <(sort $(DATA-IN)/ParlaMint-CZ-listPerson.xml | grep -o "xml:id=\"[^\"]*"|sort)'| bash || :
+	echo 'diff <(sort $(DATA-IN)/parczech.tei.ana/consolidated/ParCzech-listOrg.xml| grep -o "xml:id=\"[^\"]*"|sort ) <(sort $(DATA-IN)/ParlaMint-CZ-listOrg.xml | grep -o "xml:id=\"[^\"]*"|sort)'| bash || :
+$(DATA-IN)/ParlaMint-CZ-listOrg.xml:
+	wget https://raw.githubusercontent.com/clarin-eric/ParlaMint/v4.0/Samples/ParlaMint-CZ/ParlaMint-CZ-listOrg.xml -O $(DATA-IN)/ParlaMint-CZ-listOrg.xml
+$(DATA-IN)/ParlaMint-CZ-listPerson.xml:
+	wget https://raw.githubusercontent.com/clarin-eric/ParlaMint/v4.0/Samples/ParlaMint-CZ/ParlaMint-CZ-listPerson.xml -O $(DATA-IN)/ParlaMint-CZ-listPerson.xml
+
+
+validate-release-parlaclarin:
+	echo $(DATA-RELEASE)/ParCzech.TEI.ana/ParCzech.ana.xml | xargs ${pc}
+validate-release-ParCzech:
+	echo $(DATA-RELEASE)/ParCzech.TEI.ana/ParCzech.ana.xml | xargs ${pc}
 
 
 
+validate-release-ParCzech.TEI.ana:
+	find $(DATA-RELEASE) -type f -path "$(DATA-RELEASE)ParCzech.TEI.ana/ParCzech.ana.xml" | xargs ${vra}
+	find $(DATA-RELEASE) -type f -path "$(DATA-RELEASE)ParCzech.TEI.ana/*/*" -name "*.ana.xml" | xargs ${vca}
+	find $(DATA-RELEASE) -type f -path "$(DATA-RELEASE)ParCzech.TEI.ana/*-taxonomy-*.xml" | xargs ${vch_taxonomy}
+	find $(DATA-RELEASE) -type f -path "$(DATA-RELEASE)ParCzech.TEI.ana/ParCzech-listPerson.xml" | xargs ${vch_pers}
+	find $(DATA-RELEASE) -type f -path "$(DATA-RELEASE)ParCzech.TEI.ana/ParCzech-listOrg.xml" | xargs ${vch_orgs}
+
+validate-release-ParCzech.TEI:
+	find $(DATA-RELEASE) -type f -path "$(DATA-RELEASE)ParCzech.TEI/ParCzech.xml" | xargs ${vrt}
+	find $(DATA-RELEASE) -type f -path "$(DATA-RELEASE)ParCzech.TEI/*/*" -name "*.xml" | xargs ${vct}
+	find $(DATA-RELEASE) -type f -path "$(DATA-RELEASE)ParCzech.TEI/*-taxonomy-*.xml" | xargs ${vch_taxonomy}
+	find $(DATA-RELEASE) -type f -path "$(DATA-RELEASE)ParCzech.TEI/ParCzech-listPerson.xml" | xargs ${vch_pers}
+	find $(DATA-RELEASE) -type f -path "$(DATA-RELEASE)ParCzech.TEI/ParCzech-listOrg.xml" | xargs ${vch_orgs}
 
 
 DEV-clean-sample-for-release:
@@ -51,4 +87,12 @@ DEV-prepare-sample-for-release-ana-fix: # ana specific issues
 ###################x
 s = java $(JM) -jar /usr/share/java/saxon.jar
 j = java $(JM) -jar /usr/share/java/jing.jar
+pc = -I % $s -xi -xsl:$(PWD)/tools/copy.xsl % | $j schema/parla-clarin.rng
+vrt = $j schema/ParCzech-teiCorpus.rng 	# Corpus root / text
+vct = $j schema/ParCzech-TEI.rng		# Corpus component / text
+vra = $j schema/ParCzech-teiCorpus.ana.rng	# Corpus root / analysed
+vca = $j schema/ParCzech-TEI.ana.rng		# Corpus component / analysed
+vch_taxonomy = $j schema/ParCzech-taxonomy.rng # factorized taxonomy
+vch_pers = $j schema/ParCzech-listPerson.rng # factorized listPerson
+vch_orgs = $j schema/ParCzech-listOrg.rng # factorized listOrg
 getcomponentincludes = -I % java -cp /usr/share/java/saxon.jar net.sf.saxon.Query -xi:off \!method=adaptive -qs:'/*/*[local-name()="include"]/@href' -s:% |sed 's/^ *href="//;s/"//'
