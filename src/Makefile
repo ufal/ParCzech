@@ -61,6 +61,21 @@ validate-release-ParCzech.TEI:
 	find $(DATA-RELEASE) -type f -path "$(DATA-RELEASE)ParCzech.TEI/ParCzech-listPerson.xml" | xargs ${vch_pers}
 	find $(DATA-RELEASE) -type f -path "$(DATA-RELEASE)ParCzech.TEI/ParCzech-listOrg.xml" | xargs ${vch_orgs}
 
+###### Check links
+check-links-release-ParCzech.TEI.ana check-links-release-ParCzech.TEI: check-links-release-ParCzech.TEI%:
+	for root in `find $(DATA-RELEASE)ParCzech.TEI$*/ParCzech$*.xml`;	do \
+	  echo "checking links in root:" $${root}; \
+	  ${s} ${vlink} $${root}; \
+	  for component in `echo $${root}| xargs ${getheaderincludes}`; do \
+	    echo "checking links in header component:" $(DATA-RELEASE)ParCzech.TEI$*/$${component}; \
+	    ${s} meta=$${root} ${vlink} $(DATA-RELEASE)ParCzech.TEI$*/$${component}; \
+	  done; \
+	  for component in `echo $${root}| xargs ${getcomponentincludes}`; do \
+	    echo "checking links in component:" $(DATA-RELEASE)ParCzech.TEI$*/$${component}; \
+	    ${s} meta=$${root} ${vlink} $(DATA-RELEASE)ParCzech.TEI$*/$${component}; \
+	  done; \
+	done
+
 
 DEV-clean-sample-for-release:
 	rm -r $(SAMPLE-DATA-IN)/parczech.tei.*
@@ -95,4 +110,7 @@ vca = $j schema/ParCzech-TEI.ana.rng		# Corpus component / analysed
 vch_taxonomy = $j schema/ParCzech-taxonomy.rng # factorized taxonomy
 vch_pers = $j schema/ParCzech-listPerson.rng # factorized listPerson
 vch_orgs = $j schema/ParCzech-listOrg.rng # factorized listOrg
+vlink = -xsl:tools/check-links.xsl
+getincludes = -I % java -cp /usr/share/java/saxon.jar net.sf.saxon.Query -xi:off \!method=adaptive -qs:'//*[local-name()="include"]/@href' -s:% |sed 's/^ *href="//;s/"//'
+getheaderincludes = -I % java -cp /usr/share/java/saxon.jar net.sf.saxon.Query -xi:off \!method=adaptive -qs:'//*[local-name()="teiHeader"]//*[local-name()="include"]/@href' -s:% |sed 's/^ *href="//;s/"//'
 getcomponentincludes = -I % java -cp /usr/share/java/saxon.jar net.sf.saxon.Query -xi:off \!method=adaptive -qs:'/*/*[local-name()="include"]/@href' -s:% |sed 's/^ *href="//;s/"//'

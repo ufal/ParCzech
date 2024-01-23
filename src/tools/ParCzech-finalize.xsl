@@ -39,8 +39,8 @@
   <xsl:variable name="taxonomies">
     <item>ParlaMint-taxonomy-parla.legislature.xml</item>
     <item>ParlaMint-taxonomy-speaker_types.xml</item>
-    <!--<item>ParlaMint-taxonomy-politicalOrientation.xml</item>-->
-    <!--<item>ParlaMint-taxonomy-CHES.xml</item>-->
+    <item>ParlaMint-taxonomy-politicalOrientation.xml</item>
+    <item>ParlaMint-taxonomy-CHES.xml</item>
     <!--<item>ParlaMint-taxonomy-subcorpus.xml</item>-->
     <item>ParCzech-taxonomy-parla.links.xml</item>
     <item>ParCzech-taxonomy-meeting.parts.xml</item>
@@ -306,6 +306,9 @@
       </xsl:call-template>
     </xsl:copy>
   </xsl:template>
+
+  <xsl:template mode="comp" match="tei:pc/@lemma"/> <!-- remove lemma from punct -->
+
 
   <!-- Remove leading, trailing and multiple spaces -->
   <xsl:template mode="comp" match="text()[normalize-space(.)]">
@@ -593,7 +596,7 @@
 
   <xsl:template name="add-projectDesc">
     <projectDesc>
-      <p xml:lang="en"><ref target="https://ufal.mff.cuni.cz/parczech">ParCzech</ref> is a project on compiling Czech parliamentary data into annotated corpora</p>
+      <p xml:lang="en"><ref target="https://ufal.mff.cuni.cz/parczech">ParCzech</ref> is a project on compiling Czech parliamentary data into annotated corpora. It mostly follows the <ref target="https://www.clarin.eu/parlamint">ParlaMint project's</ref> recommendation, but the data are slightly extended in several ways. Texts contain links to original voting and prints. Except for the 4-class named entities classification, it also includes a more detailed CNEC hierarchical classification. The text in the annotated version is aligned with audio on the token level. And morphological annotation contains pdt tagsed besides UD PoS and features.</p>
     </projectDesc>
   </xsl:template>
 
