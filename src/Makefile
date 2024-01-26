@@ -184,7 +184,7 @@ audio-release-meta-quarter-FILE:
 
 ###################
 s = java $(JM) -jar $(JAVA-PATH)/saxon.jar
-j = java $(JM) -jar /usr/share/java/jing.jar
+j = java $(JM) -jar $(JAVA-PATH)/jing.jar
 pc = -I % $s -xi -xsl:$(PWD)/tools/copy.xsl % | $j schema/parla-clarin.rng
 vrt = $j schema/ParCzech-teiCorpus.rng 	# Corpus root / text
 vct = $j schema/ParCzech-TEI.rng		# Corpus component / text
