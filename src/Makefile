@@ -157,7 +157,7 @@ audio-release-meta-mp3: $(TSVaudioFile)
 FILE-DATE-PATH=$(shell echo -e "$(FILE)" | sed 's@.*$(AUDIO-DATA-RELEASE-COMMON-PATH)/*@@')
 audio-release-meta-mp3-FILE: $(FILE)
 	@echo -n "$(AUDIO-DATA-RELEASE-COMMON-PATH)/$(FILE-DATE-PATH)\\t" >> $(TSVaudioFile).tmp
-	@realpath `find audio-release-TMP/audio-data-source/ -path "*/2016/06/01/2016060110381052.mp3"`|sed 's@^.*\(www.psp.cz/\)@https://\1@'|tr "\n" "\t" >> $(TSVaudioFile).tmp
+	@realpath `find $(AUDIO-DATA-SOURCE) -path "*/2016/06/01/2016060110381052.mp3"`|sed 's@^.*\(www.psp.cz/\)@https://\1@'|tr "\n" "\t" >> $(TSVaudioFile).tmp
 	@echo -n "$(FILE)"|sed 's@^.*\(audioPSP-....-Q.\).*$$@\1.tar\t@' >> $(TSVaudioFile).tmp
 	@echo "$(AUDIO-DATA-VERSION)\\t1">> $(TSVaudioFile).tmp
 
