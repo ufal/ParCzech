@@ -9,6 +9,17 @@ DATA-IN=$(SAMPLE-DATA-IN)
 SAMPLE-DATA-SOURCE=parczech:/opt/data/data-ParlaMint3.1-FRESH/
 
 
+AUDIO-DATA-PATH=.
+AUDIO-DATA-SOURCE=$(AUDIO-DATA-PATH)/audio-data-source/
+AUDIO-DATA-TO-RELEASE=$(AUDIO-DATA-PATH)/audio-data-to-release/
+AUDIO-DATA-RELEASE=$(AUDIO-DATA-PATH)/audio-data-release/
+AUDIO-DATA-VERSION=20240101
+AUDIO-DATA-RELEASE-COMMON-PATH=audio/psp
+AUDIO-DATA-RELEASE-HANDLE-ID=11234/1-5404
+AUDIO-DATA-RELEASE-REPOSITORY-URL-PREF=https://lindat.mff.cuni.cz/repository/xmlui/bitstream/handle/$(AUDIO-DATA-RELEASE-HANDLE-ID)/
+TSVaudioFile=$(AUDIO-DATA-RELEASE)/audioPSP-meta.audioFile.tsv
+TSVquartileArchive=$(AUDIO-DATA-RELEASE)/audioPSP-meta.quartileArchive.tsv
+
 
 
 release: get-lists-ParlaMint4.0
@@ -98,8 +109,80 @@ DEV-prepare-sample-for-release-raw-fix: # raw specific issues
 
 DEV-prepare-sample-for-release-ana-fix: # ana specific issues
 
+###################
+audio-release-folder-structure: audio-release-folder-structure-clear
+	mkdir -p $(AUDIO-DATA-TO-RELEASE)/ || :
+	# create audioPSP-YYYY-QN/audio/psp/YYYY/MM audio-release-folder-structure
+	find $(AUDIO-DATA-SOURCE)/ -type d| grep -v '/../..$$'| sed -n 's@^.*/audio/\(....\)/\(..\)@audioPSP-\1-MONTH\2/$(AUDIO-DATA-RELEASE-COMMON-PATH)/\1/\2@p' \
+	  | sed 's/MONTH0[123]/Q1/;s/MONTH0[456]/Q2/;s/MONTH0[789]/Q3/;s/MONTH[1][012]/Q4/' |xargs -I {} mkdir -p $(AUDIO-DATA-TO-RELEASE)/{}
+	# create audio/psp/YYYY/MM/DD symlinks
+	find $(AUDIO-DATA-TO-RELEASE)/ -type d| grep  '/..../..$$' \
+	  | sed 's@\(.*\)/\(....\)/\(..\)@realpath --relative-to="\1/\2/\3" `find $(AUDIO-DATA-SOURCE)/ -type d -path "**/\2/\3/*"|tr "\\n" " "`| xargs -I {} echo ln -s {}YYY \1/\2/\3/XXX@' \
+	  | sh \
+	  | sed 's@\(.*\)\(/..\)YYY \(.*\)XXX@\1\2 \3\2@' \
+	  | sh
+audio-release-folder-structure-clear:
+	rm -r $(AUDIO-DATA-TO-RELEASE)/* || :
 
-###################x
+audio-release: audio-release-pack audio-release-meta
+
+AUDIO-Qn = $(addprefix audio-release-pack-,$(shell ls $(AUDIO-DATA-TO-RELEASE)))
+audio-release-pack: $(AUDIO-Qn)
+$(AUDIO-Qn): audio-release-pack-%:
+	mkdir -p $(AUDIO-DATA-RELEASE) || :
+	tar -cf $(AUDIO-DATA-RELEASE)/$*.tar --mode='a+rwX' --dereference --directory=$(AUDIO-DATA-TO-RELEASE)/$* audio
+
+AUDIO-Qn-unpack = $(addprefix audio-release-unpack-,$(shell ls $(AUDIO-DATA-TO-RELEASE)))
+audio-release-unpack: $(AUDIO-Qn-unpack)
+$(AUDIO-Qn-unpack): audio-release-unpack-%:
+	mkdir $(AUDIO-DATA-PATH)/UNPACK-TEST/ || :
+	tar -xvf $(AUDIO-DATA-RELEASE)/$*.tar -C $(AUDIO-DATA-PATH)/UNPACK-TEST/
+
+## meta ##
+audio-release-meta: audio-release-meta-mp3 audio-release-meta-quartile
+audio-release-meta-clear:
+	rm $(TSVaudioFile) $(TSVquartileArchive)
+
+## audioFile
+$(TSVaudioFile):
+	@mkdir -p $(AUDIO-DATA-RELEASE) || :
+	@echo "filePath fileSource archiveFileName fromVersion isUpdated"|tr " " "\t" > $(TSVaudioFile)
+
+audio-release-meta-mp3: $(TSVaudioFile)
+	@find -L $(AUDIO-DATA-TO-RELEASE) -type f | xargs -I {} make  --no-print-directory audio-release-meta-mp3-FILE FILE={}
+	@cat $(TSVaudioFile).tmp | sort >> $(TSVaudioFile)
+	@echo `cat $(TSVaudioFile).tmp|wc -l` "files added to $(TSVaudioFile)"
+	@rm $(TSVaudioFile).tmp
+
+FILE-DATE-PATH=$(shell echo -e "$(FILE)" | sed 's@.*$(AUDIO-DATA-RELEASE-COMMON-PATH)/*@@')
+audio-release-meta-mp3-FILE: $(FILE)
+	@echo -n "$(AUDIO-DATA-RELEASE-COMMON-PATH)/$(FILE-DATE-PATH)\\t" >> $(TSVaudioFile).tmp
+	@realpath `find audio-release-TMP/audio-data-source/ -path "*/2016/06/01/2016060110381052.mp3"`|sed 's@^.*\(www.psp.cz/\)@https://\1@'|tr "\n" "\t" >> $(TSVaudioFile).tmp
+	@echo -n "$(FILE)"|sed 's@^.*\(audioPSP-....-Q.\).*$$@\1.tar\t@' >> $(TSVaudioFile).tmp
+	@echo "$(AUDIO-DATA-VERSION)\\t1">> $(TSVaudioFile).tmp
+
+
+
+## quartileArchive
+$(TSVquartileArchive):
+	mkdir -p $(AUDIO-DATA-RELEASE) || :
+	echo "archiveFileName fromDate toDate cntFiles fromVersion isUpdated repositoryUrl"|tr " " "\t" > $(TSVquartileArchive)
+
+audio-release-meta-quartile: $(TSVquartileArchive)
+	@ls $(AUDIO-DATA-TO-RELEASE) | xargs -I {} make  --no-print-directory audio-release-meta-quartile-FILE FILE={}
+	@cat $(TSVquartileArchive).tmp | sort >> $(TSVquartileArchive)
+	@echo `cat $(TSVquartileArchive).tmp|wc -l` "files added to $(TSVquartileArchive)"
+	@rm $(TSVquartileArchive).tmp
+
+audio-release-meta-quartile-FILE:
+	@echo -n "$(FILE).tar\\t" >> $(TSVquartileArchive).tmp
+	@echo $(AUDIO-DATA-TO-RELEASE)/$(FILE)/$(AUDIO-DATA-RELEASE-COMMON-PATH)/*/*/*|tr " " "\\n"| sort|head -n1|sed 's@.*$(AUDIO-DATA-RELEASE-COMMON-PATH)/*@@'|tr "/\\n" "-\\t">> $(TSVquartileArchive).tmp
+	@echo $(AUDIO-DATA-TO-RELEASE)/$(FILE)/$(AUDIO-DATA-RELEASE-COMMON-PATH)/*/*/*|tr " " "\\n"| sort|tail -n1|sed 's@.*$(AUDIO-DATA-RELEASE-COMMON-PATH)/*@@'|tr "/\\n" "-\\t">> $(TSVquartileArchive).tmp
+	@find -L $(AUDIO-DATA-TO-RELEASE)/$(FILE) -type f | wc -l|tr "\\n" "\\t"  >> $(TSVquartileArchive).tmp
+	@echo "$(AUDIO-DATA-VERSION)\\t1\\t$(AUDIO-DATA-RELEASE-REPOSITORY-URL-PREF)$(FILE).tar" >> $(TSVquartileArchive).tmp
+
+
+###################
 s = java $(JM) -jar /usr/share/java/saxon.jar
 j = java $(JM) -jar /usr/share/java/jing.jar
 pc = -I % $s -xi -xsl:$(PWD)/tools/copy.xsl % | $j schema/parla-clarin.rng
