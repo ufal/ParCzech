@@ -1,6 +1,6 @@
-
-
-
+JAVA-MEMORY =
+JM := $(shell test -n "$(JAVA-MEMORY)" && echo -n "-Xmx$(JAVA-MEMORY)g")
+JAVA-PATH=/usr/share/java/
 
 PWD=$(shell pwd)
 DATA-RELEASE=$(PWD)/data/release/
@@ -183,7 +183,7 @@ audio-release-meta-quarter-FILE:
 
 
 ###################
-s = java $(JM) -jar /usr/share/java/saxon.jar
+s = java $(JM) -jar $(JAVA-PATH)/saxon.jar
 j = java $(JM) -jar /usr/share/java/jing.jar
 pc = -I % $s -xi -xsl:$(PWD)/tools/copy.xsl % | $j schema/parla-clarin.rng
 vrt = $j schema/ParCzech-teiCorpus.rng 	# Corpus root / text
