@@ -18,7 +18,7 @@ AUDIO-DATA-RELEASE-COMMON-PATH=audio/psp
 AUDIO-DATA-RELEASE-HANDLE-ID=11234/1-5404
 AUDIO-DATA-RELEASE-REPOSITORY-URL-PREF=https://lindat.mff.cuni.cz/repository/xmlui/bitstream/handle/$(AUDIO-DATA-RELEASE-HANDLE-ID)/
 TSVaudioFile=$(AUDIO-DATA-RELEASE)/audioPSP-meta.audioFile.tsv
-TSVquartileArchive=$(AUDIO-DATA-RELEASE)/audioPSP-meta.quartileArchive.tsv
+TSVquarterArchive=$(AUDIO-DATA-RELEASE)/audioPSP-meta.quarterArchive.tsv
 
 
 
@@ -139,9 +139,9 @@ $(AUDIO-Qn-unpack): audio-release-unpack-%:
 	tar -xvf $(AUDIO-DATA-RELEASE)/$*.tar -C $(AUDIO-DATA-PATH)/UNPACK-TEST/
 
 ## meta ##
-audio-release-meta: audio-release-meta-mp3 audio-release-meta-quartile
+audio-release-meta: audio-release-meta-mp3 audio-release-meta-quarter
 audio-release-meta-clear:
-	rm $(TSVaudioFile) $(TSVquartileArchive)
+	rm $(TSVaudioFile) $(TSVquarterArchive)
 
 ## audioFile
 $(TSVaudioFile):
@@ -163,23 +163,23 @@ audio-release-meta-mp3-FILE: $(FILE)
 
 
 
-## quartileArchive
-$(TSVquartileArchive):
+## quarterArchive
+$(TSVquarterArchive):
 	mkdir -p $(AUDIO-DATA-RELEASE) || :
-	echo "archiveFileName fromDate toDate cntFiles fromVersion isUpdated repositoryUrl"|tr " " "\t" > $(TSVquartileArchive)
+	echo "archiveFileName fromDate toDate cntFiles fromVersion isUpdated repositoryUrl"|tr " " "\t" > $(TSVquarterArchive)
 
-audio-release-meta-quartile: $(TSVquartileArchive)
-	@ls $(AUDIO-DATA-TO-RELEASE) | xargs -I {} make  --no-print-directory audio-release-meta-quartile-FILE FILE={}
-	@cat $(TSVquartileArchive).tmp | sort >> $(TSVquartileArchive)
-	@echo `cat $(TSVquartileArchive).tmp|wc -l` "files added to $(TSVquartileArchive)"
-	@rm $(TSVquartileArchive).tmp
+audio-release-meta-quarter: $(TSVquarterArchive)
+	@ls $(AUDIO-DATA-TO-RELEASE) | xargs -I {} make  --no-print-directory audio-release-meta-quarter-FILE FILE={}
+	@cat $(TSVquarterArchive).tmp | sort >> $(TSVquarterArchive)
+	@echo `cat $(TSVquarterArchive).tmp|wc -l` "files added to $(TSVquarterArchive)"
+	@rm $(TSVquarterArchive).tmp
 
-audio-release-meta-quartile-FILE:
-	@echo -n "$(FILE).tar\\t" >> $(TSVquartileArchive).tmp
-	@echo $(AUDIO-DATA-TO-RELEASE)/$(FILE)/$(AUDIO-DATA-RELEASE-COMMON-PATH)/*/*/*|tr " " "\\n"| sort|head -n1|sed 's@.*$(AUDIO-DATA-RELEASE-COMMON-PATH)/*@@'|tr "/\\n" "-\\t">> $(TSVquartileArchive).tmp
-	@echo $(AUDIO-DATA-TO-RELEASE)/$(FILE)/$(AUDIO-DATA-RELEASE-COMMON-PATH)/*/*/*|tr " " "\\n"| sort|tail -n1|sed 's@.*$(AUDIO-DATA-RELEASE-COMMON-PATH)/*@@'|tr "/\\n" "-\\t">> $(TSVquartileArchive).tmp
-	@find -L $(AUDIO-DATA-TO-RELEASE)/$(FILE) -type f | wc -l|tr "\\n" "\\t"  >> $(TSVquartileArchive).tmp
-	@echo "$(AUDIO-DATA-VERSION)\\t1\\t$(AUDIO-DATA-RELEASE-REPOSITORY-URL-PREF)$(FILE).tar" >> $(TSVquartileArchive).tmp
+audio-release-meta-quarter-FILE:
+	@echo -n "$(FILE).tar\\t" >> $(TSVquarterArchive).tmp
+	@echo $(AUDIO-DATA-TO-RELEASE)/$(FILE)/$(AUDIO-DATA-RELEASE-COMMON-PATH)/*/*/*|tr " " "\\n"| sort|head -n1|sed 's@.*$(AUDIO-DATA-RELEASE-COMMON-PATH)/*@@'|tr "/\\n" "-\\t">> $(TSVquarterArchive).tmp
+	@echo $(AUDIO-DATA-TO-RELEASE)/$(FILE)/$(AUDIO-DATA-RELEASE-COMMON-PATH)/*/*/*|tr " " "\\n"| sort|tail -n1|sed 's@.*$(AUDIO-DATA-RELEASE-COMMON-PATH)/*@@'|tr "/\\n" "-\\t">> $(TSVquarterArchive).tmp
+	@find -L $(AUDIO-DATA-TO-RELEASE)/$(FILE) -type f | wc -l|tr "\\n" "\\t"  >> $(TSVquarterArchive).tmp
+	@echo "$(AUDIO-DATA-VERSION)\\t1\\t$(AUDIO-DATA-RELEASE-REPOSITORY-URL-PREF)$(FILE).tar" >> $(TSVquarterArchive).tmp
 
 
 ###################
