@@ -3,7 +3,9 @@ JM := $(shell test -n "$(JAVA-MEMORY)" && echo -n "-Xmx$(JAVA-MEMORY)g")
 JAVA-PATH=/usr/share/java/
 
 PWD=$(shell pwd)
+CORPUS-NAME=ParCzech4.0
 DATA-RELEASE=$(PWD)/data/release/
+DATA-RELEASE-COMPLETE=$(PWD)/data/release-$(CORPUS-NAME)/
 SAMPLE-DATA-IN=$(PWD)/data/sample-in/
 DATA-IN=$(SAMPLE-DATA-IN)
 SAMPLE-DATA-SOURCE=parczech:/opt/data/data-ParlaMint3.1-FRESH/
@@ -50,6 +52,24 @@ $(DATA-IN)/ParlaMint-CZ-listOrg.xml:
 $(DATA-IN)/ParlaMint-CZ-listPerson.xml:
 	wget https://raw.githubusercontent.com/clarin-eric/ParlaMint/v4.0/Samples/ParlaMint-CZ/ParlaMint-CZ-listPerson.xml -O $(DATA-IN)/ParlaMint-CZ-listPerson.xml
 
+release-pack: release-pack-schema release-pack-html release-pack-TEI release-pack-TEI.ana
+
+release-pack-schema: $(DATA-RELEASE-COMPLETE)-is-empty
+	tar -czf $(DATA-RELEASE-COMPLETE)/$(CORPUS-NAME).schema.tar.gz --mode='a+rwX' schema/*.rng
+	#tar -tf $(DATA-RELEASE-COMPLETE)/$(CORPUS-NAME).schema.tar.gz|sort
+
+release-pack-html:
+	tar -czf $(DATA-RELEASE-COMPLETE)/$(CORPUS-NAME).html.tar.gz --mode='a+rwX' --dereference --directory=$(DATA-RELEASE) ParCzech.html
+release-pack-TEI release-pack-TEI.ana: release-pack-TEI%:
+	tar -czf $(DATA-RELEASE-COMPLETE)/$(CORPUS-NAME).TEI$*.tar.gz --mode='a+rwX' --directory=$(DATA-RELEASE) ParCzech.TEI$*
+	#tar -tf $(DATA-RELEASE-COMPLETE)/$(CORPUS-NAME).TEI$*.tar.gz|sort
+
+
+
+$(DATA-RELEASE-COMPLETE):
+	mkdir -p $(DATA-RELEASE-COMPLETE) || :
+$(DATA-RELEASE-COMPLETE)-is-empty: $(DATA-RELEASE-COMPLETE)
+	test -z "$$(ls -A $(DATA-RELEASE-COMPLETE))" || exit 1
 
 validate-release-parlaclarin:
 	echo $(DATA-RELEASE)/ParCzech.TEI.ana/ParCzech.ana.xml | xargs ${pc}
