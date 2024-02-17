@@ -1,3 +1,7 @@
+JAVA-MEMORY =
+JM := $(shell test -n "$(JAVA-MEMORY)" && echo -n "-Xmx$(JAVA-MEMORY)g")
+JAVA-PATH=/usr/share/java/
+
 
 bin=~/scripts
 RESOURCES=asr/resources
@@ -14,6 +18,7 @@ WORKING-DIR=$(DATADIR)/audio-working
 
 WORKING-DIR-ASR=$(WORKING-DIR)/asr/$(FILE)
 ASR-DIR=$(DATADIR)/audio-asr
+TEI.ana-DIR=$(DATADIR)/TEI.ana
 
 WORKING-DIR-ALIGN-SEQ=$(WORKING-DIR)/align-seq/$(FILE)
 ALIGN-SEQ-DIR=$(DATADIR)/audio-align-seq
@@ -21,12 +26,14 @@ ALIGN-SEQ-DIR=$(DATADIR)/audio-align-seq
 ALIGN-TOKEN-DIR=$(DATADIR)/audio-align-token
 STENO-CONTEXT-DIR=$(DATADIR)/audio-steno-context
 
-YEAR=$(shell echo -n "$(DATE)" | sed -nE "s/^([0-9]{4}).*$$/\1/p")
-MONTH=$(shell echo -n "$(DATE)" | sed -nE "s/^[0-9]{4}-?([0-9]{2}).*$$/\1/p")
-DAY=$(shell echo -n "$(DATE)" | sed -nE "s/^[0-9]{4}-?[0-9]{2}-?([0-9]{2}).*$$/\1/p")
+YEAR=$(shell echo -n "$(DATE)" | sed 's@^.*/@@' | sed -nE "s/^([0-9]{4}).*$$/\1/p")
+MONTH=$(shell echo -n "$(DATE)" | sed 's@^.*/@@' | sed -nE "s/^[0-9]{4}-?([0-9]{2}).*$$/\1/p")
+DAY=$(shell echo -n "$(DATE)" | sed 's@^.*/@@' | sed -nE "s/^[0-9]{4}-?[0-9]{2}-?([0-9]{2}).*$$/\1/p")
 
 AUDIO-DIR=$(shell echo $(AUDIO)/www.psp.cz/eknih/*/audio/$(YEAR)/$(MONTH)/$(DAY)/)
 TOKENS-DIR=$(shell echo $(TOKENS)/www.psp.cz/eknih/*/audio/$(YEAR)/$(MONTH)/$(DAY)/)
+PAGE-TOKENS-RANGE=$(DATADIR)/parlaspeech-page-token-range.tsv
+PARLASPEECH-BEST-ALIGNMENT=$(DATADIR)/parlaspeech-best-alignment.jsonl
 
 YY=$(shell ls data/audio/www.psp.cz/eknih/*/audio/|sed 's/.*://'|xargs|)
 
@@ -46,8 +53,35 @@ CONTEXT-SIZE=100
 all:
 	echo "'$(YY)'"
 
+#####################
+# Prepare
+#####################
+
+# get tokenized data from TEI.ana files
+# remove this part from run_parczech pipeline
+
+#export AUDIO_VERT_DIR=$DATA_DIR/audio-vert-in/${ID}
+#export AUDIO_CORRESP_TSV_DIR=$DATA_DIR/audio-corresp-tsv-in/${ID}
+#export AUDIO_VERT_LIST=$AUDIO_VERT_DIR/vertical.fl
+#export AUDIO_VERT_SPEAKERS=$AUDIO_VERT_DIR/speakers.tsv
 
 
+# TODO pipe:
+# open tei.xml and get all included TEI files
+#  | pass every file to ../audio/token_ids.xsl and print output to stdout
+#  | script ../audio/audio-corresp-split.pl will output the files that correspond to tsv files
+audio-prepare-for-asr:
+	mkdir -p $(TOKENS)
+	find $(TEI.ana-DIR)/ -type f | grep 'ps[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9]' \
+	  | xargs -I {} $s -xsl:$(audio-prepare-token-ids) {} \
+	  | perl $(audio-corresp-split) "$(TOKENS)"
+
+
+
+
+#####################
+# ALIGNMENT
+#####################
 
 #(1)################  ASR
 
@@ -175,7 +209,39 @@ align-token-file-$(FILE): $(ALIGN-TOKEN-DIR) $(PYTHON-ENV)/bin/activate
 	      "tokens aligned in result $(ALIGN-TOKEN-DIR)/$(FILE).tsv"
 
 
+#####################
+# ParlaSpeech
+#####################
 
+#(4)################  ParlaSpeech-CZ
+# create ParlaSpeech from $(ALIGN-TOKEN-DIR)/$(FILE).tsv,
+# firstly crop overlaps
+
+ParlaSpeech-get-page-token-ranges:
+	find $(TOKENS-DIR) -type f |sed 's@\.tsv@@'| xargs -I {} make --no-print-directory ParlaSpeech-get-page-token-range-{} FILE={} DATE={}
+
+ParlaSpeech-get-page-token-range-$(FILE):
+	@echo "FILE: $(FILE)"
+	@echo "TOKENS-DIR: $(TOKENS-DIR)"
+	@echo "DATE: $(DATE)"
+	@echo "DATE PARSED: $(YEAR)----$(MONTH)----$(DAY)"
+	echo -n "$(FILE)\t"|sed "s@^.*/@@" >> $(PAGE-TOKENS-RANGE)
+	head -n1 $(FILE).tsv |cut -f 2|tr "\n" "\t" >> $(PAGE-TOKENS-RANGE)
+	tail -n1 $(FILE).tsv |cut -f 2 >> $(PAGE-TOKENS-RANGE)
+
+
+ParlaSpeech-get-best-alignment:
+	rm $(PARLASPEECH-BEST-ALIGNMENT)
+	perl parla-speech/get-best-alignment.pl \
+	                        --error-rate 0.15 \
+	                        --shortest-partial-sentence 10 \
+	                        --input-dir $(ALIGN-TOKEN-DIR) \
+	                        --tokens-ranges $(PAGE-TOKENS-RANGE) \
+	                        --output $(PARLASPEECH-BEST-ALIGNMENT)
+ParlaSpeech-add-transcribed-text: # use TEI.ana files
+ParlaSpeech-convert-ids2ParlaMint: # create ParlaMint IDs
+ParlaSpeech-finalize: # create jsonl with metadata, clean temporary staff in jsonl(if any)
+ParlaSpeech-release-pack: # pack jsonl
 
 #####################################################
 $(ASR-DIR):
@@ -229,3 +295,9 @@ setup-python-env:
 	&& pip install Levenshtein numpy unidecode num2words pyyaml pydub
 
 getdir = tr " " "\n" | sed "s@.*/@@"
+
+
+
+s = java $(JM) -jar $(JAVA-PATH)/saxon.jar
+audio-prepare-token-ids = ../audio/token_ids.xsl
+audio-corresp-split = ../audio/audio-corresp-split.pl
