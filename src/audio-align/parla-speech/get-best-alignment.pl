@@ -7,13 +7,18 @@ use Getopt::Long;
 use File::Basename;
 use File::Spec;
 
+use Text::CSV qw/csv/;
+
 use JSON::Lines;
 use List::Util;
+
+use Text::Levenshtein;
+
 
 use constant {
   WHOLE => 0,
   BORDER => 1,
-  SPLIT => 2
+  SPLIT => 2,
 };
 
 use Data::Dumper;
@@ -35,15 +40,17 @@ sub usage {
     print STDERR (" \n");
 }
 
-my ($help, $error_rate, $input_dir, $shortest_partial_sentence, $tokens_ranges_file, $output_file);
+my ($help, $error_rate, $input_alignment_dir, $input_tokens_dir, $shortest_partial_sentence, $output_file);
 
+$shortest_partial_sentence = 1000000; #default is not put partial sentences to result
 GetOptions
     (
      'help'       => \$help,
      'error-rate=s'    => \$error_rate,
      'shortest-partial-sentence=s'    => \$shortest_partial_sentence,
-     'input-dir=s'   => \$input_dir,
-     'tokens-ranges=s'     => \$tokens_ranges_file,
+     'input-alignment-dir=s'   => \$input_alignment_dir,
+     'input-tokens-dir=s'   => \$input_tokens_dir,
+     #'tokens-ranges=s'     => \$tokens_ranges_file,
      'output=s'  => \$output_file,
 );
 
@@ -54,26 +61,45 @@ if ($help) {
 
 my $jsonl = JSON::Lines->new();
 open my $OUTPUT, ">", $output_file or die "$output_file: $!";
-open my $RANGES, "<", $tokens_ranges_file or die "$tokens_ranges_file: $!";
+# open my $RANGES, "<", $tokens_ranges_file or die "$tokens_ranges_file: $!";
 
 
 my $report = {
   pages => 0,
   processed => 0,
   result_sent => 0,
-  result_part => 0
+  result_part => 0,
+  audio_len => 0,
+  audio_gaps_len => 0,
+  audio_tokens_len => 0,
 };
 
-while(my $range = <$RANGES>){
-  $range =~ s/\s*$//;
-  my ($file_id,$start_token,$end_token) = split /\t/, $range;
-  my $input_page_file = "$input_dir/$file_id.tsv";
-  print STDERR "Processing page $file_id source file $input_page_file\n";
-  open my $ALIGNMENT, "<", $input_page_file or next;
+
+#while(my $range = <$RANGES>){
+#  $range =~ s/\s*$//;
+
+foreach my $input_align_file (sort glob "$input_alignment_dir/*.tsv" ){ # iterate over all alignment files in input_alignment_dir
+  #my ($file_id,$start_token,$end_token) = split /\t/, $range;
+  #my $input_page_file = "$input_alignment_dir/$file_id.tsv";
+  my ($file_id) = $input_align_file =~ m/(\d*)\.tsv$/;
+  print STDERR "Processing page $file_id source file $input_align_file\n";
+  open my $ALIGNMENT, "<", $input_align_file or next;
+  my ($YYYY,$MM,$DD) = $file_id =~ m/^(\d{4})(\d{2})(\d{2})/;
+  print STDERR "$input_tokens_dir/www.psp.cz/eknih/*/audio/$YYYY/$MM/$DD/$file_id.tsv\n";
+  my ($input_token_page_file) = glob "$input_tokens_dir/www.psp.cz/eknih/*/audio/$YYYY/$MM/$DD/$file_id.tsv";
+  my ($audio_file) = $input_token_page_file =~ m/audio\/(.*)\.tsv$/;
+  $audio_file = "audio/psp/$audio_file.mp3";
+  open my $TOKENS, "<", $input_token_page_file or next;
   $report->{pages} += 1;
   my $line;
-  my @sentence;
-  do {$line = <$ALIGNMENT>; } until ($line =~ m/\t$start_token\t/);
+  my @sentences = load_source_files($TOKENS,$ALIGNMENT);
+  while(my $sentence = shift @sentences){
+    print STDERR scalar(@sentences)," ";
+    proces_sentence({json_obj=>$jsonl,fh=>$OUTPUT, report => $report}, $error_rate, WHOLE, $shortest_partial_sentence, {%$sentence,audio_file=>$audio_file},@{$sentence->{tokens}});
+  }
+
+=XXX
+  #do {$line = <$ALIGNMENT>; } until ($line =~ m/\t$start_token\t/);
   my ($sent_id, $new_sent_id);
   PAGE: {
     do {
@@ -106,7 +132,10 @@ while(my $range = <$RANGES>){
     } while ($line = <$ALIGNMENT>);
   }
   proces_sentence({json_obj=>$jsonl,fh=>$OUTPUT, report => $report}, $error_rate, WHOLE, $shortest_partial_sentence, $sent_id, @sentence);
+=cut
   close $ALIGNMENT;
+  close $TOKENS;
+
   print STDERR "Page $file_id done\n";
 }
 
@@ -114,6 +143,9 @@ print "Pages processed: ",$report->{pages},"\n";
 print "Sentences processed: ",$report->{processed},"\n";
 print "Sentences in result: ",$report->{result_sent},"\n";
 print "Parts in result: ",$report->{result_part},"\n";
+print "audio length in result: ",($report->{audio_len}/1000)," s\n";
+print "tokens audio length in result: ",($report->{audio_tokens_len}/1000)," s\n";
+print "gaps audio length in result: ",($report->{audio_gaps_len}/1000)," s\n";
 
 
 print STDERR "TODO:
@@ -123,34 +155,131 @@ print STDERR "TODO:
 \t   insert the data before passing them to this script???\n";
 
 
+sub load_source_files {
+  my ($TOK,$ALIGN) = @_;
+  my @result;
+  my $tok_in = Text::CSV->new({binary => 1, auto_diag => 1, sep_char=> "\t"});
+  my $align_in = Text::CSV->new({binary => 1, auto_diag => 1, sep_char=> "\t"});
+  # set/load headers
+  $tok_in -> column_names(qw/token wid who uid date no_space_after is_word/);
+  # true_w  trans_w joined  id  recognized  dist  dist/len(true_word) start end time_len_ms time_len/len(true_word)
+  $align_in->header ($ALIGN, { munge_column_names => "none" });
+  # load data
+  my $toks = $tok_in->getline_hr_all($TOK);
+  my $align = $align_in->getline_hr_all($ALIGN);
+  foreach my $row (@$align,@$toks) {
+    foreach my $col (values %{$row}) {
+      $col = 1 if $col eq 'True';
+      $col = 0 if $col eq 'False';
+      $col = $col eq '-' ? undef :$col;
+    }
+  }
+  my ($ti, $ai) = (0,0);
+  while($ai < @$align && (!defined($align->[$ai]->{id}) ||  $toks->[$ti]->{wid} ne $align->[$ai]->{id} )) { # skipping undef and context tokens
+    $ai++;
+  }
+  my ($sent_id, $new_sent_id);
+  my $sentence;
+  #print STDERR Dumper($toks,$align);
+  while($ti < @$toks && $ai < @$align){
+    my ($move_ti,$move_ai) = (0,0);
+    if($toks->[$ti]->{wid} && $align->[$ai]->{id}
+        && $toks->[$ti]->{wid} eq $align->[$ai]->{id}){
+      $move_ti = 1;
+      $move_ai = 1;
+      ($new_sent_id) = $toks->[$ti]->{wid} =~ m/^(.*)\.w.*?$/;
+    } elsif (! defined($align->[$ai]->{id})) { # skip move through all unmatched aligns
+      $move_ai = 1;
+    } else { # move to next token (current token is not in align)
+      $move_ti = 1;
+      ($new_sent_id) = $toks->[$ti]->{wid} =~ m/^(.*)\.w.*?$/;
+    }
+
+    if($sent_id && $sent_id ne $new_sent_id){
+      push @result, $sentence;
+      undef $sentence;
+    }
+    $sent_id = $new_sent_id;
+
+    if(!defined($sentence) && $sent_id){ # first token in sentence from toks
+      print STDERR "new sentence $sent_id\n";
+      $sentence = {};
+      $sentence->{sid} = $sent_id;
+      $sentence->{uid} = $toks->[$ti]->{uid};
+      $sentence->{date} = $toks->[$ti]->{date};
+      $sentence->{tokens} = [];
+    }
+    # change sentence if previous different sent_id
+    # insert to current sentence
+    if($sentence){ # align is skipped if not seen the first token from toks
+      my $id = $move_ti ? $toks->[$ti]->{wid} : $align->[$ai]->{id};
+      push @{$sentence->{tokens}},{
+        id => $id,
+        dist => ($move_ti && $move_ai)
+                ? ($align->[$ai]->{dist} // length($align->[$ai]->{true_w}))
+                : ($move_ai
+                    ? length($align->[$ai]->{trans_w})
+                    : 0 # punctation
+                  ),
+        #dist => ($move_ti && $move_ai) ? ($align->[$ai]->{dist} // length($align->[$ai]->{true_w})) : 0,
+        len => $move_ai ? length($align->[$ai]->{true_w} // $align->[$ai]->{trans_w}) : 0,
+        #len => $move_ai ? length($align->[$ai]->{true_w} // '') : 0,
+        word => $move_ti ? $toks->[$ti]->{token} : undef,
+        word_audio => $move_ai ? $align->[$ai]->{trans_w} : undef,
+        aligned => ($move_ti + $move_ai == 2 && $align->[$ai]->{start}) ? 1 : 0,
+        is_in_audio => $move_ai,
+        is_in_token => $move_ti,
+        no_space_after => $move_ti ? $toks->[$ti]->{no_space_after} : 1,
+        start_time => $move_ai ? $align->[$ai]->{start} : undef,
+        end_time => $move_ai ? $align->[$ai]->{end} : undef,
+        time_len_ms => $move_ai ? $align->[$ai]->{time_len_ms} : undef,
+      };
+    }
+    $ai += $move_ai;;
+    $ti += $move_ti;
+  }
+  return @result;
+}
+
 sub proces_sentence {
   my $result = shift;
   my $max_error_rate = shift;
   my $crop_level = shift;
   my $partial_sentence_min_len = shift;
-  my $sent_id = shift;
+  my $sentence = shift;
   my @alignment = @_;
+
+  print STDERR "TODO SKIP punctation tokens first !!! and then remove not aligned ",$sentence->{sid}," ";
+  print STDERR scalar(@alignment)," --> ";
+
   # remove mismatchs from the beginning
-  while(@alignment && (!defined($alignment[0]->{id}) || !defined($alignment[0]->{trans_w}))) {
-    $crop_level = BORDER if !defined($alignment[0]->{trans_w}) && $crop_level == WHOLE;
-    shift @alignment;
+  my @beginning = ();
+  while(@alignment && !$alignment[0]->{aligned}) { #ends at the first aligned token
+    my $elem = shift @alignment;
+    unshift @beginning, $elem if $elem->{id};
   }
+  unshift @alignment, (shift @beginning) while(@beginning);
+
   # remove mismatchs from the end
-  while(@alignment && (!defined($alignment[$#alignment]->{id}) || !defined($alignment[$#alignment]->{trans_w}))) {
-    $crop_level = BORDER if !defined($alignment[$#alignment]->{trans_w}) && $crop_level == WHOLE;
-    pop @alignment;
+  my @ending = ();
+  while(@alignment && !$alignment[$#alignment]->{aligned}) { #ends at the last aligned token
+    my $elem = pop @alignment;
+    push @ending, $elem if $elem->{id}
   }
+  push @alignment, pop @ending while(@ending);
+
   $result->{report}->{processed} += 1 if $crop_level == WHOLE;
+
   my $sent_dist = List::Util::sum(map { $_->{dist} } @alignment);
-  my $sent_len_true = List::Util::sum(map { length($_->{true_w}//'') } @alignment);
-  my $sent_len_all = List::Util::sum(map { length($_->{true_w}//$_->{trans_w}) } @alignment);
+  my $sent_len_all = List::Util::sum(map { $_->{len} } @alignment);
   return unless $sent_len_all;
   my $result_error_rate = $sent_dist / $sent_len_all;
+
   if(($result_error_rate <= $max_error_rate) && (($crop_level == WHOLE) || ($partial_sentence_min_len <= @alignment)) ) {
-    print STDERR ($crop_level == WHOLE ? "WHOLE-":'PARTIAL-'),"SENTENCE: DIST=$sent_dist LEN=$sent_len_true ERROR-TRUE=",($sent_dist/$sent_len_true)," ERROR-ALL=$result_error_rate\n";
-    print STDERR "\tTEXT: ",join(" ",map {$_->{true_w}//'-'} @alignment),"\n";
-    print STDERR "\tAUDIO:",join(" ",map {$_->{trans_w}//'-'} @alignment),"\n";
-    $result->{json_obj}->add_line({align=>\@alignment},$result->{fh});
+    print STDERR ($crop_level == WHOLE ? "WHOLE-":'PARTIAL-'),"SENTENCE: DIST=$sent_dist ERROR-ALL=$result_error_rate\n";
+    print STDERR "\tTEXT: ",join(" ",map {$_->{word}//'-'} @alignment),"\n";
+    print STDERR "\tAUDIO:",join(" ",map {$_->{word_audio}//'-'} @alignment),"\n";
+    sentence_to_result($result, \@alignment,{%$sentence, token_char_error_rate => $result_error_rate},$crop_level);
     if($crop_level == WHOLE){
       $result->{report}->{result_sent} += 1;
     } else {
@@ -158,6 +287,7 @@ sub proces_sentence {
     }
   } elsif (@alignment >= 3 && @alignment >= $partial_sentence_min_len) {
     # calculate floating mismatch
+    print STDERR "DEAL WITH PUNCTATION - best space for division !!!";
     my @floating_dist = (
       $alignment[0]->{dist},
       (map {List::Util::sum(map {$alignment[$_]->{dist}} ($_-1,$_,$_+1) ) } (1..($#alignment-1))),
@@ -167,14 +297,67 @@ sub proces_sentence {
     my $max_idx = List::Util::reduce { $floating_dist[$a] > $floating_dist[$b] ? $a : $b } 0..$#floating_dist;
     print STDERR "\t",join(' ',@floating_dist),"\n";
     print STDERR "\t",join(' ',@floating_dist[0..($max_idx-1)])," ## ", join(' ',@floating_dist[($max_idx+1)..$#floating_dist]),"\n";
-    print STDERR "\tTEXT: ",join(" ",map {$max_idx == $_ ? '##' : $alignment[$_]->{true_w}//'-'} (0..$#alignment)),"\n";
-    print STDERR "\tAUDIO:",join(" ",map {$max_idx == $_ ? '##' : $alignment[$_]->{trans_w}//'-'} (0..$#alignment)),"\n";
-    proces_sentence($result, $max_error_rate, SPLIT, $partial_sentence_min_len, $sent_id, @alignment[0..($max_idx-1)]) if $max_idx > $partial_sentence_min_len;
-    proces_sentence($result, $max_error_rate, SPLIT, $partial_sentence_min_len, $sent_id, @alignment[($max_idx+1)..$#floating_dist]) if $#floating_dist-$max_idx+1 > $partial_sentence_min_len;
+    print STDERR "\tTEXT: ",join(" ",map {$max_idx == $_ ? '##' : $alignment[$_]->{word}//'-'} (0..$#alignment)),"\n";
+    print STDERR "\tAUDIO:",join(" ",map {$max_idx == $_ ? '##' : $alignment[$_]->{word_audio}//'-'} (0..$#alignment)),"\n";
+    proces_sentence($result, $max_error_rate, SPLIT, $partial_sentence_min_len, $sentence, @alignment[0..($max_idx-1)]) if $max_idx > $partial_sentence_min_len;
+    proces_sentence($result, $max_error_rate, SPLIT, $partial_sentence_min_len, $sentence, @alignment[($max_idx+1)..$#floating_dist]) if $#floating_dist-$max_idx+1 > $partial_sentence_min_len;
   }
 }
 
+sub sentence_to_result {
+  my ($result,$alignment,$meta,$status) = @_;
+  my $id_prefix = 'ParlaMint-CZ_'.$meta->{date}.'-';
+  my $id = $id_prefix.$meta->{sid}.'_'. join('-',map {(split '\.', $_->{id})[-1] } @$alignment[0,-1]);
+  my ($time_s,$time_e);
+  my $time_len = 0;
+  my $text = '';
+  my $text_audio = '';
+  my @words;
+  for my $tok (@$alignment){
+    my $word = {};
+    $word->{char_s} = length($text) + 0; # force number
+    $text .=  $tok->{word};
+    $text_audio .=  $tok->{word_audio} ? ($tok->{word_audio}.' ') : '';
+    if($tok->{aligned}){
+      $word->{char_e} = length($text) + 0;
+      $word->{time_s} = $tok->{start_time} / 1000 + 0;
+      $word->{time_e} = $tok->{end_time} / 1000 + 0;
+      $word->{id} = $tok->{id};
+      push @words, $word;
+      $time_s //= $tok->{start_time};
+      $time_e = $tok->{end_time};
+      $time_len += $tok->{end_time} - $tok->{start_time};
 
+    }
+    $text .= ' ' unless $tok->{no_space_after};
+  }
+  #my $text = join('',map {$_->{word}.($_->{no_space_after}?'':' ')} @$alignment);
+  $text =~ s/ $//; # removing space after sentence (inside paragraph)
+  $text_audio =~ s/ $//; # removing space after sentence (inside paragraph)
+  $result->{json_obj}->add_line(
+    {
+      id => $id,
+      word => \@words,
+      audio => $meta->{audio_file},
+      audio_cover => {
+        start =>$time_s/1000+0,
+        end =>$time_e/1000+0,
+        len =>($time_e-$time_s)/1000+0,
+        len_tokens => ($time_len)/1000+0,
+        len_gaps => ($time_e-$time_s-$time_len)/1000+0,
+      },
+#      quality => {
+#        token_char_error_rate => $meta->{token_char_error_rate},
+#        char_error_rate => Text::Levenshtein::distance($text, $text_audio) / length($text),
+#      },
+      text=>$text,
+    }
+    ,$result->{fh});
 
-close $RANGES;
+  $result->{report}->{audio_len} += $time_e-$time_s;
+  $result->{report}->{audio_tokens_len} += $time_len;
+  $result->{report}->{audio_gaps_len} += $time_e - $time_s - $time_len;
+}
+
+#close $RANGES;
 close $OUTPUT;

@@ -217,29 +217,28 @@ align-token-file-$(FILE): $(ALIGN-TOKEN-DIR) $(PYTHON-ENV)/bin/activate
 # create ParlaSpeech from $(ALIGN-TOKEN-DIR)/$(FILE).tsv,
 # firstly crop overlaps
 
-ParlaSpeech-get-page-token-ranges:
-	find $(TOKENS-DIR) -type f |sed 's@\.tsv@@'| xargs -I {} make --no-print-directory ParlaSpeech-get-page-token-range-{} FILE={} DATE={}
+# ParlaSpeech-get-page-token-ranges:
+# 	find $(TOKENS-DIR) -type f |sed 's@\.tsv@@'| xargs -I {} make --no-print-directory ParlaSpeech-get-page-token-range-{} FILE={} DATE={}
 
-ParlaSpeech-get-page-token-range-$(FILE):
-	@echo "FILE: $(FILE)"
-	@echo "TOKENS-DIR: $(TOKENS-DIR)"
-	@echo "DATE: $(DATE)"
-	@echo "DATE PARSED: $(YEAR)----$(MONTH)----$(DAY)"
-	echo -n "$(FILE)\t"|sed "s@^.*/@@" >> $(PAGE-TOKENS-RANGE)
-	head -n1 $(FILE).tsv |cut -f 2|tr "\n" "\t" >> $(PAGE-TOKENS-RANGE)
-	tail -n1 $(FILE).tsv |cut -f 2 >> $(PAGE-TOKENS-RANGE)
+# ParlaSpeech-get-page-token-range-$(FILE):
+# 	@echo "FILE: $(FILE)"
+# 	@echo "TOKENS-DIR: $(TOKENS-DIR)"
+# 	@echo "DATE: $(DATE)"
+# 	@echo "DATE PARSED: $(YEAR)----$(MONTH)----$(DAY)"
+# 	echo -n "$(FILE)\t"|sed "s@^.*/@@" >> $(PAGE-TOKENS-RANGE)
+# 	head -n1 $(FILE).tsv |cut -f 2|tr "\n" "\t" >> $(PAGE-TOKENS-RANGE)
+# 	tail -n1 $(FILE).tsv |cut -f 2 >> $(PAGE-TOKENS-RANGE)
 
 
 ParlaSpeech-get-best-alignment:
-	rm $(PARLASPEECH-BEST-ALIGNMENT)
+	rm $(PARLASPEECH-BEST-ALIGNMENT) || :
 	perl parla-speech/get-best-alignment.pl \
 	                        --error-rate 0.15 \
-	                        --shortest-partial-sentence 10 \
-	                        --input-dir $(ALIGN-TOKEN-DIR) \
-	                        --tokens-ranges $(PAGE-TOKENS-RANGE) \
+	                        \ #--shortest-partial-sentence 10 \
+	                        --input-alignment-dir $(ALIGN-TOKEN-DIR) \
+	                        --input-tokens-dir $(TOKENS) \
 	                        --output $(PARLASPEECH-BEST-ALIGNMENT)
-ParlaSpeech-add-transcribed-text: # use TEI.ana files
-ParlaSpeech-convert-ids2ParlaMint: # create ParlaMint IDs
+
 ParlaSpeech-finalize: # create jsonl with metadata, clean temporary staff in jsonl(if any)
 ParlaSpeech-release-pack: # pack jsonl
 
