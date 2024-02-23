@@ -17,6 +17,7 @@ my $OUT;
 while(my $line = <STDIN>){
   $line =~ s/\n//;
   ($nFile) = $line =~ m/^.*AUDIO.*\/\/(.*).mp3/;
+  print STDERR "WARN: missing audio on page - should be closed and not overflow to next page\n" if $line =~ m/^#.*AUDIO/ && $line !~ m/^#.*mp3/;
   if($nFile && $nFile ne $oFile){
     close $OUT if $oFile;
     $oFile = $nFile;
@@ -24,7 +25,7 @@ while(my $line = <STDIN>){
     my $dir = dirname($file);
     File::Path::mkpath($dir) unless -d $dir;
     open $OUT, ">$file";
-  } elsif ($line)  {
+  } elsif ($line && $line !~ m/^#.*AUDIO/)  {
     print $OUT "$line\n";
   }
 }
