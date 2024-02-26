@@ -219,6 +219,8 @@ align-token-file-$(FILE): $(ALIGN-TOKEN-DIR) $(PYTHON-ENV)/bin/activate
 #(4)################  ParlaSpeech-CZ
 
 ParlaSpeech-meta-download:
+	cd $(DATADIR); curl https://www.clarin.si/repository/xmlui/bitstream/handle/11356/1859/ParlaMint-CZ.tgz \
+	  | tar zxf - --wildcards 'ParlaMint-CZ.txt/**/*meta-en.tsv'
 
 ParlaSpeech-meta-prepare:
 	find $(ParlaMint-meta-DIR)/ -type f \
@@ -233,7 +235,7 @@ ParlaSpeech-meta-prepare:
 
 ParlaSpeech-release:
 	rm $(PARLASPEECH-OUTPUT) || :
-	perl parla-speech/get-best-alignment.pl \
+	perl ParlaSpeech/get-best-alignment.pl \
 	                        --error-rate 0.15 \
 	                        \ #--shortest-partial-sentence 10 \
 	                        --input-alignment-dir $(ALIGN-TOKEN-DIR) \

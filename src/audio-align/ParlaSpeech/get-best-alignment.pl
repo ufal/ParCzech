@@ -109,45 +109,10 @@ foreach my $input_align_file (sort glob "$input_alignment_dir/*.tsv" ){ # iterat
     proces_sentence({json_obj=>$jsonl,fh=>$OUTPUT, report => $report}, $error_rate, WHOLE, $shortest_partial_sentence, {%$sentence,audio_file=>$audio_file},@{$sentence->{tokens}});
   }
 
-=XXX
-  #do {$line = <$ALIGNMENT>; } until ($line =~ m/\t$start_token\t/);
-  my ($sent_id, $new_sent_id);
-  PAGE: {
-    do {
-      # true_w  trans_w joined  id  recognized  dist  dist/len(true_word) start end time_len_ms time_len/len(true_word)
-      my ($true_w,$trans_w,$joined,$id,undef,$dist,undef,$start_time,$end_time,$time_len_ms,undef) = map {$_ eq '-' ? undef : $_} split /\t/, $line;
-      my $new_sent_id;
-      if (defined $id && $id =~ m/^CONTEXT_/){
-        last PAGE;
-      } elsif(! defined $id ) {
-        $new_sent_id = $sent_id;
-      } else {
-        ($new_sent_id) = $id =~ m/^(.*)w.*?$/;
-      }
-      if($sent_id && $sent_id ne $new_sent_id){
-        proces_sentence({json_obj=>$jsonl,fh=>$OUTPUT, report => $report}, $error_rate, WHOLE, $shortest_partial_sentence, $sent_id, @sentence);
-        @sentence = ();
-        undef $sent_id;
-      }
-      $sent_id = $new_sent_id;
-      push @sentence, {
-        true_w => $true_w,
-        trans_w => $trans_w,
-        joined => ($joined eq 'True'),
-        id => $id,
-        dist =>  ($dist // (length($true_w//'')+ length($trans_w//''))),
-        start_time => $start_time,
-        end_time => $end_time,
-        time_len_ms => $time_len_ms
-      };
-    } while ($line = <$ALIGNMENT>);
-  }
-  proces_sentence({json_obj=>$jsonl,fh=>$OUTPUT, report => $report}, $error_rate, WHOLE, $shortest_partial_sentence, $sent_id, @sentence);
-=cut
   close $ALIGNMENT;
   close $TOKENS;
-
-  print STDERR "Page $file_id done\n";
+  print STDERR "Page $file_id done'\n";
+  print STDERR "INFO: status ",$report->{pages}," pages, ",$report->{result_sent}," result_sent, ",($report->{audio_len}/1000/60)," minutes\n";
 }
 
 print "Pages processed: ",$report->{pages},"\n";
@@ -158,12 +123,6 @@ print "audio length in result: ",($report->{audio_len}/1000)," s\n";
 print "tokens audio length in result: ",($report->{audio_tokens_len}/1000)," s\n";
 print "gaps audio length in result: ",($report->{audio_gaps_len}/1000)," s\n";
 
-
-print STDERR "TODO:
-\tload original tsv file and insert interpunction ????
-\t BETTER: and maybe insert other info from TEI file to tsv-corresp???
-- nospace after
-\t   insert the data before passing them to this script???\n";
 
 
 sub load_source_files {
