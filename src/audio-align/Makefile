@@ -33,8 +33,9 @@ DAY=$(shell echo -n "$(DATE)" | sed 's@^.*/@@' | sed -nE "s/^[0-9]{4}-?[0-9]{2}-
 
 AUDIO-DIR=$(shell echo $(AUDIO)/www.psp.cz/eknih/*/audio/$(YEAR)/$(MONTH)/$(DAY)/)
 TOKENS-DIR=$(shell echo $(TOKENS)/www.psp.cz/eknih/*/audio/$(YEAR)/$(MONTH)/$(DAY)/)
-PAGE-TOKENS-RANGE=$(DATADIR)/parlaspeech-page-token-range.tsv
-PARLASPEECH-BEST-ALIGNMENT=$(DATADIR)/parlaspeech-best-alignment.jsonl
+
+
+PARLASPEECH-OUTPUT=$(DATADIR)/ParlaSpeech-CZ.jsonl
 ParlaMint-meta-en=$(DATADIR)/ParlaMint-CZ-meta-en.tsv
 
 YY=$(shell ls data/audio/www.psp.cz/eknih/*/audio/|sed 's/.*://'|xargs|)
@@ -216,22 +217,10 @@ align-token-file-$(FILE): $(ALIGN-TOKEN-DIR) $(PYTHON-ENV)/bin/activate
 #####################
 
 #(4)################  ParlaSpeech-CZ
-# create ParlaSpeech from $(ALIGN-TOKEN-DIR)/$(FILE).tsv,
-# firstly crop overlaps
 
-# ParlaSpeech-get-page-token-ranges:
-# 	find $(TOKENS-DIR) -type f |sed 's@\.tsv@@'| xargs -I {} make --no-print-directory ParlaSpeech-get-page-token-range-{} FILE={} DATE={}
+ParlaSpeech-meta-download:
 
-# ParlaSpeech-get-page-token-range-$(FILE):
-# 	@echo "FILE: $(FILE)"
-# 	@echo "TOKENS-DIR: $(TOKENS-DIR)"
-# 	@echo "DATE: $(DATE)"
-# 	@echo "DATE PARSED: $(YEAR)----$(MONTH)----$(DAY)"
-# 	echo -n "$(FILE)\t"|sed "s@^.*/@@" >> $(PAGE-TOKENS-RANGE)
-# 	head -n1 $(FILE).tsv |cut -f 2|tr "\n" "\t" >> $(PAGE-TOKENS-RANGE)
-# 	tail -n1 $(FILE).tsv |cut -f 2 >> $(PAGE-TOKENS-RANGE)
-
-ParlaSpeech-prepare-meta:
+ParlaSpeech-meta-prepare:
 	find $(ParlaMint-meta-DIR)/ -type f \
 	  | grep meta-en.tsv \
 	  | head -n1 \
@@ -242,17 +231,16 @@ ParlaSpeech-prepare-meta:
 	  | xargs -I {} tail -n +2 {} \
 	  >> $(ParlaMint-meta-en)
 
-ParlaSpeech-get-best-alignment:
-	rm $(PARLASPEECH-BEST-ALIGNMENT) || :
+ParlaSpeech-release:
+	rm $(PARLASPEECH-OUTPUT) || :
 	perl parla-speech/get-best-alignment.pl \
 	                        --error-rate 0.15 \
 	                        \ #--shortest-partial-sentence 10 \
 	                        --input-alignment-dir $(ALIGN-TOKEN-DIR) \
 	                        --input-tokens-dir $(TOKENS) \
 	                        --meta $(ParlaMint-meta-en) \
-	                        --output $(PARLASPEECH-BEST-ALIGNMENT)
+	                        --output $(PARLASPEECH-OUTPUT)
 
-ParlaSpeech-finalize: # create jsonl with metadata, clean temporary staff in jsonl(if any)
 ParlaSpeech-release-pack: # pack jsonl
 
 #####################################################
