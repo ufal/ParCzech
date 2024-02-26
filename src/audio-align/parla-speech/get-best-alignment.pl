@@ -40,7 +40,7 @@ sub usage {
     print STDERR (" \n");
 }
 
-my ($help, $error_rate, $input_alignment_dir, $input_tokens_dir, $shortest_partial_sentence, $output_file);
+my ($help, $error_rate, $input_alignment_dir, $input_tokens_dir, $shortest_partial_sentence, $meta_file, $output_file);
 
 $shortest_partial_sentence = 1000000; #default is not put partial sentences to result
 GetOptions
@@ -50,6 +50,7 @@ GetOptions
      'shortest-partial-sentence=s'    => \$shortest_partial_sentence,
      'input-alignment-dir=s'   => \$input_alignment_dir,
      'input-tokens-dir=s'   => \$input_tokens_dir,
+     'meta=s'   => \$meta_file,
      #'tokens-ranges=s'     => \$tokens_ranges_file,
      'output=s'  => \$output_file,
 );
@@ -57,6 +58,15 @@ GetOptions
 if ($help) {
     &usage;
     exit;
+}
+
+unless($meta_file){
+  die "Missing --meta param\n";
+}
+
+my %meta_db;
+for my $m (@{csv({in => $meta_file,headers => "auto", binary => 1, auto_diag => 1, sep_char=> "\t"})}){
+  $meta_db{$m->{ID}} = $m;
 }
 
 my $jsonl = JSON::Lines->new();
@@ -94,7 +104,6 @@ foreach my $input_align_file (sort glob "$input_alignment_dir/*.tsv" ){ # iterat
   my $line;
   my @sentences = load_source_files($TOKENS,$ALIGNMENT);
   while(my $sentence = shift @sentences){
-    print STDERR scalar(@sentences)," ";
     proces_sentence({json_obj=>$jsonl,fh=>$OUTPUT, report => $report}, $error_rate, WHOLE, $shortest_partial_sentence, {%$sentence,audio_file=>$audio_file},@{$sentence->{tokens}});
   }
 
@@ -169,9 +178,9 @@ sub load_source_files {
   my $align = $align_in->getline_hr_all($ALIGN);
   foreach my $row (@$align,@$toks) {
     foreach my $col (values %{$row}) {
-      $col = 1 if $col eq 'True';
-      $col = 0 if $col eq 'False';
-      $col = $col eq '-' ? undef :$col;
+      $col = 1 if $col && $col eq 'True';
+      $col = 0 if $col && $col eq 'False';
+      $col = $col eq '-' ? undef :$col if $col;
     }
   }
   my ($ti, $ai) = (0,0);
@@ -179,6 +188,8 @@ sub load_source_files {
     $ai++;
   }
   my ($sent_id, $new_sent_id);
+  my $u_id;
+  my $u_len = 0;
   my $sentence;
   #print STDERR Dumper($toks,$align);
   while($ti < @$toks && $ai < @$align){
@@ -198,14 +209,20 @@ sub load_source_files {
     if($sent_id && $sent_id ne $new_sent_id){
       push @result, $sentence;
       undef $sentence;
+      my @seg_id = ($sent_id,$new_sent_id);
+      @seg_id = map {s/\.[^\.]*$//;$_} @seg_id;
+      $u_len +=1 if($seg_id[0] ne $seg_id[1]); # moving to next paragraph
     }
     $sent_id = $new_sent_id;
-
+    if($move_ti && $toks->[$ti]->{uid} ne ($u_id//'')){ # move to next utterance
+      $u_len = 0;
+      $u_id = $toks->[$ti]->{uid};
+    }
     if(!defined($sentence) && $sent_id){ # first token in sentence from toks
-      print STDERR "new sentence $sent_id\n";
       $sentence = {};
       $sentence->{sid} = $sent_id;
       $sentence->{uid} = $toks->[$ti]->{uid};
+      ($sentence->{tid}) = $sentence->{uid} =~ m/^(.*)\.u[0-9]*$/;
       $sentence->{date} = $toks->[$ti]->{date};
       $sentence->{tokens} = [];
     }
@@ -213,6 +230,7 @@ sub load_source_files {
     # insert to current sentence
     if($sentence){ # align is skipped if not seen the first token from toks
       my $id = $move_ti ? $toks->[$ti]->{wid} : $align->[$ai]->{id};
+      my $new_u_len = $u_len + ($move_ti ? length($toks->[$ti]->{token}//'') : 0);
       push @{$sentence->{tokens}},{
         id => $id,
         dist => ($move_ti && $move_ai)
@@ -225,6 +243,8 @@ sub load_source_files {
         len => $move_ai ? length($align->[$ai]->{true_w} // $align->[$ai]->{trans_w}) : 0,
         #len => $move_ai ? length($align->[$ai]->{true_w} // '') : 0,
         word => $move_ti ? $toks->[$ti]->{token} : undef,
+        u_pos_start => $u_len,
+        u_pos_end => $new_u_len,
         word_audio => $move_ai ? $align->[$ai]->{trans_w} : undef,
         aligned => ($move_ti + $move_ai == 2 && $align->[$ai]->{start}) ? 1 : 0,
         is_in_audio => $move_ai,
@@ -234,6 +254,7 @@ sub load_source_files {
         end_time => $move_ai ? $align->[$ai]->{end} : undef,
         time_len_ms => $move_ai ? $align->[$ai]->{time_len_ms} : undef,
       };
+      $u_len = $new_u_len + (($move_ti && !$toks->[$ti]->{no_space_after}) ? 1 : 0);
     }
     $ai += $move_ai;;
     $ti += $move_ti;
@@ -248,9 +269,6 @@ sub proces_sentence {
   my $partial_sentence_min_len = shift;
   my $sentence = shift;
   my @alignment = @_;
-
-  print STDERR "TODO SKIP punctation tokens first !!! and then remove not aligned ",$sentence->{sid}," ";
-  print STDERR scalar(@alignment)," --> ";
 
   # remove mismatchs from the beginning
   my @beginning = ();
@@ -276,9 +294,9 @@ sub proces_sentence {
   my $result_error_rate = $sent_dist / $sent_len_all;
 
   if(($result_error_rate <= $max_error_rate) && (($crop_level == WHOLE) || ($partial_sentence_min_len <= @alignment)) ) {
-    print STDERR ($crop_level == WHOLE ? "WHOLE-":'PARTIAL-'),"SENTENCE: DIST=$sent_dist ERROR-ALL=$result_error_rate\n";
-    print STDERR "\tTEXT: ",join(" ",map {$_->{word}//'-'} @alignment),"\n";
-    print STDERR "\tAUDIO:",join(" ",map {$_->{word_audio}//'-'} @alignment),"\n";
+    #print STDERR ($crop_level == WHOLE ? "WHOLE-":'PARTIAL-'),"SENTENCE: DIST=$sent_dist ERROR-ALL=$result_error_rate\n";
+    #print STDERR "\tTEXT: ",join(" ",map {$_->{word}//'-'} @alignment),"\n";
+    #print STDERR "\tAUDIO:",join(" ",map {$_->{word_audio}//'-'} @alignment),"\n";
     sentence_to_result($result, \@alignment,{%$sentence, token_char_error_rate => $result_error_rate},$crop_level);
     if($crop_level == WHOLE){
       $result->{report}->{result_sent} += 1;
@@ -287,18 +305,18 @@ sub proces_sentence {
     }
   } elsif (@alignment >= 3 && @alignment >= $partial_sentence_min_len) {
     # calculate floating mismatch
-    print STDERR "DEAL WITH PUNCTATION - best space for division !!!";
+    #print STDERR "DEAL WITH PUNCTATION - best space for division !!!";
     my @floating_dist = (
       $alignment[0]->{dist},
       (map {List::Util::sum(map {$alignment[$_]->{dist}} ($_-1,$_,$_+1) ) } (1..($#alignment-1))),
       $alignment[$#alignment]->{dist}
     );
-    print STDERR "($crop_level)===== split sentence $result_error_rate  ($max_error_rate)\n";
+    #print STDERR "($crop_level)===== split sentence $result_error_rate  ($max_error_rate)\n";
     my $max_idx = List::Util::reduce { $floating_dist[$a] > $floating_dist[$b] ? $a : $b } 0..$#floating_dist;
-    print STDERR "\t",join(' ',@floating_dist),"\n";
-    print STDERR "\t",join(' ',@floating_dist[0..($max_idx-1)])," ## ", join(' ',@floating_dist[($max_idx+1)..$#floating_dist]),"\n";
-    print STDERR "\tTEXT: ",join(" ",map {$max_idx == $_ ? '##' : $alignment[$_]->{word}//'-'} (0..$#alignment)),"\n";
-    print STDERR "\tAUDIO:",join(" ",map {$max_idx == $_ ? '##' : $alignment[$_]->{word_audio}//'-'} (0..$#alignment)),"\n";
+    #print STDERR "\t",join(' ',@floating_dist),"\n";
+    #print STDERR "\t",join(' ',@floating_dist[0..($max_idx-1)])," ## ", join(' ',@floating_dist[($max_idx+1)..$#floating_dist]),"\n";
+    #print STDERR "\tTEXT: ",join(" ",map {$max_idx == $_ ? '##' : $alignment[$_]->{word}//'-'} (0..$#alignment)),"\n";
+    #print STDERR "\tAUDIO:",join(" ",map {$max_idx == $_ ? '##' : $alignment[$_]->{word_audio}//'-'} (0..$#alignment)),"\n";
     proces_sentence($result, $max_error_rate, SPLIT, $partial_sentence_min_len, $sentence, @alignment[0..($max_idx-1)]) if $max_idx > $partial_sentence_min_len;
     proces_sentence($result, $max_error_rate, SPLIT, $partial_sentence_min_len, $sentence, @alignment[($max_idx+1)..$#floating_dist]) if $#floating_dist-$max_idx+1 > $partial_sentence_min_len;
   }
@@ -309,6 +327,7 @@ sub sentence_to_result {
   my $id_prefix = 'ParlaMint-CZ_'.$meta->{date}.'-';
   my $id = $id_prefix.$meta->{sid}.'_'. join('-',map {(split '\.', $_->{id})[-1] } @$alignment[0,-1]);
   my ($time_s,$time_e);
+  my ($text_start,$text_end);
   my $time_len = 0;
   my $text = '';
   my $text_audio = '';
@@ -316,41 +335,42 @@ sub sentence_to_result {
   for my $tok (@$alignment){
     my $word = {};
     $word->{char_s} = length($text) + 0; # force number
-    $text .=  $tok->{word};
+    $text .=  $tok->{word}//'';
     $text_audio .=  $tok->{word_audio} ? ($tok->{word_audio}.' ') : '';
     if($tok->{aligned}){
       $word->{char_e} = length($text) + 0;
-      $word->{time_s} = $tok->{start_time} / 1000 + 0;
-      $word->{time_e} = $tok->{end_time} / 1000 + 0;
+      $word->{time_s} = $tok->{start_time};
+      $word->{time_e} = $tok->{end_time};
       $word->{id} = $tok->{id};
       push @words, $word;
       $time_s //= $tok->{start_time};
       $time_e = $tok->{end_time};
       $time_len += $tok->{end_time} - $tok->{start_time};
-
     }
+    $text_start //= $tok->{u_pos_start} + 0;
+    $text_end = $tok->{u_pos_end} + 0;
     $text .= ' ' unless $tok->{no_space_after};
   }
-  #my $text = join('',map {$_->{word}.($_->{no_space_after}?'':' ')} @$alignment);
   $text =~ s/ $//; # removing space after sentence (inside paragraph)
   $text_audio =~ s/ $//; # removing space after sentence (inside paragraph)
+
+  my $audio_start = $time_s;
+  my $audio_end = $time_e;
+  $_->{time_s}= ($_->{time_s} - $audio_start)/1000+0 for @words;
+  $_->{time_e} = ($_->{time_e} - $audio_start)/1000+0  for @words;
   $result->{json_obj}->add_line(
     {
       id => $id,
+      sentence_id => $id_prefix.$meta->{sid},
       word => \@words,
-      audio => $meta->{audio_file},
-      audio_cover => {
-        start =>$time_s/1000+0,
-        end =>$time_e/1000+0,
-        len =>($time_e-$time_s)/1000+0,
-        len_tokens => ($time_len)/1000+0,
-        len_gaps => ($time_e-$time_s-$time_len)/1000+0,
-      },
-#      quality => {
-#        token_char_error_rate => $meta->{token_char_error_rate},
-#        char_error_rate => Text::Levenshtein::distance($text, $text_audio) / length($text),
-#      },
-      text=>$text,
+      audio_source => $meta->{audio_file},
+      text_start => $text_start,
+      text_end => $text_end,
+      audio_start => $audio_start // 1000 + 0,
+      audio_end => $audio_end // 1000 + 0,
+      audio_length => ($audio_end - $audio_start)/1000 + 0,
+      text => $text,
+      speaker_info => $meta_db{$id_prefix.$meta->{uid}}
     }
     ,$result->{fh});
 
