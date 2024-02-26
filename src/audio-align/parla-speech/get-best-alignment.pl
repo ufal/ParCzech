@@ -70,7 +70,8 @@ for my $m (@{csv({in => $meta_file,headers => "auto", binary => 1, auto_diag => 
 }
 
 my $jsonl = JSON::Lines->new();
-$JSON::Lines::JSON->ascii(1);
+$JSON::Lines::JSON->ascii(1); # escape non ascii
+$JSON::Lines::JSON->canonical([1]);
 open my $OUTPUT, ">", $output_file or die "$output_file: $!";
 # open my $RANGES, "<", $tokens_ranges_file or die "$tokens_ranges_file: $!";
 
@@ -365,7 +366,7 @@ sub sentence_to_result {
     {
       id => $id,
       sentence_id => $id_prefix.$meta->{sid},
-      word => \@words,
+      words => \@words,
       audio_source => $meta->{audio_file},
       audio => sprintf('%s_%0.2f-%0.2f.flac', $audio_pref, ($audio_start / 1000), ($audio_end / 1000)),
       text_start => $text_start,
