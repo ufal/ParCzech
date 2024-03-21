@@ -6,6 +6,8 @@ PWD=$(shell pwd)
 CORPUS-NAME=ParCzech4.0
 DATA-RELEASE=$(PWD)/data/release/
 DATA-RELEASE-COMPLETE=$(PWD)/data/release-$(CORPUS-NAME)/
+DATA-TEITOK=$(PWD)/data/teitok/
+DATA-TEITOK-PACKED=$(PWD)/data/$(CORPUS-NAME).teitok.tar.gz
 SAMPLE-DATA-IN=$(PWD)/data/sample-in/
 DATA-IN=$(SAMPLE-DATA-IN)
 SAMPLE-DATA-SOURCE=parczech:/opt/data/data-ParlaMint3.1-FRESH/
@@ -15,7 +17,7 @@ AUDIO-DATA-PATH=.
 AUDIO-DATA-SOURCE=$(AUDIO-DATA-PATH)/audio-data-source/
 AUDIO-DATA-TO-RELEASE=$(AUDIO-DATA-PATH)/audio-data-to-release/
 AUDIO-DATA-RELEASE=$(AUDIO-DATA-PATH)/audio-data-release/
-AUDIO-DATA-VERSION=20240101
+AUDIO-DATA-VERSION=24.01
 AUDIO-DATA-RELEASE-COMMON-PATH=audio/psp
 AUDIO-DATA-RELEASE-HANDLE-ID=11234/1-5404
 AUDIO-DATA-RELEASE-REPOSITORY-URL-PREF=https://lindat.mff.cuni.cz/repository/xmlui/bitstream/handle/$(AUDIO-DATA-RELEASE-HANDLE-ID)/
@@ -202,6 +204,17 @@ audio-release-meta-quarter-FILE:
 	@echo "$(AUDIO-DATA-VERSION)\\t1\\t$(AUDIO-DATA-RELEASE-REPOSITORY-URL-PREF)$(FILE).tar" >> $(TSVquarterArchive).tmp
 
 
+###################
+release2teitok: tools/parlamint-lib.xsl
+	mkdir -p $(DATA-TEITOK)/
+	$s -xsl:tools/ParCzech2teitok.xsl \
+	    outDir=$(DATA-TEITOK)/ \
+	    $(DATA-RELEASE)/ParCzech.TEI.ana/ParCzech.ana.xml
+
+teitok-pack:
+
+tools/parlamint-lib.xsl:
+	git archive --remote=git://github.com/clarin-eric/ParlaMint.git devel Scripts/parlamint-lib.xsl | tar -xO  Scripts/parlamint-lib.xsl > tools/parlamint-lib.xsl
 ###################
 s = java $(JM) -jar $(JAVA-PATH)/saxon.jar
 j = java $(JM) -jar $(JAVA-PATH)/jing.jar
