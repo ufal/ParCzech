@@ -13,6 +13,8 @@
   <xsl:preserve-space elements="catDesc seg p"/>
 
   <xsl:param name="outDir"/>
+  <xsl:param name="jobsCnt">1</xsl:param>
+  <xsl:param name="jobN">1</xsl:param>
 
   <xsl:import href="parlamint-lib.xsl"/>
 
@@ -28,7 +30,7 @@
 -->
   <!-- Gather URIs of component xi + files and map to new files, incl. .ana files -->
   <xsl:variable name="docs">
-    <xsl:for-each select="/tei:teiCorpus/xi:include">
+    <xsl:for-each select="/tei:teiCorpus/xi:include[(position() mod $jobsCnt) = $jobN - 1 ]">
       <item>
         <xi-orig>
           <xsl:value-of select="@href"/>
@@ -61,16 +63,18 @@
 
 
   <xsl:template match="/">
-    <xsl:message select="concat('INFO: Starting to process ', tei:teiCorpus/@xml:id)"/>
+    <xsl:message select="concat('INFO [',$jobN,'/',$jobsCnt,']: Starting to process ', tei:teiCorpus/@xml:id)"/>
     <!-- Process component files -->
-    <xsl:for-each select="$docs//item">
-      <xsl:variable name="this" select="xi-orig"/>
-      <xsl:message select="concat('INFO: Processing ', $this)"/>
-      <xsl:result-document href="{url-new}">
-        <xsl:apply-templates mode="comp" select="document(url-orig)/tei:TEI"/>
-      </xsl:result-document>
-      <xsl:message select="concat('INFO: Saving to ', xi-new)"/>
-    </xsl:for-each>
+    <xsl:apply-templates select="$docs//item"/>
+  </xsl:template>
+
+  <xsl:template match="item">
+    <xsl:variable name="this" select="xi-orig"/>
+    <xsl:message select="concat('INFO [',$jobN,'/',$jobsCnt,']: Processing ', $this)"/>
+    <xsl:result-document href="{url-new}">
+      <xsl:apply-templates mode="comp" select="document(url-orig)/tei:TEI"/>
+    </xsl:result-document>
+    <xsl:message select="concat('INFO [',$jobN,'/',$jobsCnt,']: Saving to ', xi-new)"/>
   </xsl:template>
 
   <xsl:template mode="comp" match="tei:TEI">
@@ -281,7 +285,7 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
         <!--<xsl:sort select="@href"/>-->
         <xsl:variable name="href" select="@href"/>
         <xsl:variable name="new-href" select="$docs/tei:item[./tei:xi-orig/text() = $href]/tei:xi-new/text()"/>
-        <xsl:message select="concat('INFO: Fixing xi:include: ',$href,' ',$new-href)"/>
+        <xsl:message select="concat('INFO [',$jobN,'/',$jobsCnt,']: Fixing xi:include: ',$href,' ',$new-href)"/>
         <xsl:element name="{local-name()}">
           <xsl:attribute name="href" select="$new-href"/>
         </xsl:element>
@@ -292,7 +296,7 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
   <xsl:template name="copy-file">
     <xsl:param name="in"/>
     <xsl:param name="out"/>
-    <xsl:message select="concat('INFO: copying file ',$in,' ',$out)"/>
+    <xsl:message select="concat('INFO [',$jobN,'/',$jobsCnt,']: copying file ',$in,' ',$out)"/>
     <xsl:result-document href="{$out}" method="text"><xsl:value-of select="unparsed-text($in,'UTF-8')"/></xsl:result-document>
   </xsl:template>
 

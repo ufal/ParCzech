@@ -25,6 +25,9 @@ TSVaudioFile=$(AUDIO-DATA-RELEASE)/audioPSP-meta.audioFile.tsv
 TSVquarterArchive=$(AUDIO-DATA-RELEASE)/audioPSP-meta.quarterArchive.tsv
 
 
+JOBS-CNT=1
+JOB-N=1
+
 
 release: get-lists-ParlaMint4.0
 	mkdir -p $(DATA-RELEASE)/
@@ -209,6 +212,8 @@ release2teitok: tools/parlamint-lib.xsl
 	mkdir -p $(DATA-TEITOK)/
 	$s -xsl:tools/ParCzech2teitok.xsl \
 	    outDir=$(DATA-TEITOK)/ \
+	    jobsCnt=$(JOBS-CNT) \
+	    jobN=${JOB-N} \
 	    $(DATA-RELEASE)/ParCzech.TEI.ana/ParCzech.ana.xml
 
 teitok-pack:
