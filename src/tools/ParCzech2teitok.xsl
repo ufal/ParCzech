@@ -36,9 +36,6 @@
         <url-orig>
           <xsl:value-of select="concat($inDir, '/', @href)"/>
         </url-orig>
-        <doc>
-          <xsl:apply-templates select="document(concat($inDir, '/', @href))" mode="preprocess"/>
-        </doc>
         <url-new>
           <xsl:value-of select="concat($outDir, '/')"/>
           <xsl:value-of select="replace(@href,'(?:\.ana)?\.xml$','.tt.xml')"/>
@@ -50,16 +47,6 @@
       </xsl:for-each>
   </xsl:variable>
 
-  <xsl:template match="*" mode="preprocess">
-    <xsl:copy>
-      <xsl:apply-templates select="@*"/>
-      <xsl:if test="local-name() = 'TEI'">
-        <xsl:attribute name="xmlnsoff" select="namespace-uri()"/>
-      </xsl:if>
-
-      <xsl:apply-templates mode="preprocess"/>
-    </xsl:copy>
-  </xsl:template>
 
   <xsl:variable name="person"> <!-- load listPerson and merge the info from listOrg  (add the info to affiliations)-->
     <xsl:variable name="listPerson" select="document(concat($inDir, '/',/tei:teiCorpus//tei:particDesc/xi:include[contains(@href,'listPerson')]/@href))"/>
@@ -70,8 +57,8 @@
         <xsl:attribute name="name" select="et:format-name(./tei:persName)"/>
       </xsl:copy>
     </xsl:for-each>
-    <!-- TODO for each person -->
   </xsl:variable>
+
 
   <xsl:template match="/">
     <xsl:message select="concat('INFO: Starting to process ', tei:teiCorpus/@xml:id)"/>
@@ -80,19 +67,20 @@
       <xsl:variable name="this" select="xi-orig"/>
       <xsl:message select="concat('INFO: Processing ', $this)"/>
       <xsl:result-document href="{url-new}">
-        <xsl:apply-templates mode="comp" select="doc/tei:TEI">
-          <xsl:with-param name="TEI" select="doc/tei:TEI"/>
-        </xsl:apply-templates>
+        <xsl:apply-templates mode="comp" select="document(url-orig)/tei:TEI"/>
       </xsl:result-document>
       <xsl:message select="concat('INFO: Saving to ', xi-new)"/>
     </xsl:for-each>
-    <!-- Output Root file - skipped -->
-    <!--
-    <xsl:message>INFO: processing root </xsl:message>
-    <xsl:result-document href="{$outRoot}">
-      <xsl:apply-templates/>
-    </xsl:result-document>
-    -->
+  </xsl:template>
+
+  <xsl:template mode="comp" match="tei:TEI">
+    <xsl:element name="{local-name()}">
+      <xsl:apply-templates mode="comp" select="@*"/>
+      <xsl:attribute name="xmlnsoff" select="namespace-uri()"/>
+      <xsl:apply-templates mode="comp">
+        <xsl:with-param name="TEI" select="."/>
+      </xsl:apply-templates>
+    </xsl:element>
   </xsl:template>
 
   <xsl:template mode="comp" match="tei:sourceDesc">
@@ -194,13 +182,6 @@
         <xsl:attribute name="corresp" select="@who"/>
         <xsl:attribute name="who" select="et:format-name-chrono($speaker//tei:persName, $when)"/>
       </xsl:if>
-
-<!--
-      <xsl:if test="$whoIDref">
-        <xsl:attribute name="corresp" select="$whoIDref"/>
-        <xsl:attribute name="who" select="$person//tei:person[concat('#',@xml:id) = $whoIDref ]/@name"/>
-      </xsl:if>
--->
       <xsl:apply-templates mode="comp" select="@ana"/>
       <xsl:if test="descendant::tei:anchor">
         <xsl:variable name="startId" select="./descendant::tei:anchor[1]/@synch"/>
