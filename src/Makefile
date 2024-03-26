@@ -24,7 +24,8 @@ AUDIO-DATA-RELEASE-REPOSITORY-URL-PREF=https://lindat.mff.cuni.cz/repository/xml
 TSVaudioFile=$(AUDIO-DATA-RELEASE)/audioPSP-meta.audioFile.tsv
 TSVquarterArchive=$(AUDIO-DATA-RELEASE)/audioPSP-meta.quarterArchive.tsv
 
-
+PROFILE =
+PROF := $(shell test -n "$(PROFILE)" && date "+%F%T" | tr -d ':-' | sed 's/^/-TP:profile./;s/$$/.html/' )
 JOBS-CNT=1
 JOB-N=1
 
@@ -210,11 +211,14 @@ audio-release-meta-quarter-FILE:
 ###################
 release2teitok: tools/parlamint-lib.xsl
 	mkdir -p $(DATA-TEITOK)/
-	$s -xsl:tools/ParCzech2teitok.xsl \
+	@test -n "$(PROFILE)" && echo "RUNNING PROFILER saxon param: $(PROF)" || :
+	$s $(PROF) -xsl:tools/ParCzech2teitok.xsl \
 	    outDir=$(DATA-TEITOK)/ \
 	    jobsCnt=$(JOBS-CNT) \
 	    jobN=${JOB-N} \
 	    $(DATA-RELEASE)/ParCzech.TEI.ana/ParCzech.ana.xml
+	@test -n "$(PROFILE)" && echo "Profiler output: " $(shell echo -n "$(PROFILE)"|sed 's/^.*://') || :
+
 
 teitok-pack:
 

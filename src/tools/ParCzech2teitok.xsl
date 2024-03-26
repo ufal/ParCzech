@@ -20,6 +20,7 @@
 
   <!-- Input directory -->
   <xsl:variable name="inDir" select="replace(base-uri(), '(.*)/.*', '$1')"/>
+  <xsl:key name="idwhen" match="tei:when" use="@xml:id"/>
 
 <!--
   <xsl:variable name="outRoot">
@@ -135,9 +136,10 @@
 
   <xsl:template mode="comp" match="tei:pc | tei:w">
     <xsl:param name="TEI"/>
-    <xsl:variable name="startId" select="./preceding-sibling::tei:*[1][local-name() = 'anchor']/@synch"/>
-    <xsl:variable name="endId" select="./following-sibling::tei:*[1][local-name() = 'anchor']/@synch"/>
+    <xsl:variable name="startId" select="./preceding-sibling::tei:*[1][local-name() = 'anchor']/@synch/substring-after(.,'#')"/>
+    <xsl:variable name="endId" select="./following-sibling::tei:*[1][local-name() = 'anchor']/@synch/substring-after(.,'#')"/>
     <xsl:variable name="id" select="@xml:id"/>
+    <xsl:variable name="idRef" select="concat(' #',$id)"/>
     <tok type="{name()}">
       <xsl:apply-templates mode="comp" select="@xml:id"/>
       <xsl:apply-templates mode="comp" select="@lemma"/>
@@ -149,17 +151,17 @@
       <xsl:if test="@pos">
         <xsl:attribute name="upos" select="@pos"/>
       </xsl:if>
-      <xsl:variable name="feats" select="replace(@msd,'UPosTag=[^\|]*\|?','')"/>
+      <xsl:variable name="feats" select="replace(@msd,'^UPosTag=[^\|]*\|?','')"/>
       <xsl:if test="$feats">
         <xsl:attribute name="feats" select="$feats"/>
       </xsl:if>
       <xsl:if test="$startId">
-        <xsl:attribute name="start" select="$TEI//tei:when[concat('#',@xml:id) = $startId]/@interval"/>
+        <xsl:attribute name="start" select="key('idwhen', $startId, $TEI)/@interval"/>
       </xsl:if>
       <xsl:if test="$endId">
-        <xsl:attribute name="end" select="$TEI//tei:when[concat('#',@xml:id) = $endId]/@interval"/>
+        <xsl:attribute name="end" select="key('idwhen', $endId, $TEI)/@interval"/>
       </xsl:if>
-      <xsl:variable name="link" select="ancestor::tei:s[1]/tei:linkGrp[@type='UD-SYN']/tei:link[ends-with(@target,concat(' #',$id))]"/>
+      <xsl:variable name="link" select="ancestor::tei:s[1]/tei:linkGrp[@type='UD-SYN']/tei:link[ends-with(@target,$idRef)]"/>
       <xsl:variable name="deprel" select="substring-after($link/@ana,'ud-syn:')"/>
       <xsl:if test="not($deprel = 'root')">
         <xsl:attribute name="head" select="substring-after(substring-before($link/@target,' '),'#')"/>
@@ -188,11 +190,11 @@
       </xsl:if>
       <xsl:apply-templates mode="comp" select="@ana"/>
       <xsl:if test="descendant::tei:anchor">
-        <xsl:variable name="startId" select="./descendant::tei:anchor[1]/@synch"/>
-        <xsl:attribute name="start" select="$TEI//tei:when[concat('#',@xml:id) = $startId]/@interval"/>
+        <xsl:variable name="startId" select="./descendant::tei:anchor[1]/@synch/substring-after(.,'#')"/>
+        <xsl:attribute name="start" select="key('idwhen', $startId, $TEI)/@interval"/>
         <xsl:if test="not(descendant::tei:pb)"> <!-- add end only if the speach is on one page -->
-          <xsl:variable name="endId" select="./descendant::tei:anchor[last()]/@synch"/>
-          <xsl:attribute name="end" select="$TEI//tei:when[concat('#',@xml:id) = $endId]/@interval"/>
+          <xsl:variable name="endId" select="./descendant::tei:anchor[last()]/@synch/substring-after(.,'#')"/>
+          <xsl:attribute name="end" select="key('idwhen', $endId, $TEI)/@interval"/>
         </xsl:if>
       </xsl:if>
       <xsl:apply-templates mode="comp">
@@ -212,8 +214,9 @@
       </xsl:if>
       <xsl:if test="ancestor::tei:u[@who]">
         <xsl:variable name="whoIDref" select="ancestor::tei:u/@who"/>
+        <xsl:variable name="whoId" select="substring-after(@whoIDref,'#')"/>
         <xsl:attribute name="corresp" select="$whoIDref"/>
-        <xsl:attribute name="who" select="$person//tei:person[concat('#',@xml:id) = $whoIDref ]/@name"/>
+        <xsl:attribute name="who" select="key('id', $whoId, $person)/@name"/>
       </xsl:if>
 <!--
 ParlaMint: <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schuz/s071323.htm" n="3" xml:id="ParlaMint-CZ_2023-07-26-ps2021-071-07-001-003.pb3" corresp="#PavelBelobradek.1976" utt="ParlaMint-CZ_2023-07-26-ps2021-071-07-001-003.u8" who="Bělobrádek, Pavel" ana="#regular"/>
@@ -246,10 +249,10 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
     <xsl:element name="{local-name()}">
       <xsl:apply-templates mode="comp" select="@*"/>
       <xsl:if test="ancestor-or-self::tei:seg and descendant::tei:anchor">
-        <xsl:variable name="startId" select="./descendant::tei:anchor[1]/@synch"/>
-        <xsl:variable name="endId" select="./descendant::tei:anchor[last()]/@synch"/>
-        <xsl:attribute name="start" select="$TEI//tei:when[concat('#',@xml:id) = $startId]/@interval"/>
-        <xsl:attribute name="end" select="$TEI//tei:when[concat('#',@xml:id) = $endId]/@interval"/>
+        <xsl:variable name="startId" select="./descendant::tei:anchor[1]/@synch/substring-after(.,'#')"/>
+        <xsl:variable name="endId" select="./descendant::tei:anchor[last()]/@synch/substring-after(.,'#')"/>
+        <xsl:attribute name="start" select="key('idwhen', $startId, $TEI)/@interval"/>
+        <xsl:attribute name="end" select="key('idwhen', $endId, $TEI)/@interval"/>
       </xsl:if>
       <xsl:apply-templates mode="comp">
         <xsl:with-param name="TEI" select="$TEI"/>
