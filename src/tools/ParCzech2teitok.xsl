@@ -212,11 +212,12 @@
         <xsl:attribute name="start" select="$TEI//tei:timeline[@corresp = $corresp]/tei:when[@interval][1]/@interval"/>
         <xsl:attribute name="end" select="$TEI//tei:timeline[@corresp = $corresp]/tei:when[last()]/@interval"/>
       </xsl:if>
-      <xsl:if test="ancestor::tei:u[@who]">
+      <xsl:variable name="speaker" select="ancestor::tei:u[@who]"/>
+      <xsl:if test="$speaker">
         <xsl:variable name="when" select="$TEI//tei:teiHeader//tei:setting/tei:date/@when"/>
-        <xsl:variable name="whoIDref" select="ancestor::tei:u/@who"/>
-        <xsl:attribute name="corresp" select="$whoIDref"/>
-        <xsl:attribute name="who" select="et:format-name-chrono(key('idr', $whoIDref, $rootHeader)//tei:persName,$when)"/>
+        <xsl:attribute name="corresp" select="$speaker/@who"/>
+        <xsl:attribute name="who" select="et:format-name-chrono(key('idr', $speaker/@who, $rootHeader)//tei:persName,$when)"/>
+        <xsl:attribute name="ana" select="$speaker/@ana"/>
       </xsl:if>
 <!--
 ParlaMint: <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schuz/s071323.htm" n="3" xml:id="ParlaMint-CZ_2023-07-26-ps2021-071-07-001-003.pb3" corresp="#PavelBelobradek.1976" utt="ParlaMint-CZ_2023-07-26-ps2021-071-07-001-003.u8" who="Bělobrádek, Pavel" ana="#regular"/>
