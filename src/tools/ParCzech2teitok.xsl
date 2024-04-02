@@ -76,8 +76,6 @@
   <xsl:template match="item">
     <xsl:variable name="this" select="xi-orig"/>
     <xsl:message select="concat('INFO [',$jobN,'/',$jobsCnt,']: Processing ', $this)"/>
-    <xsl:message select="prev"/>
-    <xsl:message select="next"/>
     <xsl:result-document href="{url-new}">
       <xsl:apply-templates mode="comp" select="document(url-orig)/tei:TEI">
         <xsl:with-param name="next" select="next"/>
@@ -90,7 +88,6 @@
   <xsl:template mode="comp" match="tei:TEI">
     <xsl:param name="next"/>
     <xsl:param name="prev"/>
-<xsl:message select="$prev"/><xsl:message select="$next"/>
     <xsl:element name="{local-name()}">
       <xsl:apply-templates mode="comp" select="@*"/>
       <xsl:attribute name="xmlnsoff" select="namespace-uri()"/>
