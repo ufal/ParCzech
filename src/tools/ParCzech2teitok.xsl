@@ -252,10 +252,10 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
     <xsl:element name="{local-name()}">
       <xsl:apply-templates mode="comp" select="@*"/>
       <xsl:attribute name="xml:space">remove</xsl:attribute>
-      <xsl:if test="$prev">
+      <xsl:if test="normalize-space($prev)">
         <xsl:attribute name="prev" select="$prev"/>
       </xsl:if>
-      <xsl:if test="$next">
+      <xsl:if test="normalize-space($next)">
         <xsl:attribute name="next" select="$next"/>
       </xsl:if>
       <xsl:apply-templates mode="comp">
@@ -282,6 +282,14 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
 
   <xsl:template mode="comp" match="@ana[contains(concat(' ',.),' ne:')]">
     <xsl:attribute name="cnec" select="substring-before(substring-after(concat(' ',.,' '),' ne:'),' ')"/>
+  </xsl:template>
+
+  <xsl:template mode="comp" match="@xml:*">
+    <xsl:attribute name="{local-name()}" select="."/>
+  </xsl:template>
+
+  <xsl:template match="@xml:*">
+    <xsl:attribute name="{local-name()}" select="."/>
   </xsl:template>
 
   <xsl:template mode="comp" match="@*">
