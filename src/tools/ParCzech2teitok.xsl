@@ -173,7 +173,7 @@
         <xsl:attribute name="end" select="key('idwhen', $endId, $TEI)/@interval"/>
       </xsl:if>
       <xsl:variable name="link" select="ancestor::tei:s[1]/tei:linkGrp[@type='UD-SYN']/tei:link[ends-with(@target,$idRef)]"/>
-      <xsl:variable name="deprel" select="substring-after($link/@ana,'ud-syn:')"/>
+      <xsl:variable name="deprel" select="replace(substring-after($link/@ana,'ud-syn:'),'_',':')"/>
       <xsl:if test="not($deprel = 'root')">
         <xsl:attribute name="head" select="substring-after(substring-before($link/@target,' '),'#')"/>
       </xsl:if>
