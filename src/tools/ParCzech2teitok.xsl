@@ -32,6 +32,8 @@
   <!-- Gather URIs of component xi + files and map to new files, incl. .ana files -->
   <xsl:variable name="docs">
     <xsl:for-each select="/tei:teiCorpus/xi:include[(position() mod $jobsCnt) = $jobN - 1 ]">
+      <xsl:variable name="prev-href" select="./preceding-sibling::xi:include[1]/@href"/>
+      <xsl:variable name="next-href" select="./following-sibling::xi:include[1]/@href"/>
       <item>
         <xi-orig>
           <xsl:value-of select="@href"/>
@@ -41,11 +43,13 @@
         </url-orig>
         <url-new>
           <xsl:value-of select="concat($outDir, '/')"/>
-          <xsl:value-of select="replace(@href,'(?:\.ana)?\.xml$','.tt.xml')"/>
+          <xsl:value-of select="mk:to-teitok-href(@href)"/>
         </url-new>
         <xi-new>
-          <xsl:value-of select="replace(@href,'(?:\.ana)?\.xml$','.tt.xml')"/>
+          <xsl:value-of select="mk:to-teitok-href(@href)"/>
         </xi-new>
+        <prev><xsl:value-of select="mk:to-teitok-href($prev-href)"/></prev>
+        <next><xsl:value-of select="mk:to-teitok-href($next-href)"/></next>
       </item>
       </xsl:for-each>
   </xsl:variable>
@@ -72,19 +76,29 @@
   <xsl:template match="item">
     <xsl:variable name="this" select="xi-orig"/>
     <xsl:message select="concat('INFO [',$jobN,'/',$jobsCnt,']: Processing ', $this)"/>
+    <xsl:message select="prev"/>
+    <xsl:message select="next"/>
     <xsl:result-document href="{url-new}">
-      <xsl:apply-templates mode="comp" select="document(url-orig)/tei:TEI"/>
+      <xsl:apply-templates mode="comp" select="document(url-orig)/tei:TEI">
+        <xsl:with-param name="next" select="next"/>
+        <xsl:with-param name="prev" select="prev"/>
+      </xsl:apply-templates>
     </xsl:result-document>
     <xsl:message select="concat('INFO [',$jobN,'/',$jobsCnt,']: Saving to ', xi-new)"/>
   </xsl:template>
 
   <xsl:template mode="comp" match="tei:TEI">
+    <xsl:param name="next"/>
+    <xsl:param name="prev"/>
+<xsl:message select="$prev"/><xsl:message select="$next"/>
     <xsl:element name="{local-name()}">
       <xsl:apply-templates mode="comp" select="@*"/>
       <xsl:attribute name="xmlnsoff" select="namespace-uri()"/>
       <xsl:apply-templates mode="comp">
         <xsl:with-param name="TEI" select="."/>
-      </xsl:apply-templates>
+        <xsl:with-param name="next" select="$next"/>
+        <xsl:with-param name="prev" select="$prev"/>
+     </xsl:apply-templates>
     </xsl:element>
   </xsl:template>
 
@@ -236,9 +250,17 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
 
   <xsl:template mode="comp" match="tei:text">
     <xsl:param name="TEI"/>
+    <xsl:param name="next"/>
+    <xsl:param name="prev"/>
     <xsl:element name="{local-name()}">
       <xsl:apply-templates mode="comp" select="@*"/>
       <xsl:attribute name="xml:space">remove</xsl:attribute>
+      <xsl:if test="$prev">
+        <xsl:attribute name="prev" select="$prev"/>
+      </xsl:if>
+      <xsl:if test="$next">
+        <xsl:attribute name="next" select="$next"/>
+      </xsl:if>
       <xsl:apply-templates mode="comp">
         <xsl:with-param name="TEI" select="$TEI"/>
       </xsl:apply-templates>
@@ -341,4 +363,8 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
     </xsl:choose>
   </xsl:function>
 
+  <xsl:function name="mk:to-teitok-href">
+    <xsl:param name="href"/>
+    <xsl:value-of select="replace($href,'(?:\.ana)?\.xml$','.tt.xml')"/>
+  </xsl:function>
 </xsl:stylesheet>
