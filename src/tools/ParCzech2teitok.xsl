@@ -22,6 +22,13 @@
   <xsl:variable name="inDir" select="replace(base-uri(), '(.*)/.*', '$1')"/>
   <xsl:key name="idwhen" match="tei:when" use="@xml:id"/>
 
+
+
+
+  <!-- Output label for Government-members and non-Government-members (in vertical and metadata output) -->
+  <xsl:param name="ingovernment-label">inGovernment</xsl:param>
+  <xsl:param name="notingovernment-label">notInGovernment</xsl:param>
+
 <!--
   <xsl:variable name="outRoot">
     <xsl:value-of select="$outDir"/>
@@ -118,6 +125,7 @@
               party_status="{et:party-status($speaker, $when)}"
               party_name="{et:speaker-party($speaker, 'yes', $when)}"
               minister="{et:speaker-minister($speaker, $when)}"
+              member_of_gov="{mk:speaker-member-of-gov($speaker, $when)}"
               party_orientation="{et:party-orientation($speaker, $when)}"
               party="{et:speaker-party($speaker, 'abb', $when)}">
               <xsl:attribute name="birth">
@@ -147,6 +155,7 @@
 
   <xsl:template mode="comp" match="tei:pc | tei:w">
     <xsl:param name="TEI"/>
+    <xsl:param name="cnec"/>
     <xsl:variable name="startId" select="./preceding-sibling::tei:*[1][local-name() = 'anchor']/@synch/substring-after(.,'#')"/>
     <xsl:variable name="endId" select="./following-sibling::tei:*[1][local-name() = 'anchor']/@synch/substring-after(.,'#')"/>
     <xsl:variable name="id" select="@xml:id"/>
@@ -171,6 +180,9 @@
       </xsl:if>
       <xsl:if test="$endId">
         <xsl:attribute name="end" select="key('idwhen', $endId, $TEI)/@interval"/>
+      </xsl:if>
+      <xsl:if test="normalize-space($cnec)">
+        <xsl:attribute name="cnec" select="replace(normalize-space($cnec),' ','|')"/>
       </xsl:if>
       <xsl:variable name="link" select="ancestor::tei:s[1]/tei:linkGrp[@type='UD-SYN']/tei:link[ends-with(@target,$idRef)]"/>
       <xsl:variable name="deprel" select="replace(substring-after($link/@ana,'ud-syn:'),'_',':')"/>
@@ -210,6 +222,7 @@
       </xsl:if>
       <xsl:apply-templates mode="comp">
         <xsl:with-param name="TEI" select="$TEI"/>
+        <xsl:with-param name="cnec"></xsl:with-param>
       </xsl:apply-templates>
     </xsl:element>
   </xsl:template>
@@ -266,8 +279,13 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
 
   <xsl:template mode="comp" match="*">
     <xsl:param name="TEI"/>
+    <xsl:param name="cnec"/>
     <xsl:element name="{local-name()}">
       <xsl:apply-templates mode="comp" select="@*"/>
+      <xsl:variable name="cnec-new" select="normalize-space(substring-before(substring-after(concat(' ',@ana,' '),' ne:'),' '))"/>
+      <xsl:if test="$cnec-new">
+        <xsl:attribute name="cnec" select="$cnec-new"/>
+      </xsl:if>
       <xsl:if test="ancestor-or-self::tei:seg and descendant::tei:anchor">
         <xsl:variable name="startId" select="./descendant::tei:anchor[1]/@synch/substring-after(.,'#')"/>
         <xsl:variable name="endId" select="./descendant::tei:anchor[last()]/@synch/substring-after(.,'#')"/>
@@ -276,12 +294,13 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
       </xsl:if>
       <xsl:apply-templates mode="comp">
         <xsl:with-param name="TEI" select="$TEI"/>
+        <xsl:with-param name="cnec"><xsl:value-of select="$cnec"/><xsl:text> </xsl:text><xsl:value-of select="$cnec-new"/></xsl:with-param>
       </xsl:apply-templates>
     </xsl:element>
   </xsl:template>
 
   <xsl:template mode="comp" match="@ana[contains(concat(' ',.),' ne:')]">
-    <xsl:attribute name="cnec" select="substring-before(substring-after(concat(' ',.,' '),' ne:'),' ')"/>
+    <!--xsl:attribute name="cnec" select="substring-before(substring-after(concat(' ',.,' '),' ne:'),' ')"/-->
   </xsl:template>
 
   <xsl:template mode="comp" match="@xml:*">
@@ -372,4 +391,22 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
     <xsl:param name="href"/>
     <xsl:value-of select="replace($href,'(?:\.ana)?\.xml$','.tt.xml')"/>
   </xsl:function>
+
+  <!-- Output appropriate label if the speaker is (not) a in Government when speaking -->
+  <xsl:function name="mk:speaker-member-of-gov" as="xs:string">
+    <xsl:param name="speaker" as="element(tei:person)"/>
+    <xsl:param name="when" as="xs:string"/>
+    <xsl:variable name="govs" select="string($rootHeader//tei:listOrg//tei:org[@role='government']/@xml:id)"/>
+    <xsl:choose>
+      <xsl:when test="$speaker/tei:affiliation[@role = 'member']
+                      [$govs = substring-after(@ref,'#')]
+                      [et:between-dates($when, @from, @to)]">
+        <xsl:value-of select="$ingovernment-label"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="$notingovernment-label"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:function>
+
 </xsl:stylesheet>
