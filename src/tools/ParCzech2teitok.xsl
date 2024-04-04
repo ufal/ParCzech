@@ -155,7 +155,6 @@
 
   <xsl:template mode="comp" match="tei:pc | tei:w">
     <xsl:param name="TEI"/>
-    <xsl:param name="cnec"/>
     <xsl:variable name="startId" select="./preceding-sibling::tei:*[1][local-name() = 'anchor']/@synch/substring-after(.,'#')"/>
     <xsl:variable name="endId" select="./following-sibling::tei:*[1][local-name() = 'anchor']/@synch/substring-after(.,'#')"/>
     <xsl:variable name="id" select="@xml:id"/>
@@ -180,9 +179,6 @@
       </xsl:if>
       <xsl:if test="$endId">
         <xsl:attribute name="end" select="key('idwhen', $endId, $TEI)/@interval"/>
-      </xsl:if>
-      <xsl:if test="normalize-space($cnec)">
-        <xsl:attribute name="cnec" select="replace(normalize-space($cnec),' ','|')"/>
       </xsl:if>
       <xsl:variable name="link" select="ancestor::tei:s[1]/tei:linkGrp[@type='UD-SYN']/tei:link[ends-with(@target,$idRef)]"/>
       <xsl:variable name="deprel" select="replace(substring-after($link/@ana,'ud-syn:'),'_',':')"/>
@@ -222,7 +218,6 @@
       </xsl:if>
       <xsl:apply-templates mode="comp">
         <xsl:with-param name="TEI" select="$TEI"/>
-        <xsl:with-param name="cnec"></xsl:with-param>
       </xsl:apply-templates>
     </xsl:element>
   </xsl:template>
@@ -279,13 +274,8 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
 
   <xsl:template mode="comp" match="*">
     <xsl:param name="TEI"/>
-    <xsl:param name="cnec"/>
     <xsl:element name="{local-name()}">
       <xsl:apply-templates mode="comp" select="@*"/>
-      <xsl:variable name="cnec-new" select="normalize-space(substring-before(substring-after(concat(' ',@ana,' '),' ne:'),' '))"/>
-      <xsl:if test="$cnec-new">
-        <xsl:attribute name="cnec" select="$cnec-new"/>
-      </xsl:if>
       <xsl:if test="ancestor-or-self::tei:seg and descendant::tei:anchor">
         <xsl:variable name="startId" select="./descendant::tei:anchor[1]/@synch/substring-after(.,'#')"/>
         <xsl:variable name="endId" select="./descendant::tei:anchor[last()]/@synch/substring-after(.,'#')"/>
@@ -294,13 +284,12 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
       </xsl:if>
       <xsl:apply-templates mode="comp">
         <xsl:with-param name="TEI" select="$TEI"/>
-        <xsl:with-param name="cnec"><xsl:value-of select="$cnec"/><xsl:text> </xsl:text><xsl:value-of select="$cnec-new"/></xsl:with-param>
       </xsl:apply-templates>
     </xsl:element>
   </xsl:template>
 
   <xsl:template mode="comp" match="@ana[contains(concat(' ',.),' ne:')]">
-    <!--xsl:attribute name="cnec" select="substring-before(substring-after(concat(' ',.,' '),' ne:'),' ')"/-->
+    <xsl:attribute name="cnec" select="substring-before(substring-after(concat(' ',.,' '),' ne:'),' ')"/>
   </xsl:template>
 
   <xsl:template mode="comp" match="@xml:*">
