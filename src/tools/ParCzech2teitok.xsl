@@ -175,10 +175,10 @@
         <xsl:attribute name="feats" select="$feats"/>
       </xsl:if>
       <xsl:if test="$startId">
-        <xsl:attribute name="start" select="key('idwhen', $startId, $TEI)/@interval"/>
+        <xsl:attribute name="start" select="key('idwhen', $startId, $TEI)/@interval div 1000"/>
       </xsl:if>
       <xsl:if test="$endId">
-        <xsl:attribute name="end" select="key('idwhen', $endId, $TEI)/@interval"/>
+        <xsl:attribute name="end" select="key('idwhen', $endId, $TEI)/@interval div 1000"/>
       </xsl:if>
       <xsl:variable name="link" select="ancestor::tei:s[1]/tei:linkGrp[@type='UD-SYN']/tei:link[ends-with(@target,$idRef)]"/>
       <xsl:variable name="deprel" select="replace(substring-after($link/@ana,'ud-syn:'),'_',':')"/>
@@ -210,10 +210,10 @@
       <xsl:apply-templates mode="comp" select="@ana"/>
       <xsl:if test="descendant::tei:anchor">
         <xsl:variable name="startId" select="./descendant::tei:anchor[1]/@synch/substring-after(.,'#')"/>
-        <xsl:attribute name="start" select="key('idwhen', $startId, $TEI)/@interval"/>
+        <xsl:attribute name="start" select="key('idwhen', $startId, $TEI)/@interval div 1000"/>
         <xsl:if test="not(descendant::tei:pb)"> <!-- add end only if the speach is on one page -->
           <xsl:variable name="endId" select="./descendant::tei:anchor[last()]/@synch/substring-after(.,'#')"/>
-          <xsl:attribute name="end" select="key('idwhen', $endId, $TEI)/@interval"/>
+          <xsl:attribute name="end" select="key('idwhen', $endId, $TEI)/@interval div 1000"/>
         </xsl:if>
       </xsl:if>
       <xsl:apply-templates mode="comp">
@@ -228,8 +228,8 @@
     <xsl:element name="{local-name()}">
       <xsl:apply-templates mode="comp" select="@*[not(name() = 'corresp')]"/>
       <xsl:if test="$corresp">
-        <xsl:attribute name="start" select="$TEI//tei:timeline[@corresp = $corresp]/tei:when[@interval][1]/@interval"/>
-        <xsl:attribute name="end" select="$TEI//tei:timeline[@corresp = $corresp]/tei:when[last()]/@interval"/>
+        <xsl:attribute name="start" select="$TEI//tei:timeline[@corresp = $corresp]/tei:when[@interval][1]/@interval div 1000"/>
+        <xsl:attribute name="end" select="$TEI//tei:timeline[@corresp = $corresp]/tei:when[last()]/@interval div 1000"/>
       </xsl:if>
       <xsl:variable name="speaker" select="ancestor::tei:u[@who]"/>
       <xsl:if test="$speaker">
@@ -279,8 +279,8 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
       <xsl:if test="ancestor-or-self::tei:seg and descendant::tei:anchor">
         <xsl:variable name="startId" select="./descendant::tei:anchor[1]/@synch/substring-after(.,'#')"/>
         <xsl:variable name="endId" select="./descendant::tei:anchor[last()]/@synch/substring-after(.,'#')"/>
-        <xsl:attribute name="start" select="key('idwhen', $startId, $TEI)/@interval"/>
-        <xsl:attribute name="end" select="key('idwhen', $endId, $TEI)/@interval"/>
+        <xsl:attribute name="start" select="key('idwhen', $startId, $TEI)/@interval div 1000"/>
+        <xsl:attribute name="end" select="key('idwhen', $endId, $TEI)/@interval div 1000"/>
       </xsl:if>
       <xsl:apply-templates mode="comp">
         <xsl:with-param name="TEI" select="$TEI"/>
