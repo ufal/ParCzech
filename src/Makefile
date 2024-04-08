@@ -213,6 +213,7 @@ release2teitok: tools/parlamint-lib.xsl
 	mkdir -p $(DATA-TEITOK)/
 	@test -n "$(PROFILE)" && echo "RUNNING PROFILER saxon param: $(PROF)" || :
 	$s $(PROF) -xsl:tools/ParCzech2teitok.xsl \
+	    commit=$(shell git -C . rev-parse HEAD) \
 	    outDir=$(DATA-TEITOK)/ \
 	    jobsCnt=$(JOBS-CNT) \
 	    jobN=${JOB-N} \

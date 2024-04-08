@@ -15,6 +15,7 @@
   <xsl:param name="outDir"/>
   <xsl:param name="jobsCnt">1</xsl:param>
   <xsl:param name="jobN">1</xsl:param>
+  <xsl:param name="commit"/>
 
   <xsl:import href="parlamint-lib.xsl"/>
 
@@ -152,6 +153,24 @@
       </listPerson>
     </xsl:element>
   </xsl:template>
+
+  <xsl:template mode="comp" match="tei:encodingDesc">
+    <xsl:param name="TEI"/>
+    <xsl:variable name="when" select="$TEI//tei:teiHeader//tei:setting/tei:date/@when"/>
+    <xsl:element name="{local-name()}">
+      <xsl:apply-templates mode="comp">
+        <xsl:with-param name="TEI" select="$TEI"/>
+      </xsl:apply-templates>
+      <appInfo>
+        <application ident="ParCzech2teitok" version="{$commit}">
+          <label>ParCzech2teitok.xsl</label>
+          <desc xml:lang="en">Script available at <ref target="{concat('https://github.com/ufal/ParCzech/tree/',$commit,'/src/tools/ParCzech2teitok.xsl')}">GitHub ufal/ParCzech</ref></desc>
+        </application>
+      </appInfo>
+    </xsl:element>
+  </xsl:template>
+
+
 
   <xsl:template mode="comp" match="tei:pc | tei:w">
     <xsl:param name="TEI"/>
