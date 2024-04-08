@@ -208,7 +208,7 @@ audio-release-meta-quarter-FILE:
 	@echo "$(AUDIO-DATA-VERSION)\\t1\\t$(AUDIO-DATA-RELEASE-REPOSITORY-URL-PREF)$(FILE).tar" >> $(TSVquarterArchive).tmp
 
 
-###################
+################### TEITOK
 release2teitok: tools/parlamint-lib.xsl
 	mkdir -p $(DATA-TEITOK)/
 	@test -n "$(PROFILE)" && echo "RUNNING PROFILER saxon param: $(PROF)" || :
@@ -220,7 +220,25 @@ release2teitok: tools/parlamint-lib.xsl
 	@test -n "$(PROFILE)" && echo "Profiler output: " $(shell echo -n "$(PROFILE)"|sed 's/^.*://') || :
 
 
-teitok-pack:
+teitok-get-taxonomies-translation:
+	@make teitok-get-taxonomy-translation \
+	           TAXONOMY=$(DATA-RELEASE)/ParCzech.TEI.ana/ParCzech-taxonomy-NER.cnec2.0.ana.xml \
+	           TAXONOMY-REPLACE-ID='s/^NER.cnec2.0.//' \
+	           TAXONOMY-TRANSLATION-ID-PREFIX='cnec-' \
+	           TAXONOMY-REPLACE-TERM='s///' \
+	           TAXONOMY-LANG='en'
+
+teitok-get-taxonomy-translation:
+	@java -cp /usr/share/java/saxon.jar net.sf.saxon.Query \
+	         -xi:off \!method=adaptive \
+	         -qs:'//*:category/*:catDesc[ancestor-or-self::*[@xml:lang][1]/@xml:lang="$(TAXONOMY-LANG)"]/concat(ancestor::*:category[1]/@xml:id,"@",./*:term,normalize-space(./*:term/following-sibling::text()))' \
+	         -s:$(TAXONOMY) \
+	  | sed 's/^"//;s/"$$//' \
+	  | sed '$(TAXONOMY-REPLACE-ID)' \
+	  | sed 's/^\(.*\)@/$(TAXONOMY-TRANSLATION-ID-PREFIX)\1\t\1::/'
+
+
+################### DEPENDENCIES
 
 tools/parlamint-lib.xsl:
 	git archive --remote=git://github.com/clarin-eric/ParlaMint.git devel Scripts/parlamint-lib.xsl | tar -xO  Scripts/parlamint-lib.xsl > tools/parlamint-lib.xsl
