@@ -85,10 +85,15 @@
     <xsl:variable name="this" select="xi-orig"/>
     <xsl:message select="concat('INFO [',$jobN,'/',$jobsCnt,']: Processing ', $this)"/>
     <xsl:result-document href="{url-new}">
-      <xsl:apply-templates mode="comp" select="document(url-orig)/tei:TEI">
-        <xsl:with-param name="next" select="next"/>
-        <xsl:with-param name="prev" select="prev"/>
-      </xsl:apply-templates>
+      <!-- preprocess -->
+      <xsl:variable name="preprocess">
+        <xsl:apply-templates mode="comp" select="document(url-orig)/tei:TEI">
+          <xsl:with-param name="next" select="next"/>
+          <xsl:with-param name="prev" select="prev"/>
+        </xsl:apply-templates>
+      </xsl:variable>
+      <!-- copy cnec value to tokens -->
+      <xsl:apply-templates mode="cnec" select="$preprocess"/>
     </xsl:result-document>
     <xsl:message select="concat('INFO [',$jobN,'/',$jobsCnt,']: Saving to ', xi-new)"/>
   </xsl:template>
@@ -323,6 +328,28 @@ ParCzech(3.0 like): <pb source="https://www.psp.cz/eknih/2021ps/stenprot/071schu
     <xsl:copy/>
   </xsl:template>
 
+ <!-- cnec -->
+
+  <xsl:template mode="cnec" match="tok[ancestor::*/@cnec]">
+    <xsl:copy>
+      <xsl:apply-templates mode="cnec" select="@*"/>
+      <xsl:attribute name="cnec" select="string-join(ancestor::*/@cnec,',')"/> <!-- comma due to a TEITOK query builder -->
+      <xsl:apply-templates mode="cnec"/>
+    </xsl:copy>
+  </xsl:template>
+
+  <xsl:template mode="cnec" match="*">
+    <xsl:copy>
+      <xsl:apply-templates mode="cnec" select="@*"/>
+      <xsl:apply-templates mode="cnec"/>
+    </xsl:copy>
+  </xsl:template>
+  <xsl:template mode="cnec" match="@*">
+    <xsl:copy/>
+  </xsl:template>
+  <xsl:template mode="cnec" match="text()">
+    <xsl:value-of select="."/>
+  </xsl:template>
 
   <!-- Finalizing ROOT -->
   <xsl:template match="*">
