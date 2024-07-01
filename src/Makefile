@@ -172,7 +172,7 @@ audio-release-meta-clear:
 ## audioFile
 $(TSVaudioFile):
 	@mkdir -p $(AUDIO-DATA-RELEASE) || :
-	@echo "filePath fileSource archiveFileName fromVersion isUpdated"|tr " " "\t" > $(TSVaudioFile)
+	@echo "filePath fileSource archiveFileName noChangeSinceVersion isUpdated"|tr " " "\t" > $(TSVaudioFile)
 
 audio-release-meta-mp3: $(TSVaudioFile)
 	@find -L $(AUDIO-DATA-TO-RELEASE) -type f | xargs -I {} make  --no-print-directory audio-release-meta-mp3-FILE FILE={}
@@ -183,7 +183,7 @@ audio-release-meta-mp3: $(TSVaudioFile)
 FILE-DATE-PATH=$(shell echo -e "$(FILE)" | sed 's@.*$(AUDIO-DATA-RELEASE-COMMON-PATH)/*@@')
 audio-release-meta-mp3-FILE: $(FILE)
 	@echo -n "$(AUDIO-DATA-RELEASE-COMMON-PATH)/$(FILE-DATE-PATH)\\t" >> $(TSVaudioFile).tmp
-	@realpath `find $(AUDIO-DATA-SOURCE) -path "*/2016/06/01/2016060110381052.mp3"`|sed 's@^.*\(www.psp.cz/\)@https://\1@'|tr "\n" "\t" >> $(TSVaudioFile).tmp
+	@realpath `find $(AUDIO-DATA-SOURCE) -path "*/$(FILE-DATE-PATH)"`|sed 's@^.*\(www.psp.cz/\)@https://\1@'|tr "\n" "\t" >> $(TSVaudioFile).tmp
 	@echo -n "$(FILE)"|sed 's@^.*\(audioPSP-....-Q.\).*$$@\1.tar\t@' >> $(TSVaudioFile).tmp
 	@echo "$(AUDIO-DATA-VERSION)\\t1">> $(TSVaudioFile).tmp
 
@@ -192,7 +192,7 @@ audio-release-meta-mp3-FILE: $(FILE)
 ## quarterArchive
 $(TSVquarterArchive):
 	mkdir -p $(AUDIO-DATA-RELEASE) || :
-	echo "archiveFileName fromDate toDate cntFiles fromVersion isUpdated repositoryUrl"|tr " " "\t" > $(TSVquarterArchive)
+	echo "archiveFileName fromDate toDate cntFiles noChangeSinceVersion isUpdated repositoryUrl"|tr " " "\t" > $(TSVquarterArchive)
 
 audio-release-meta-quarter: $(TSVquarterArchive)
 	@ls $(AUDIO-DATA-TO-RELEASE) | xargs -I {} make  --no-print-directory audio-release-meta-quarter-FILE FILE={}
