@@ -412,7 +412,7 @@ sub record_exporter {
   add_pagebreak_and_audio_to_teiFile($link);  # add audio if possible
   my ($link_id) = $link =~ m/s(\d*)\.htm$/;
 
-  my $date = trim xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]/p[@class="date"]/a');
+  my $date = trim xpath_string('//*[@id="main-content"]/*[has(@class,"document-nav")]/p[@class="date"]');
   if($date){
     $date =~ s/^[^ ]* //;
     $datetime = $strp->parse_datetime("$date 00:00");
