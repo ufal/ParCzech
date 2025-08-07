@@ -513,6 +513,7 @@ sub record_exporter {
       }
       $cnt_text =~ s/\s*:?\s*//; # remove initial : and spaces
 
+      $auth =~ s/  *:$/:/;
       ($$ref_author->{authorname}) = $auth =~ m/([^ ]*\s+[^ ]+?):?$/;
       $$ref_author->{author} = $auth;
       $$ref_author->{author_id} = $auth_id;
