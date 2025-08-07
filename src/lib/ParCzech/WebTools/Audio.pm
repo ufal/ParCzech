@@ -46,7 +46,6 @@ sub create_audio_link {
   my $self = shift;
   my $date = shift;
   print STDERR "TEST IF DATETIME OBJECT !!!";
-  return if $date->year < 2006; 
   my $start = $date->clone()->subtract( minutes => ($date->minute % 10) + 2);
   my $end = $start->clone()->add(minutes => 14);
   my $link = 'https://www.psp.cz/eknih/'.$self->{term}.'/audio/'
@@ -60,6 +59,7 @@ sub create_audio_link {
 sub get_audio_link {
   my $self = shift;
   my $date = shift;
+  return if $date->year < 2006;
   my $link = $self->create_audio_link($date);
   return $link if defined $self->{tested_links}->{$link};
   if($self->test_link($link)){
