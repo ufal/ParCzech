@@ -68,7 +68,7 @@ my $config = {
       }
     },
     {
-      text => 'Czech Republic',
+      text => 'Czech Republic',# TODO add language
       attr => {
         type => 'country',
         key => 'CZ'
@@ -80,6 +80,7 @@ my $config = {
   }
 };
 
+my $from_year = 2013;
 
 Getopt::Long::GetOptions(
   'tei=s' => \$tei_dir,
@@ -87,6 +88,7 @@ Getopt::Long::GetOptions(
   'cache=s' => \$cache_dir,
   'id=s' => \$run_date,
   'prune=s' => \$prune_regex,
+  'from=i' => \$from_year,
   'debug=i' => \$debug_level
   );
 
@@ -207,7 +209,7 @@ for my $row (xpath_node('//*[@id="main-content"]/table/tr',$URL_start)) {
   my ($from, $notequal,$to) = xpath_string('./td[1]',$row) =~ m/(\d{4})\s*(-?)\s*(\d*)/;
   $to = $from unless $notequal;
   $link = $URL.$link;
-  push @URLs_parlament, $link if $from >= 2013 and $link =~ m/\/\d{4}ps\//;
+  push @URLs_parlament, $link if $from >= $from_year and $link =~ m/\/\d{4}ps\//;
 }
 
 # get stenoprotocols link for each terms

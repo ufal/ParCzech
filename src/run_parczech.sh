@@ -15,13 +15,16 @@ usage() {
   exit 1
 }
 
-while getopts  ':c:p:l:E:'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
+while getopts  ':c:p:f:l:E:'  opt; do # -l "identificator:,file-pattern:,export-audio" -a -o
   case "$opt" in
     'c')
       CONFIG_FILE=$OPTARG
       ;;
     'p')
       [ -n "$EXISTING_FILELIST" ] && usage || DOWN_PARAMS+=(--prune $OPTARG )
+      ;;
+    'f')
+      [ -n "$EXISTING_FILELIST" ] && usage || DOWN_PARAMS+=(--from $OPTARG )
       ;;
     'l')
       [ ${#DOWN_PARAMS[@]} -ne 0 ] && usage || EXISTING_FILELIST=$OPTARG
