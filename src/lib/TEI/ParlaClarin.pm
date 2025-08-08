@@ -253,6 +253,8 @@ sub _get_child_node_or_create { # allow create multiple tree ancestors
 
 sub _to_xmlid {
   my $self = shift;
-  return join('',map {my $p = $_; $p =~ s/\s*//g; Unicode::Diacritic::Strip::strip_diacritics($p)} @_);
+  my $id = join('',map {my $p = $_; $p =~ s/\s*//g; Unicode::Diacritic::Strip::strip_diacritics($p)} @_);
+  $id =~ s/^[^a-zA-Z0-9]*//;
+  return $id;
 }
 1;
