@@ -9,9 +9,9 @@ use File::Spec;
 use File::Path;
 use Getopt::Long;
 
-my $URL = 'https://www.vlada.cz';
-my $URL_start = "$URL/cz/clenove-vlady/historie-minulych-vlad/prehled-vlad-cr/1993-2007-cr/";
-my @gov_urls = ("$URL/cz/vlada/");
+my $URL = 'https://vlada.gov.cz';
+my $URL_start = "$URL/scripts/detail.php?pgid=1337";
+my @gov_urls = ("$URL/cz/vlada/clenove-vlady/");
 my @pers_urls = ();
 
 
@@ -75,9 +75,10 @@ if($person_list_in){
 
 
 make_request($URL_start);
+print STDERR "DOWNLOADING: $URL_start\n";
 if(doc_loaded) {
   my $first=1;
-  for my $period_link (grep {m/clenove-vlady/} xpath_string('//div[has(@class,"content-main")]//ul/li/a/@href')){
+  for my $period_link (grep {m/clenove-vlady/} xpath_string('//div[@id ="main-content"]//ul/li/a/@href')){
     my ($pgid) = $period_link =~m/-([0-9]+)\/?$/;
     print STDERR "$period_link\n";
     push @gov_urls, "$URL$period_link" if($first || is_new($pgid));
@@ -89,9 +90,12 @@ for my $gov_url (@gov_urls) {
   make_request($gov_url);
   print STDERR "DOWNLOADING: $gov_url\n";
   next unless doc_loaded;
-  for my $pers_link (grep {m/clenove-vlady.*-\d+\/?$/} xpath_string('//div[has(@class,"content-main")]//p/a/@href')) {
+  my $c = 0;
+  for my $pers_link (grep {m/clenove-vlady.*-\d+\/?$/} xpath_string('//div[@id ="main-content"]//p/a/@href | //div[has(@class,"members")]//a/@href')) {
     push @pers_urls,["$pers_link",'',''] if is_new($pers_link);
+    $c++;
   }
+  print STDERR "\tlinks cnt: $c\n"
 }
 
 my $fh;
@@ -108,20 +112,30 @@ for my $pers (@pers_urls) {
     print $fh "$id||$sname|$fname||||||\n" if $fname and $sname;
     next;
   }
-  my $main = xpath_node('//*[has(@class,"content-main")]');
+  my $main = xpath_node('//*[@id="main-content"]');
   next unless $main;
-  my $persName = xpath_string('./h1[1]',$main);
+  my $persName = xpath_string('.//h1[1]',$main);
+  print STDERR "\t$persName\n";
   my ($before,$forename,$surname,$after) = $persName =~ m/^(.*?)\s*([^\.\s]+)\s+([^\.,]+),?\s*(.*?)$/;
   $surname = trim $surname;
   my ($pers_info) = grep {m/\d\d\d\d/} grep {$_} map {trim $_} xpath_string('.//*[contains(./text(),"Osobní údaje")]/following::p');
   ($pers_info) =  grep {m/\d\d\d\d/} grep {$_} map {trim $_} xpath_string('.//*[contains(./text(),"Osobní údaje")]/following::text()') unless $pers_info;
-  my ($female,$birth_date,$birth_place) = ($pers_info//'') =~ m/(?:(?:rodil)|(?:rozen))(a*)\s*(?:se\s+)?(\d+\.\s+[^\s]+\s+\d\d\d\d)(?:\s+v.?\s+([^\.,]*))?/;
+  ($pers_info) =  join(" ",grep {m/\d\d\d\d/} grep {$_} map {trim $_} xpath_string('.//article/p/text()')) unless $pers_info;
+  
+  my ($female,$birth_date,$birth_place) = ($pers_info//'') =~ m/(?:(?:rodil)|(?:rozen))(a*)\s*(?:se\s+)?(\d+\.\s*[^\s]+\s*\d\d\d\d)(?:\s+v.?\s+([^\.,]*))?/;
   $birth_date = guess_date($birth_date);
   unless($birth_date){
-    ($female,$birth_date) = ($pers_info//'') =~ m/(?:(?:rodil)|(?:rozen))(a*)\s*(?:se\s+)?.*?(\d+\.\s+[^\s]+\s+\d\d\d\d)/;
+    ($female,$birth_date) = ($pers_info//'') =~ m/(?:(?:rodil)|(?:rozen))(a*)\s*(?:se\s+)?[^\.\d,\?\!]*?(\d+\.\s*[^\s]+\s*\d\d\d\d)/;
     $birth_date = guess_date($birth_date);
   }
-  ($female) = $surname =~ m/(á)$/  unless $birth_date;
+  unless($birth_date){
+    ($pers_info) = grep {m/\*\s*\d+\.\s*\d+\.\s*\d\d\d\d\s*/} grep {$_} map {trim $_} xpath_string('.//article/p/text()');
+    ($birth_date) = ($pers_info//'') =~ m/(\d+\.\s*[^\s]+\s*\d\d\d\d)/;
+    $birth_date = guess_date($birth_date);
+  }
+
+  print STDERR "\tmissing birth\n" unless $birth_date;
+  ($female) = $surname =~ m/(á)$/  unless $female;
   my $sex = $female ? 'F' : 'M';
 
   print $fh "$id|$before|$surname|$forename|$after|$birth_date|$sex|||\n";
