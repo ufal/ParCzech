@@ -278,7 +278,7 @@ for my $person_node ($xpc->findnodes('//tei:person',$personlist->{dom})) {
   my $forename = trim($xpc->findvalue('./tei:persName/tei:forename/text()',$person_node));
   my $surname = trim($xpc->findvalue('./tei:persName/tei:surname/text()',$person_node));
   my %data = ();
-
+  $data{id} = $id;
   if( my ($gov_id) = $id =~ m/-([0-9]+)$/){
     $data{gov_id} = $gov_id;
   } elsif (my ($psp_id) = $id =~ m/[^-]([0-9]+)$/) {
@@ -468,6 +468,18 @@ sub addPerson { # create new person or use existing based on passed data
   my $person = $self->findPerson(%opts);
   my $sth;
   unless ($person){
+    for my $g ([qw/gov_id gov_osoby GOVERNMENT/], [qw/psp_id osoby PSP/]) {
+      if(defined $opts{$g->[0]}){ # handling invalid government and psp id -> using guest_id 
+        $sth = $pspdb->prepare(sprintf('SELECT * FROM '.$g->[1].' WHERE id_osoba=%s', $opts{$g->[0]}));
+        $sth->execute;
+        unless($sth->fetchrow_hashref){
+          print STDERR "INVALID ",$g->[2]," ID: ",$opts{$g->[0]},"\n";
+          $opts{guest_id} = $opts{id};
+          undef $opts{$g->[0]};
+        }
+      }
+    }
+
     if(defined $opts{guest_id}){ # try to find id in government persons
       print STDERR "looking for $opts{forename} $opts{surname} in gov_osoby\n";
       $sth = $pspdb->prepare(sprintf('SELECT * FROM gov_osoby WHERE jmeno="%s" AND prijmeni="%s"', $opts{forename}//'', $opts{surname}//''));
