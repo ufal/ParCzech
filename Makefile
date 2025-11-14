@@ -6,7 +6,7 @@ DATASHARED := $(DATA)/shared
 REPOSITORY := $(DATA)/repository
 DATARUN := $(DATA)/$(RUNID)
 DATABASE := $(DATARUN)/database/work
-DOWN := $(DATARUN)/down
+PROC := $(DATARUN)/proc
 HTML := $(DATARUN)/html
 HTML_DISTRO := $(DATARUN)/dist
 HTML_WORK := $(HTML)/work
@@ -40,7 +40,7 @@ PATCH_PSP_STENO_TABLES_add_year = $(STATIC)/psp_idorg2year.tsv
 
 
 
-$(DATA) $(DATABASE) $(TMP) $(DOWN) $(DATASHARED):
+$(DATA) $(DATABASE) $(TMP) $(PROC) $(DATASHARED):
 	mkdir -p $@
 ####################### download
 
@@ -53,7 +53,7 @@ $(DATABASE)/steno: $(DATABASE)
 
 
 
-downloader-get-urls: $(DATABASE)/steno $(TMP) $(DOWN) # download-tables-steno $(PATCH_PSP_STENO_TABLES_add_year)
+downloader-get-urls: $(DATABASE)/steno $(TMP) $(PROC) # download-tables-steno $(PATCH_PSP_STENO_TABLES_add_year)
 	@# adding year as the last column
 	@# 140734|173|111|79|2024-07-11|1|1320|1330|2021|
 	@# columns:
@@ -95,45 +95,45 @@ downloader-get-urls: $(DATABASE)/steno $(TMP) $(DOWN) # download-tables-steno $(
 		} \
 	  ' \
 	  $</steno-year.unl \
-		> $(DOWN)/urls-all.tsv
+		> $(PROC)/urls-all.tsv
 
-$(DOWN)/urls-all.tsv: downloader-get-urls
+$(PROC)/urls-all.tsv: downloader-get-urls
 
 $(DATASHARED)/urls-seen-notfinal.tsv $(DATASHARED)/urls-seen-final.tsv: $(DATASHARED)
 	touch $@
 
-$(DOWN)/meetings-to-download.tsv: $(DOWN)/urls-all.tsv $(DATASHARED)/urls-seen-notfinal.tsv
+$(PROC)/meetings-to-download.tsv: $(PROC)/urls-all.tsv $(DATASHARED)/urls-seen-notfinal.tsv
 	@echo -n "INFO[$@]: getting list of meetings to be downloaded:"
-	@( awk -F'\t' '$$5 >= "$(FIRSTDATE)"' $(DOWN)/urls-all.tsv; cat $(DATASHARED)/urls-seen-notfinal.tsv ) |	cut -f 3,9 | sort |uniq > $@
+	@( awk -F'\t' '$$5 >= "$(FIRSTDATE)"' $(PROC)/urls-all.tsv; cat $(DATASHARED)/urls-seen-notfinal.tsv ) |	cut -f 3,9 | sort |uniq > $@
 	@cat $@|awk -F'\t' -v OFS='\t' '{ print $$2, $$1 }' |tr '\t\n' '/ '
 	@echo
 
 
-$(DOWN)/urls-to-download.tsv: $(DOWN)/meetings-to-download.tsv $(DOWN)/urls-all.tsv $(DATASHARED)/urls-seen-final.tsv
+$(PROC)/urls-to-download.tsv: $(PROC)/meetings-to-download.tsv $(PROC)/urls-all.tsv $(DATASHARED)/urls-seen-final.tsv
 	@# get all new and to update urls - all urls in meeting to download and skip final urls
 	@echo "INFO[$@]: STARTED steno URLs to be downloaded"
 	@awk -F'\t' \
 	    'NR==FNR { key[$$1 FS $$2] = 1;next } ($$3 FS $$9) in key' \
-			$(DOWN)/meetings-to-download.tsv \
-			$(DOWN)/urls-all.tsv > $(DOWN)/urls-to-include.tsv
+			$(PROC)/meetings-to-download.tsv \
+			$(PROC)/urls-all.tsv > $(PROC)/urls-to-include.tsv
 	@if [ -s $(DATASHARED)/urls-seen-final.tsv ]; then \
 	  awk -F'\t' \
 	    'NR==FNR {  if ($$14 != "") key[$$14] = 1;next } !($$14 in key)' \
 			$(DATASHARED)/urls-seen-final.tsv \
-			$(DOWN)/urls-to-include.tsv ; \
+			$(PROC)/urls-to-include.tsv ; \
 	else \
-	  cat $(DOWN)/urls-to-include.tsv ; \
+	  cat $(PROC)/urls-to-include.tsv ; \
 	fi > $@
 	@echo "INFO[$@]: URLs to be downloaded stored in: $@"
 
 download-steno-from-repository: $(HTML_WORK_REPOSITORY)
-$(HTML_WORK_REPOSITORY): $(DOWN)/meetings-to-download.tsv $(HTML_WORK_SOURCE)
+$(HTML_WORK_REPOSITORY): $(PROC)/meetings-to-download.tsv $(HTML_WORK_SOURCE)
 	@# download only meetings
 	@echo "TODO[$@]"
 	@ #$(call REPOSITORY_CMD,handle,file_name,output_path)
 
 download-steno-from-psp: $(HTML_WORK_SOURCE)
-$(HTML_WORK_SOURCE): $(DOWN)/urls-to-download.tsv
+$(HTML_WORK_SOURCE): $(PROC)/urls-to-download.tsv
 	@echo "INFO[$@]: downloading meeting steno, that has sitting day newer than $(FIRSTDATE) or needs to be updated"
 	@test -d $@ && echo "INFO: downloading skipped - folder exists" || ( \
 	  mkdir -p $@; \
@@ -154,10 +154,11 @@ build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY)
 	@find $(HTML_WORK_SOURCE) -type d -printf '%P\n'| xargs -I {} mkdir -p $(HTML_WORK_NORMALIZED)/{}
 	@find $(HTML_WORK_SOURCE) -type f -printf '%P\n'\
 	  | parallel  "make --silent get-and-normalize-html-content INFILE=$(HTML_WORK_SOURCE)/{} > $(HTML_WORK_NORMALIZED)/{} "
-	# file_path md5sum_normalized runid source_url source_down_date isfinal
-	cat $(HTML_WORK)/steno-down.log \
+	@# file_path md5sum_normalized runid source_url source_down_date isfinal
+	@echo "INFO: calculating checksums of downloaded steno files"
+	@cat $(HTML_WORK)/steno-down.log \
 	  | sed -n 's/^\([-:0-9 ]*\) URL:\([^ ]*\) .* -> "\(.*\)".*/\1\t\2\t\3/p' \
-		| awk -F'\t' \
+		| awk -F'\t' -v OFS='\t' \
 		      -v norm="$(HTML_WORK_NORMALIZED)/" \
 		      -v down="$(HTML_WORK_SOURCE)/" \
 		      -v runid="$(RUNID)" \
@@ -171,7 +172,48 @@ build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY)
 						print $$3, sum[1], runid, $$2, $$1, isfinal; \
 					} \
 					' \
-		> $(HTML_WORK)/files-current-steno-psp.tsv
+		> $(PROC)/files-current-steno-psp.tsv
+	@echo "INFO: merging checksum file with metadata from database"
+	@awk -F'\t' -v OFS='\t' \
+	    '\
+			  NR==FNR { fl[$$4]=$$0;next } \
+        $$14 in fl { print $$0 "\t" fl[$$14] }\
+			' \
+    $(PROC)/files-current-steno-psp.tsv \
+		$(PROC)/urls-to-download.tsv \
+		> $(PROC)/urls_files-current-steno-psp.tsv
+	@echo "INFO: creating checksum and metadata file in the final shape (TSV)"
+	@# chamber therm meeting sittingN page_in_meeting date starttime endtime file md5sum isfinal cite_datetime stenourl audiourl
+	@awk -F'\t' -v OFS='\t' \
+	    '\
+			{\
+	      print "PSP ČR", \
+				      $$9, \
+				      $$3, \
+				      $$6, \
+				      $$4, \
+				      $$5, \
+				      $$10, \
+				      $$11, \
+				      $$16, \
+				      $$17, \
+				      $$21, \
+				      $$20, \
+				      $$14, \
+				      $$15;\
+			}\
+			'\
+			$(PROC)/urls_files-current-steno-psp.tsv \
+			> $(PROC)/distro-current-steno-psp.tsv	
+	@echo "TODO: determining which files are new or updated"
+
+	@echo "TODO: copy new or updated files to distro location"
+	@echo "TODO: copy nonchanged files to distro location"
+	@echo "TODO: create final checksums and metadata file" # use released file as a base and change updated or new rows
+	
+
+	
+	
 	@echo "TODO: $@"
 
 release-steno: build-steno
