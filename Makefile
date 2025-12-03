@@ -1,4 +1,8 @@
+.DEFAULT_GOAL := help
+
+##$FIRSTDATE## The oldest date (YYYY-MM-DD) to be considered to download
 FIRSTDATE := 2025-11-05
+
 RUNID := $(shell date +"%Y%m%dT%H%M%S")
 
 DATA := $(shell pwd)/data
@@ -16,7 +20,7 @@ HTML_WORK_NORMALIZED := $(HTML_WORK)/normalized
 TMP := $(DATARUN)/tmp
 STATIC := $(shell pwd)/static
 
-
+##$DONT_USE_REPOSITORY## Set whether the release result should be passed to repository or stored in local folder
 DONT_USE_REPOSITORY := 1
 
 ifeq ($(DONT_USE_REPOSITORY),1)
@@ -36,14 +40,17 @@ endif
 
 
 URL_PSP_STENO_TABLES = https://www.psp.cz/eknih/cdrom/opendata/steno.zip
+URL_PSP_PERS_ORG_TABLES = https://www.psp.cz/eknih/cdrom/opendata/poslanci.zip
 PATCH_PSP_STENO_TABLES_add_year = $(STATIC)/psp_idorg2year.tsv
 
 
 
 $(DATA) $(DATABASE) $(TMP) $(PROC) $(DATASHARED):
 	mkdir -p $@
-####################### download
 
+###### Download
+
+## download-tables-steno ## downloads current table with all steno metadata
 download-tables-steno: $(DATABASE)/steno
 $(DATABASE)/steno: $(DATABASE)
 	@# table documentation: https://www.psp.cz/sqw/hp.sqw?k=1310
@@ -51,10 +58,18 @@ $(DATABASE)/steno: $(DATABASE)
 	@wget -O "$(DATABASE)/steno.zip"  $(URL_PSP_STENO_TABLES) 
 	@unzip -o "$(DATABASE)/steno.zip" -d "$(DATABASE)/steno"
 
+## download-tables-person-and-org ## downloads current table with all persons and organizations
+download-tables-person-and-org: $(DATABASE)/person-org
+$(DATABASE)/person-org: $(DATABASE)
+	@# table documentation: https://www.psp.cz/sqw/hp.sqw?k=1301
+	@echo "INFO: Downloading 'poslanci a osoby' tables with metadata"
+	@wget -O "$(DATABASE)/poslanci.zip"  $(URL_PSP_PERS_ORG_TABLES) 
+	@unzip -o "$(DATABASE)/poslanci.zip" -d "$(DATABASE)/person-org"
 
 
-downloader-get-urls: $(DATABASE)/steno $(TMP) $(PROC) # download-tables-steno $(PATCH_PSP_STENO_TABLES_add_year)
-	@# adding year as the last column
+## downloader-get-urls ## extend steno tables with times and steno and audio urls (calls download-tables-steno)
+downloader-get-urls: $(DATABASE)/steno $(DATABASE)/person-org $(TMP) $(PROC) # download-tables-steno $(PATCH_PSP_STENO_TABLES_add_year)
+	@# adding year as the last column (steno.unl)
 	@# 140734|173|111|79|2024-07-11|1|1320|1330|2021|
 	@# columns:
 	@ # 1) id like
@@ -65,36 +80,34 @@ downloader-get-urls: $(DATABASE)/steno $(TMP) $(PROC) # download-tables-steno $(
 	@	# 6) sitting day in meeting
 	@	# 7) start steno time - minutes from day beginning 
 	@	# 8) end steno time - minutes from day beginning		
-	@	# 9) term starting year - for constructing urls
-	@sed 's#^\(.*\)\t\(.*\)$$#s@^\\([^\|]*\|\1\|.*\\)@\\1\2@\;t end#' $(PATCH_PSP_STENO_TABLES_add_year) > $(TMP)/steno-year.sed
-	@echo  >> $(TMP)/steno-year.sed
-	@echo ":end" >> $(TMP)/steno-year.sed
-	@sed -f $(TMP)/steno-year.sed \
-	    $</steno.unl \
-			> $</steno-year.unl
+	echo "TODO: use person-org data to identify psYYYY url"
+	cut -f 1,3,4,7 -d'|'  $(DATABASE)/person-org/organy.unl| awk 'BEGIN {FS="|";OFS="|"}{if($$2 == 11){print $$1,$$3,$$4,substr($$4, 7, 4)}}' > $(PROC)/psp-organy-year.unl
 	@# https://www.psp.cz/eknih/<id_org_year>ps/stenprot/<schuze>schuz/s<schuze><stranka>.htm
 	@# https://www.psp.cz/eknih/<id_org_year>ps/audio/<year>/<month>/<day>/<year><monnth><day>08580912.mp3
 	@# appending columns:
+	@ # 9) start term year
 	@ # 10) start steno time HH:MM
 	@ # 11) end steno time HH:MM
 	@ # 12) start audio time HHMM
-	@ # 13) end audio time HHMM
-	@ # 14) steno url
-	@ # 15) audio url
-	@awk ' \
+	@ # 14) end audio time HHMM
+	@ # 15) steno url
+	@ # 16) audio url
+	awk ' \
 	  BEGIN {FS="|";OFS="\t"} \
-		{ \
+		NR==FNR { org2year[$$1] = $$4;next } \
+		$$2 in org2year { \
 		  start_steno = sprintf("%02d:%02d",int(($$7) / 60),($$7 % 60)); \
 		  end_steno = sprintf("%02d:%02d",int(($$8) / 60),($$8 % 60)); \
 			start_audio = sprintf("%02d%02d",int((int($$7/10)*10-2) / 60),((int($$7/10)*10-2) % 60)); \
 			end_audio = sprintf("%02d%02d",int((int($$7/10)*10-2+14) / 60),((int($$7/10)*10-2+14) % 60)); \
 			split($$5, d, "-"); \
-		  url_steno = sprintf("https://www.psp.cz/eknih/%sps/stenprot/%03dschuz/s%03d%03d.htm", $$9, $$3, $$3, $$4); \
-		  url_audio = $$8 == "" ? "" : sprintf("https://www.psp.cz/eknih/%sps/audio/%04d/%02d/%02d/%04d%02d%02d%s%s.mp3",$$9, d[1], d[2], d[3], d[1], d[2], d[3], start_audio, end_audio); \
-		  print $$1,$$2,$$3,$$4,$$5,$$6,$$7,$$8,$$9,start_steno,end_steno,start_audio,end_audio,url_steno, url_audio;\
+		  url_steno = sprintf("https://www.psp.cz/eknih/%sps/stenprot/%03dschuz/s%03d%03d.htm", org2year[$$2], $$3, $$3, $$4); \
+		  url_audio = $$8 == "" ? "" : sprintf("https://www.psp.cz/eknih/%sps/audio/%04d/%02d/%02d/%04d%02d%02d%s%s.mp3",org2year[$$2], d[1], d[2], d[3], d[1], d[2], d[3], start_audio, end_audio); \
+		  print $$1,$$2,$$3,$$4,$$5,$$6,$$7,$$8,org2year[$$2],start_steno,end_steno,start_audio,end_audio,url_steno, url_audio;\
 		} \
 	  ' \
-	  $</steno-year.unl \
+		$(PROC)/psp-organy-year.unl \
+	  $</steno.unl \
 		> $(PROC)/urls-all.tsv
 
 $(PROC)/urls-all.tsv: downloader-get-urls
@@ -126,12 +139,14 @@ $(PROC)/urls-to-download.tsv: $(PROC)/meetings-to-download.tsv $(PROC)/urls-all.
 	fi > $@
 	@echo "INFO[$@]: URLs to be downloaded stored in: $@"
 
+## download-steno-from-repository ## download steno to be updated from repository
 download-steno-from-repository: $(HTML_WORK_REPOSITORY)
 $(HTML_WORK_REPOSITORY): $(PROC)/meetings-to-download.tsv $(HTML_WORK_SOURCE)
 	@# download only meetings
 	@echo "TODO[$@]"
 	@ #$(call REPOSITORY_CMD,handle,file_name,output_path)
 
+## download-steno-from-psp ## download new steno from PSP
 download-steno-from-psp: $(HTML_WORK_SOURCE)
 $(HTML_WORK_SOURCE): $(PROC)/urls-to-download.tsv
 	@echo "INFO[$@]: downloading meeting steno, that has sitting day newer than $(FIRSTDATE) or needs to be updated"
@@ -148,7 +163,7 @@ $(HTML_WORK_SOURCE): $(PROC)/urls-to-download.tsv
 					 -i- \
 	)
 
-
+## build-steno ## prepare new repository records based on new/updated data
 build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY)
 	@mkdir -p $(HTML_WORK_NORMALIZED)
 	@find $(HTML_WORK_SOURCE) -type d -printf '%P\n'| xargs -I {} mkdir -p $(HTML_WORK_NORMALIZED)/{}
@@ -216,6 +231,8 @@ build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY)
 	
 	@echo "TODO: $@"
 
+
+## release-steno ## calls build-steno and releases new/updated records in repository
 release-steno: build-steno
 
 
@@ -228,3 +245,28 @@ get-and-normalize-html-content: $(INFILE)
 							--xpath '//div[@id="main-content"]/*[not(self::script) and normalize-space(.)]' \
 							- 2> /dev/null 
 
+
+
+###### Help
+
+help-intro:
+
+help-variables:
+	@echo "\033[1m\033[32mVARIABLES:\033[0m"
+	@echo "Variable VAR with value 'value' can be set when calling target TARGET in $(MAKEFILE_LIST): make VAR=value TARGET"
+	@grep -E '^## *\$$[a-zA-Z_-]*.*?##.*$$' $(MAKEFILE_LIST) |sed 's/^## *\$$/##/'| awk 'BEGIN {FS = " *## *"}; {printf "\033[1m%s\033[0m\033[36m%-18s\033[0m %s\n", $$4, $$2, $$3}'
+
+help-targets:
+	@echo "\033[1m\033[32mTARGETS:\033[0m"
+	@grep -E '^## *[a-zA-Z_-]+.*?##.*$$|^####' $(MAKEFILE_LIST) | awk 'BEGIN {FS = " *## *"}; {printf "\033[1m%s\033[0m\033[36m%-25s\033[0m %s\n", $$4, $$2, $$3}'
+
+
+.PHONY: help
+## help ## print this help
+help: help-intro help-variables help-targets
+
+## help-advanced ## print full help
+help-advanced: help
+	@echo "\033[1m\033[32mADVANCED:\033[0m"
+	@echo "If you want to run target on multiple targets but not all, you can overwrite PRESS variable. E.g. make check-links PRESS=\"GB CZ\""
+	@grep -E '^## *![a-zA-Z_-]+.*?##.*$$|^##!##' $(MAKEFILE_LIST) |sed 's/^## *!/##/'| awk 'BEGIN {FS = " *## *"}; {printf "\033[1m%s\033[0m\033[35m%-25s\033[0m %s\n", $$4, $$2, $$3}'
