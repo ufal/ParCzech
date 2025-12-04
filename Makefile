@@ -45,7 +45,7 @@ PATCH_PSP_STENO_TABLES_add_year = $(STATIC)/psp_idorg2year.tsv
 
 
 
-$(DATA) $(DATABASE) $(TMP) $(PROC) $(DATASHARED):
+$(DATA) $(DATABASE) $(TMP) $(PROC) $(DATASHARED) $(HTML_DISTRO):
 	mkdir -p $@
 
 ###### Download
@@ -70,7 +70,7 @@ $(DATABASE)/person-org: $(DATABASE)
 ## downloader-get-urls ## extend steno tables with times and steno and audio urls (calls download-tables-steno)
 downloader-get-urls: $(DATABASE)/steno $(DATABASE)/person-org $(TMP) $(PROC) # download-tables-steno $(PATCH_PSP_STENO_TABLES_add_year)
 	@# adding year as the last column (steno.unl)
-	@# 140734|173|111|79|2024-07-11|1|1320|1330|2021|
+	@# 140734|173|111|79|2024-07-11|1|1320|1330|
 	@# columns:
 	@ # 1) id like
 	@	# 2) org_id
@@ -80,8 +80,7 @@ downloader-get-urls: $(DATABASE)/steno $(DATABASE)/person-org $(TMP) $(PROC) # d
 	@	# 6) sitting day in meeting
 	@	# 7) start steno time - minutes from day beginning 
 	@	# 8) end steno time - minutes from day beginning		
-	echo "TODO: use person-org data to identify psYYYY url"
-	cut -f 1,3,4,7 -d'|'  $(DATABASE)/person-org/organy.unl| awk 'BEGIN {FS="|";OFS="|"}{if($$2 == 11){print $$1,$$3,$$4,substr($$4, 7, 4)}}' > $(PROC)/psp-organy-year.unl
+	@cut -f 1,3,4,7 -d'|'  $(DATABASE)/person-org/organy.unl| awk 'BEGIN {FS="|";OFS="|"}{if($$2 == 11){print $$1,$$3,$$4,substr($$4, 7, 4)}}' > $(PROC)/psp-organy-year.unl
 	@# https://www.psp.cz/eknih/<id_org_year>ps/stenprot/<schuze>schuz/s<schuze><stranka>.htm
 	@# https://www.psp.cz/eknih/<id_org_year>ps/audio/<year>/<month>/<day>/<year><monnth><day>08580912.mp3
 	@# appending columns:
@@ -92,7 +91,7 @@ downloader-get-urls: $(DATABASE)/steno $(DATABASE)/person-org $(TMP) $(PROC) # d
 	@ # 14) end audio time HHMM
 	@ # 15) steno url
 	@ # 16) audio url
-	awk ' \
+	@awk ' \
 	  BEGIN {FS="|";OFS="\t"} \
 		NR==FNR { org2year[$$1] = $$4;next } \
 		$$2 in org2year { \
@@ -117,16 +116,18 @@ $(DATASHARED)/urls-seen-notfinal.tsv $(DATASHARED)/urls-seen-final.tsv: $(DATASH
 
 $(PROC)/meetings-to-download.tsv: $(PROC)/urls-all.tsv $(DATASHARED)/urls-seen-notfinal.tsv
 	@echo -n "INFO[$@]: getting list of meetings to be downloaded:"
-	@( awk -F'\t' '$$5 >= "$(FIRSTDATE)"' $(PROC)/urls-all.tsv; cat $(DATASHARED)/urls-seen-notfinal.tsv ) |	cut -f 3,9 | sort |uniq > $@
-	@cat $@|awk -F'\t' -v OFS='\t' '{ print $$2, $$1 }' |tr '\t\n' '/ '
-	@echo
+	@( awk -F'\t' '$$5 >= "$(FIRSTDATE)"' $(PROC)/urls-all.tsv; cat $(DATASHARED)/urls-seen-notfinal.tsv ) \
+	  |	awk -F'\t' -v OFS='\t' '{ print $$9, $$3 }'\
+		| sort \
+		| uniq \
+		> $@
 
 
 $(PROC)/urls-to-download.tsv: $(PROC)/meetings-to-download.tsv $(PROC)/urls-all.tsv $(DATASHARED)/urls-seen-final.tsv
 	@# get all new and to update urls - all urls in meeting to download and skip final urls
 	@echo "INFO[$@]: STARTED steno URLs to be downloaded"
 	@awk -F'\t' \
-	    'NR==FNR { key[$$1 FS $$2] = 1;next } ($$3 FS $$9) in key' \
+	    'NR==FNR { key[$$1 FS $$2] = 1;next } ($$9 FS $$3) in key' \
 			$(PROC)/meetings-to-download.tsv \
 			$(PROC)/urls-all.tsv > $(PROC)/urls-to-include.tsv
 	@if [ -s $(DATASHARED)/urls-seen-final.tsv ]; then \
@@ -149,7 +150,7 @@ $(HTML_WORK_REPOSITORY): $(PROC)/meetings-to-download.tsv $(HTML_WORK_SOURCE)
 ## download-steno-from-psp ## download new steno from PSP
 download-steno-from-psp: $(HTML_WORK_SOURCE)
 $(HTML_WORK_SOURCE): $(PROC)/urls-to-download.tsv
-	@echo "INFO[$@]: downloading meeting steno, that has sitting day newer than $(FIRSTDATE) or needs to be updated"
+	@echo "INFO[$@]: downloading meeting steno, that has sitting day newer than $(FIRSTDATE) - new or needs to be updated"
 	@test -d $@ && echo "INFO: downloading skipped - folder exists" || ( \
 	  mkdir -p $@; \
 	  cut -f14 $< \
@@ -164,7 +165,7 @@ $(HTML_WORK_SOURCE): $(PROC)/urls-to-download.tsv
 	)
 
 ## build-steno ## prepare new repository records based on new/updated data
-build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY)
+build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY) $(HTML_DISTRO)
 	@mkdir -p $(HTML_WORK_NORMALIZED)
 	@find $(HTML_WORK_SOURCE) -type d -printf '%P\n'| xargs -I {} mkdir -p $(HTML_WORK_NORMALIZED)/{}
 	@find $(HTML_WORK_SOURCE) -type f -printf '%P\n'\
@@ -173,11 +174,12 @@ build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY)
 	@echo "INFO: calculating checksums of downloaded steno files"
 	@cat $(HTML_WORK)/steno-down.log \
 	  | sed -n 's/^\([-:0-9 ]*\) URL:\([^ ]*\) .* -> "\(.*\)".*/\1\t\2\t\3/p' \
-		| awk -F'\t' -v OFS='\t' \
+		| awk \
 		      -v norm="$(HTML_WORK_NORMALIZED)/" \
 		      -v down="$(HTML_WORK_SOURCE)/" \
 		      -v runid="$(RUNID)" \
 					' \
+	        BEGIN {FS="\t";OFS="\t"} \
 					{ \
 					  sub("^" down, "", $$3); \
 						cmd = "md5sum " norm $$3; \
@@ -189,8 +191,9 @@ build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY)
 					' \
 		> $(PROC)/files-current-steno-psp.tsv
 	@echo "INFO: merging checksum file with metadata from database"
-	@awk -F'\t' -v OFS='\t' \
+	@awk \
 	    '\
+	      BEGIN {FS="\t";OFS="\t"} \
 			  NR==FNR { fl[$$4]=$$0;next } \
         $$14 in fl { print $$0 "\t" fl[$$14] }\
 			' \
@@ -199,10 +202,11 @@ build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY)
 		> $(PROC)/urls_files-current-steno-psp.tsv
 	@echo "INFO: creating checksum and metadata file in the final shape (TSV)"
 	@# chamber therm meeting sittingN page_in_meeting date starttime endtime file md5sum isfinal cite_datetime stenourl audiourl
-	@awk -F'\t' -v OFS='\t' \
+	@awk \
 	    '\
+	    BEGIN {FS="\t";OFS="\t"} \
 			{\
-	      print "PSP ČR", \
+	      print "ps", \
 				      $$9, \
 				      $$3, \
 				      $$6, \
@@ -220,16 +224,86 @@ build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY)
 			'\
 			$(PROC)/urls_files-current-steno-psp.tsv \
 			> $(PROC)/distro-current-steno-psp.tsv	
-	@echo "TODO: determining which files are new or updated"
-
-	@echo "TODO: copy new or updated files to distro location"
-	@echo "TODO: copy nonchanged files to distro location"
-	@echo "TODO: create final checksums and metadata file" # use released file as a base and change updated or new rows
-	
-
-	
-	
-	@echo "TODO: $@"
+	@echo "INFO: determining which files are new or updated"
+	@if [ -s $(DATASHARED)/urls-seen-final.tsv ]; then \
+	  awk ' \
+	    BEGIN {FS="\t";OFS="\t"} \
+		  NR==FNR { file[$$9] = $$10;next } \
+		  !($$9 in file) { \
+		    print $$0,$$1;\
+			  next\
+		  } \
+		  file[$$9]!=$$10 { \
+		    print $$0,$$1;\
+			  next\
+		  }\
+	    ' \
+		  $(DATASHARED)/urls-seen-notfinal.tsv\
+	    $(PROC)/distro-current-steno-psp.tsv; \
+	else \
+	  cat $(PROC)/distro-current-steno-psp.tsv ; \
+	fi > $(PROC)/distro-current-steno-psp-new-or-updated.tsv 
+	@echo "INFO: " $$(cat $(PROC)/distro-current-steno-psp-new-or-updated.tsv | wc -l) " new or updated files"
+	@echo "INFO: determining which meetings are new or updated"
+	@cat $(PROC)/distro-current-steno-psp-new-or-updated.tsv \
+	  | awk 'BEGIN {FS="\t";OFS="\t"} {print $$2,$$3;}'\
+		|sort\
+		|uniq \
+	  > $(PROC)/distro-current-steno-psp-new-or-updated-meetings.tsv
+	@echo "INFO: new/updated meetings:" $$(cat $(PROC)/distro-current-steno-psp-new-or-updated-meetings.tsv|tr "\n\t" " /")
+	@echo "TODO: prepare folder structure for release"
+	cp $(DATASHARED)/urls-seen-notfinal.tsv $(DATASHARED)/urls-seen-final.tsv $(PROC)/
+	while read -r year meeting; do \
+	  echo "Column 1: $$year"; \
+	  echo "Column 2: $$meeting"; \
+		foldername=$$(printf "ps%d-%03d" $$year $$meeting); \
+		cat $(PROC)/distro-current-steno-psp-new-or-updated.tsv \
+		  | awk \
+		      -v year="$$year" \
+		      -v meeting="$$meeting" \
+					'BEGIN {FS="\t";OFS="\t"} \
+					$$2==year && $$3==meeting {print $$0;}' \
+			> $(PROC)/distro-current-steno-psp-new-or-updated.$$foldername.tsv; \
+		awk \
+		      -v year="$$year" \
+		      -v meeting="$$meeting" \
+					'\
+					BEGIN {FS="\t";OFS="\t"} \
+					NR==FNR { file[$$9] = 1; next} \
+					!($$9 in file) && $$2==year && $$3==meeting {print $$9;print $$0; next} \
+				' \
+			  $(PROC)/distro-current-steno-psp-new-or-updated.$$foldername.tsv\
+				$(PROC)/distro-current-steno-psp.tsv \
+			> $(PROC)/distro-current-steno-psp-old.$$foldername.tsv; \
+		cat $(PROC)/distro-current-steno-psp-old.$$foldername.tsv $(PROC)/distro-current-steno-psp-new-or-updated.$$foldername.tsv \
+		  | cut -f9 | sort | uniq \
+			| sed 's@[^/]*$$@@' \
+			| xargs -I {} mkdir -p $(HTML_DISTRO)/$$foldername/{};\
+		# copy old/notchanged files \
+		cat $(PROC)/distro-current-steno-psp-old.$$foldername.tsv \
+		  | cut -f9 \
+			| xargs -I {} cp $(HTML_WORK_REPOSITORY)/$$foldername/{} $(HTML_DISTRO)/$$foldername/{};\
+		# cope new/updated files \
+		cat $(PROC)/distro-current-steno-psp-new-or-updated.$$foldername.tsv \
+		  | cut -f9 \
+			| xargs -I {} cp $(HTML_WORK_SOURCE)/{} $(HTML_DISTRO)/$$foldername/{};\
+		cat $(PROC)/distro-current-steno-psp-old.$$foldername.tsv $(PROC)/distro-current-steno-psp-new-or-updated.$$foldername.tsv \
+		  | sort > $(HTML_DISTRO)/$$foldername/metadata.tsv; \
+	  cp $(PROC)/urls-seen-final.tsv $(PROC)/urls-seen-final.tsv.tmp; \
+		awk 'BEGIN {FS="\t";OFS="\t"} $$11 == "true" {print $$0} ' $(HTML_DISTRO)/$$foldername/metadata.tsv \
+		  >> $(PROC)/urls-seen-final.tsv.tmp; \
+		cat $(PROC)/urls-seen-final.tsv.tmp | sort | uniq > $(PROC)/urls-seen-final.tsv; \
+	  awk \
+		  -v year="$$year" \
+		  -v meeting="$$meeting" \
+			'BEGIN {FS="\t";OFS="\t"}  !($$2==year && $$3==meeting) {print $$0;}' \
+			$(PROC)/urls-seen-final.tsv \
+			> $(PROC)/urls-seen-final.tsv.tmp; \
+		awk 'BEGIN {FS="\t";OFS="\t"} $$11 == "false" {print $$0} ' $(HTML_DISTRO)/$$foldername/metadata.tsv \
+		  >> $(PROC)/urls-seen-notfinal.tsv.tmp; \
+		cat $(PROC)/urls-seen-notfinal.tsv.tmp | sort | uniq > $(PROC)/urls-seen-notfinal.tsv; \
+	done < $(PROC)/distro-current-steno-psp-new-or-updated-meetings.tsv
+	cp $(PROC)/urls-seen-notfinal.tsv $(PROC)/urls-seen-final.tsv $(DATASHARED)/
 
 
 ## release-steno ## calls build-steno and releases new/updated records in repository
