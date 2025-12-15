@@ -1,5 +1,11 @@
 .DEFAULT_GOAL := help
 
+VENV_DIR=scripts/venv
+export PATH := $(abspath $(VENV_DIR)/bin):$(PATH)
+
+-include .env
+export
+
 ##$FIRSTDATE## The oldest date (YYYY-MM-DD) to be considered to download
 FIRSTDATE := 2025-11-05
 
@@ -20,18 +26,36 @@ HTML_WORK_NORMALIZED := $(HTML_WORK)/normalized
 TMP := $(DATARUN)/tmp
 STATIC := $(shell pwd)/static
 
+
+DSPACEMETA_dc_publisher = Charles University, Faculty of Mathematics and Physics, Institute of Formal and Applied Linguistics (UFAL)
+DSPACEMETA_dc_contributor_author = Kopp, Matyáš
+DSPACEMETA_local_contact_person = Matyáš Kopp kopp@ufal.mff.cuni.cz Institute of Formal and Applied Linguistics (UFAL)
+DSPACEMETA_local_sponsor = 
+DSPACEMETA_dc_language_iso = ces
+DSPACEMETA_dc_subject = Parliament of the Czech Republic|Chamber of Deputies|stenographic protocols
+
+DSPACE_CLIENT_DIR=scripts/clarin-submission-python
+DSPACE_CLIENT_REPO=https://github.com/ufal/clarin-submission-python.git
+DSPACE_CLIENT_BRANCH=issue_\#1169_automatic_submission
+
 ##$DONT_USE_REPOSITORY## Set whether the release result should be passed to repository or stored in local folder
 DONT_USE_REPOSITORY := 1
 
 ifeq ($(DONT_USE_REPOSITORY),1)
   REPOSITORY_URL := $(shell pwd)/test_repository
-define REPOSITORY_CMD
+define REPOSITORY_pull_CMD
 	   mkdir -p "$3"; cp "$(REPOSITORY_URL)/$1/$2" "$3/$2"
+endef
+define REPOSITORY_push_CMD
+	   echo "TODO !!!"
 endef
 else
   REPOSITORY_URL := 
-define REPOSITORY_CMD
+define REPOSITORY_pull_CMD
     mkdir -p "$3"; curl -s -L -o "$3/$2" "$(REPOSITORY_URL)/$1/$2"
+endef
+define REPOSITORY_push_CMD
+	   echo "TODO !!!"
 endef
 endif
 
@@ -47,6 +71,36 @@ PATCH_PSP_STENO_TABLES_add_year = $(STATIC)/psp_idorg2year.tsv
 
 $(DATA) $(DATABASE) $(TMP) $(PROC) $(DATASHARED) $(HTML_DISTRO):
 	mkdir -p $@
+
+## setup-dependencies ## setup (some dependencies)
+setup-dependencies: setup-dep-dspace-client
+
+## setup-dep-dspace-client ## setup dspace client and install a python environment
+setup-dep-dspace-client: setup-python-env
+	@echo "Installing ufal/clarin-submission-python (shallow clone) into $(DSPACE_CLIENT_DIR)"
+	if [ ! -d "$(DSPACE_CLIENT_DIR)" ]; then \
+		git clone --depth 1 --branch $(DSPACE_CLIENT_BRANCH) $(DSPACE_CLIENT_REPO) $(DSPACE_CLIENT_DIR); \
+	else \
+		echo "ufal/clarin-submission-python already installed; updating..."; \
+		cd $(DSPACE_CLIENT_DIR) && \
+		git fetch origin $(DSPACE_CLIENT_BRANCH) --depth 1 && \
+		git checkout $(DSPACE_CLIENT_BRANCH) && \
+		git pull --depth 1; \
+	fi
+	@echo "Installing python dependencies into venv"
+	. $(VENV_DIR)/bin/activate && \
+		pip install --upgrade pip && \
+		if [ -f "$(DSPACE_CLIENT_DIR)/requirements.txt" ]; then \
+			pip install -r $(DSPACE_CLIENT_DIR)/requirements.txt; \
+		else \
+			echo "No requirements.txt found"; \
+		fi
+
+setup-python-env:
+	@echo "Setting up Python virtual environment in $(VENV_DIR)"
+	if [ ! -d "$(VENV_DIR)" ]; then \
+		python3 -m venv $(VENV_DIR); \
+	fi
 
 ###### Download
 
@@ -91,9 +145,10 @@ downloader-get-urls: $(DATABASE)/steno $(DATABASE)/person-org $(TMP) $(PROC) # d
 	@ # 14) end audio time HHMM
 	@ # 15) steno url
 	@ # 16) audio url
+	@ # 17) organization abb
 	@awk ' \
 	  BEGIN {FS="|";OFS="\t"} \
-		NR==FNR { org2year[$$1] = $$4;next } \
+		NR==FNR { org2year[$$1] = $$4; org2abb[$$1] = $$2;next } \
 		$$2 in org2year { \
 		  start_steno = sprintf("%02d:%02d",int(($$7) / 60),($$7 % 60)); \
 		  end_steno = sprintf("%02d:%02d",int(($$8) / 60),($$8 % 60)); \
@@ -102,7 +157,7 @@ downloader-get-urls: $(DATABASE)/steno $(DATABASE)/person-org $(TMP) $(PROC) # d
 			split($$5, d, "-"); \
 		  url_steno = sprintf("https://www.psp.cz/eknih/%sps/stenprot/%03dschuz/s%03d%03d.htm", org2year[$$2], $$3, $$3, $$4); \
 		  url_audio = $$8 == "" ? "" : sprintf("https://www.psp.cz/eknih/%sps/audio/%04d/%02d/%02d/%04d%02d%02d%s%s.mp3",org2year[$$2], d[1], d[2], d[3], d[1], d[2], d[3], start_audio, end_audio); \
-		  print $$1,$$2,$$3,$$4,$$5,$$6,$$7,$$8,org2year[$$2],start_steno,end_steno,start_audio,end_audio,url_steno, url_audio;\
+		  print $$1,$$2,$$3,$$4,$$5,$$6,$$7,$$8,org2year[$$2],start_steno,end_steno,start_audio,end_audio,url_steno, url_audio, org2abb[$$2];\
 		} \
 	  ' \
 		$(PROC)/psp-organy-year.unl \
@@ -145,7 +200,7 @@ download-steno-from-repository: $(HTML_WORK_REPOSITORY)
 $(HTML_WORK_REPOSITORY): $(PROC)/meetings-to-download.tsv $(HTML_WORK_SOURCE)
 	@# download only meetings
 	@echo "TODO[$@]"
-	@ #$(call REPOSITORY_CMD,handle,file_name,output_path)
+	@ #$(call REPOSITORY_pull_CMD,handle,file_name,output_path)
 
 ## download-steno-from-psp ## download new steno from PSP
 download-steno-from-psp: $(HTML_WORK_SOURCE)
@@ -164,8 +219,11 @@ $(HTML_WORK_SOURCE): $(PROC)/urls-to-download.tsv
 					 -i- \
 	)
 
+$(PROC)/metadata-template.csv:
+	python scripts/clarin-submission-python/generate_submission_metadata_template.py --submission-metadata $@
+
 ## build-steno ## prepare new repository records based on new/updated data
-build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY) $(HTML_DISTRO)
+build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY) $(HTML_DISTRO) $(PROC)/metadata-template.csv
 	@mkdir -p $(HTML_WORK_NORMALIZED)
 	@find $(HTML_WORK_SOURCE) -type d -printf '%P\n'| xargs -I {} mkdir -p $(HTML_WORK_NORMALIZED)/{}
 	@find $(HTML_WORK_SOURCE) -type f -printf '%P\n'\
@@ -206,7 +264,7 @@ build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY) $(HTML_DISTRO)
 	    '\
 	    BEGIN {FS="\t";OFS="\t"} \
 			{\
-	      print "ps", \
+	      print $$16, \
 				      $$9, \
 				      $$3, \
 				      $$6, \
@@ -214,10 +272,10 @@ build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY) $(HTML_DISTRO)
 				      $$5, \
 				      $$10, \
 				      $$11, \
-				      $$16, \
 				      $$17, \
+				      $$18, \
+				      $$22, \
 				      $$21, \
-				      $$20, \
 				      $$14, \
 				      $$15;\
 			}\
@@ -246,35 +304,37 @@ build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY) $(HTML_DISTRO)
 	@echo "INFO: " $$(cat $(PROC)/distro-current-steno-psp-new-or-updated.tsv | wc -l) " new or updated files"
 	@echo "INFO: determining which meetings are new or updated"
 	@cat $(PROC)/distro-current-steno-psp-new-or-updated.tsv \
-	  | awk 'BEGIN {FS="\t";OFS="\t"} {print $$2,$$3;}'\
+	  | awk 'BEGIN {FS="\t";OFS="\t"} {sub(/^[A-Za-z]+/, "", $$1);print $$1,$$2,$$3;}'\
 		|sort\
 		|uniq \
 	  > $(PROC)/distro-current-steno-psp-new-or-updated-meetings.tsv
 	@echo "INFO: new/updated meetings:" $$(cat $(PROC)/distro-current-steno-psp-new-or-updated-meetings.tsv|tr "\n\t" " /")
-	@echo "TODO: prepare folder structure for release"
-	cp $(DATASHARED)/urls-seen-notfinal.tsv $(DATASHARED)/urls-seen-final.tsv $(PROC)/
-	while read -r year meeting; do \
-	  echo "Column 1: $$year"; \
-	  echo "Column 2: $$meeting"; \
+	@cp $(DATASHARED)/urls-seen-notfinal.tsv $(DATASHARED)/urls-seen-final.tsv $(PROC)/
+	while read -r term year meeting; do \
+	  echo "INFO: START $$year $$term/$$meeting build"; \
 		foldername=$$(printf "ps%d-%03d" $$year $$meeting); \
 		cat $(PROC)/distro-current-steno-psp-new-or-updated.tsv \
 		  | awk \
+		      -v term="$$term" \
 		      -v year="$$year" \
 		      -v meeting="$$meeting" \
 					'BEGIN {FS="\t";OFS="\t"} \
 					$$2==year && $$3==meeting {print $$0;}' \
 			> $(PROC)/distro-current-steno-psp-new-or-updated.$$foldername.tsv; \
+		echo "INFO: $$year/$$meeting new or updated files:" $$(cat $(PROC)/distro-current-steno-psp-new-or-updated.$$foldername.tsv | wc -l); \
 		awk \
+		      -v term="$$term" \
 		      -v year="$$year" \
 		      -v meeting="$$meeting" \
 					'\
 					BEGIN {FS="\t";OFS="\t"} \
 					NR==FNR { file[$$9] = 1; next} \
-					!($$9 in file) && $$2==year && $$3==meeting {print $$9;print $$0; next} \
+					!($$9 in file) && $$2==year && $$3==meeting {print $$0; next} \
 				' \
 			  $(PROC)/distro-current-steno-psp-new-or-updated.$$foldername.tsv\
 				$(PROC)/distro-current-steno-psp.tsv \
 			> $(PROC)/distro-current-steno-psp-old.$$foldername.tsv; \
+		echo "INFO: $$year/$$meeting unchanged files:" $$(cat $(PROC)/distro-current-steno-psp-old.$$foldername.tsv | wc -l); \
 		cat $(PROC)/distro-current-steno-psp-old.$$foldername.tsv $(PROC)/distro-current-steno-psp-new-or-updated.$$foldername.tsv \
 		  | cut -f9 | sort | uniq \
 			| sed 's@[^/]*$$@@' \
@@ -288,12 +348,13 @@ build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY) $(HTML_DISTRO)
 		  | cut -f9 \
 			| xargs -I {} cp $(HTML_WORK_SOURCE)/{} $(HTML_DISTRO)/$$foldername/{};\
 		cat $(PROC)/distro-current-steno-psp-old.$$foldername.tsv $(PROC)/distro-current-steno-psp-new-or-updated.$$foldername.tsv \
-		  | sort > $(HTML_DISTRO)/$$foldername/metadata.tsv; \
-	  cp $(PROC)/urls-seen-final.tsv $(PROC)/urls-seen-final.tsv.tmp; \
+		  | sort -k5n > $(HTML_DISTRO)/$$foldername/metadata.tsv; \
+		cp $(PROC)/urls-seen-final.tsv $(PROC)/urls-seen-final.tsv.tmp; \
 		awk 'BEGIN {FS="\t";OFS="\t"} $$11 == "true" {print $$0} ' $(HTML_DISTRO)/$$foldername/metadata.tsv \
 		  >> $(PROC)/urls-seen-final.tsv.tmp; \
-		cat $(PROC)/urls-seen-final.tsv.tmp | sort | uniq > $(PROC)/urls-seen-final.tsv; \
+		cat $(PROC)/urls-seen-final.tsv.tmp | sort | uniq | sort -k5n > $(PROC)/urls-seen-final.tsv; \
 	  awk \
+		      -v term="$$term" \
 		  -v year="$$year" \
 		  -v meeting="$$meeting" \
 			'BEGIN {FS="\t";OFS="\t"}  !($$2==year && $$3==meeting) {print $$0;}' \
@@ -301,13 +362,58 @@ build-steno: $(HTML_WORK_SOURCE) $(HTML_WORK_REPOSITORY) $(HTML_DISTRO)
 			> $(PROC)/urls-seen-final.tsv.tmp; \
 		awk 'BEGIN {FS="\t";OFS="\t"} $$11 == "false" {print $$0} ' $(HTML_DISTRO)/$$foldername/metadata.tsv \
 		  >> $(PROC)/urls-seen-notfinal.tsv.tmp; \
-		cat $(PROC)/urls-seen-notfinal.tsv.tmp | sort | uniq > $(PROC)/urls-seen-notfinal.tsv; \
+		cat $(PROC)/urls-seen-notfinal.tsv.tmp | sort | uniq | sort -k5n > $(PROC)/urls-seen-notfinal.tsv; \
+		rm $(PROC)/urls-seen-*final.tsv.tmp; \
+		echo "INFO: $$year/$$meeting final files:" $$(cut -f11 $(HTML_DISTRO)/$$foldername/metadata.tsv| grep true | wc -l); \
+		echo "INFO: $$year/$$meeting not-final files:" $$(cut -f11 $(HTML_DISTRO)/$$foldername/metadata.tsv| grep false | wc -l); \
+		echo "INFO: $$year/$$meeting final files:" $$(cut -f11 $(HTML_DISTRO)/$$foldername/metadata.tsv| grep true | wc -l); \
+		echo "INFO: $$year/$$meeting total files:" $$(cat $(HTML_DISTRO)/$$foldername/metadata.tsv| wc -l); \
+		cut -f 13 $(HTML_DISTRO)/$$foldername/metadata.tsv > $(PROC)/$${foldername}_dc.source.uri;\
+		cat $(PROC)/metadata-template.csv \
+		  | awk \
+		  -v term="$$term" \
+		  -v year="$$year" \
+		  -v meeting="$$meeting" \
+			-v urlfile="$(PROC)/$${foldername}_dc.source.uri"\
+			'BEGIN {\
+			  FS=",";OFS=",";\
+			  for (v in ENVIRON) { \
+			    if (v ~ /^DSPACEMETA_/) { \
+					  field = v;\
+					  gsub("^DSPACEMETA_", "", field);\
+					  gsub("_", ".", field);\
+				    meta[field] = ENVIRON[v]; \
+			    } \
+		    } \
+			}  \
+			$(AWKORDINAL) \
+			$$1 == "dc.title" {print $$1,"Stenographic record of the " meeting ordinal(meeting)" meeting of the Chamber of Deputies of the Parliament of the Czech Republic, " term ordinal(term)" legislative term";next}\
+			$$1 == "dc.source.uri" { while ((getline line < urlfile) > 0) { print $$1, line }; close(urlfile); next}\
+			$$1 in meta {\
+			  val = meta[$$1]; \
+			  n = split(val, arr, "\\|");\
+				for (i = 1; i <= n; i++) {\
+			    print $$1 , arr[i];\
+		    };\
+				next}\
+			{print $$0;}'\
+		  | awk \
+			'BEGIN {FS=",";OFS=","}\
+			(NF > 2) {\
+				for (i = 3; i <= NF; i++) { $$2 = $$2 "," $$i;	}\
+				NF = 2;\
+			  $$2 = "\"" $$2 "\"";\
+		  }\
+		  {print $$1,$$2}' > $(HTML_DISTRO)/$$foldername.csv; \
 	done < $(PROC)/distro-current-steno-psp-new-or-updated-meetings.tsv
-	cp $(PROC)/urls-seen-notfinal.tsv $(PROC)/urls-seen-final.tsv $(DATASHARED)/
+
 
 
 ## release-steno ## calls build-steno and releases new/updated records in repository
 release-steno: build-steno
+	@echo "INFO: updating shared status files"
+	@cp $(PROC)/urls-seen-notfinal.tsv $(PROC)/urls-seen-final.tsv $(DATASHARED)/
+
 
 
 get-and-normalize-html-content: $(INFILE)
@@ -344,3 +450,21 @@ help-advanced: help
 	@echo "\033[1m\033[32mADVANCED:\033[0m"
 	@echo "If you want to run target on multiple targets but not all, you can overwrite PRESS variable. E.g. make check-links PRESS=\"GB CZ\""
 	@grep -E '^## *![a-zA-Z_-]+.*?##.*$$|^##!##' $(MAKEFILE_LIST) |sed 's/^## *!/##/'| awk 'BEGIN {FS = " *## *"}; {printf "\033[1m%s\033[0m\033[35m%-25s\033[0m %s\n", $$4, $$2, $$3}'
+
+
+
+
+
+#
+
+define AWKORDINAL
+function ordinal(n,   mod100, mod10) {\
+    mod100 = n % 100;\
+    if (mod100 >= 11 && mod100 <= 13) return "th";\
+    mod10 = n % 10;\
+    if (mod10 == 1) return "st";\
+    if (mod10 == 2) return "nd";\
+    if (mod10 == 3) return "rd";\
+    return "th";\
+}
+endef
